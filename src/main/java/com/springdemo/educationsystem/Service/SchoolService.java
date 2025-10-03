@@ -1,6 +1,4 @@
 package com.springdemo.educationsystem.Service;
-
-
 import com.springdemo.educationsystem.Entity.School;
 import com.springdemo.educationsystem.Repository.SchoolRepository;
 import org.springframework.beans.factory.annotation.Autowired;

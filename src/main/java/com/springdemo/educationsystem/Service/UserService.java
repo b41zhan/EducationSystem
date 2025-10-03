@@ -1,5 +1,4 @@
 package com.springdemo.educationsystem.Service;
-
 import com.springdemo.educationsystem.DTO.UserDTO;
 import com.springdemo.educationsystem.Entity.*;
 import com.springdemo.educationsystem.Repository.*;
@@ -16,8 +15,8 @@ public class UserService {
     @Autowired private TeacherRepository teacherRepository;
     @Autowired private ParentRepository parentRepository;
     @Autowired private SchoolClassRepository classRepository;
+    @Autowired private SchoolRepository schoolRepository;
 
-    // Преобразование User в UserDTO
     private UserDTO convertToDTO(User user) {
         UserDTO dto = new UserDTO();
         dto.setId(user.getId());
@@ -30,6 +29,13 @@ public class UserService {
         if (user.getSchool() != null) {
             dto.setSchoolId(user.getSchool().getId());
             dto.setSchoolName(user.getSchool().getName());
+        }
+
+        if (user.getRoles() != null && !user.getRoles().isEmpty()) {
+            List<String> roleNames = user.getRoles().stream()
+                    .map(role -> role.getName())
+                    .collect(Collectors.toList());
+            dto.setRoles(roleNames);
         }
 
         return dto;
@@ -48,19 +54,19 @@ public class UserService {
     }
 
     public UserDTO registerStudent(User user, Long classId) {
-        // Находим роль студента
         Role studentRole = roleRepository.findByName("student")
                 .orElseThrow(() -> new RuntimeException("Role 'student' not found"));
 
-        // Находим класс
         SchoolClass schoolClass = classRepository.findById(classId)
                 .orElseThrow(() -> new RuntimeException("Class not found"));
 
-        // Сохраняем пользователя
+        if (user.getSchool() == null) {
+            user.setSchool(schoolClass.getSchool());
+        }
+
         user.getRoles().add(studentRole);
         User savedUser = userRepository.save(user);
 
-        // Создаем студента
         Student student = new Student();
         student.setUser(savedUser);
         student.setSchoolClass(schoolClass);
@@ -72,6 +78,12 @@ public class UserService {
     public UserDTO registerTeacher(User user) {
         Role teacherRole = roleRepository.findByName("teacher")
                 .orElseThrow(() -> new RuntimeException("Role 'teacher' not found"));
+
+        if (user.getSchool() == null) {
+            School defaultSchool = schoolRepository.findById(1L)
+                    .orElseThrow(() -> new RuntimeException("Default school not found"));
+            user.setSchool(defaultSchool);
+        }
 
         user.getRoles().add(teacherRole);
         User savedUser = userRepository.save(user);

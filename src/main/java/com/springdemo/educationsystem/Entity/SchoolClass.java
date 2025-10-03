@@ -1,6 +1,4 @@
 package com.springdemo.educationsystem.Entity;
-
-
 import jakarta.persistence.*;
 
 import java.util.ArrayList;

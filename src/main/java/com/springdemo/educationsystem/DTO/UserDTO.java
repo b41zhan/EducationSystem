@@ -1,7 +1,7 @@
 package com.springdemo.educationsystem.DTO;
 
-
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class UserDTO {
     private Long id;
@@ -12,8 +12,8 @@ public class UserDTO {
     private LocalDateTime createdAt;
     private Long schoolId;
     private String schoolName;
+    private List<String> roles;
 
-    // Конструкторы
     public UserDTO() {}
 
     // Геттеры и сеттеры
@@ -33,4 +33,6 @@ public class UserDTO {
     public void setSchoolId(Long schoolId) { this.schoolId = schoolId; }
     public String getSchoolName() { return schoolName; }
     public void setSchoolName(String schoolName) { this.schoolName = schoolName; }
+    public List<String> getRoles() { return roles; }
+    public void setRoles(List<String> roles) { this.roles = roles; }
 }
