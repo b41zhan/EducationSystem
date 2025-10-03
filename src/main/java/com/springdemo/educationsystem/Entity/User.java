@@ -1,7 +1,5 @@
 package com.springdemo.educationsystem.Entity;
 
-
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
@@ -39,7 +37,7 @@ public class User {
     @JsonIgnore
     private School school;
 
-    @ManyToMany(fetch = FetchType.LAZY) // ← Изменить на LAZY
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
@@ -48,22 +46,11 @@ public class User {
     @JsonIgnore
     private List<Role> roles = new ArrayList<>();
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnore
-    private Student student;
-
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnore
-    private Teacher teacher;
-
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnore
-    private Parent parent;
     public User() {
         this.createdAt = LocalDateTime.now();
     }
 
-
+    // Геттеры и сеттеры
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getEmail() { return email; }
@@ -82,10 +69,4 @@ public class User {
     public void setSchool(School school) { this.school = school; }
     public List<Role> getRoles() { return roles; }
     public void setRoles(List<Role> roles) { this.roles = roles; }
-    public Student getStudent() { return student; }
-    public void setStudent(Student student) { this.student = student; }
-    public Teacher getTeacher() { return teacher; }
-    public void setTeacher(Teacher teacher) { this.teacher = teacher; }
-    public Parent getParent() { return parent; }
-    public void setParent(Parent parent) { this.parent = parent; }
 }
