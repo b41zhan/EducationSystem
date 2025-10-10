@@ -13,10 +13,13 @@ import java.util.Map;
 @RequestMapping("/api/auth")
 @CrossOrigin("*")
 public class AuthController {
-    @Autowired
-    private AuthService authService;
-    @Autowired
-    private UserRepository userRepository;
+
+    private final AuthService authService;
+    private final UserRepository userRepository;
+    public AuthController(AuthService authService, UserRepository userRepository) {
+        this.authService = authService;
+        this.userRepository = userRepository;
+    }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {

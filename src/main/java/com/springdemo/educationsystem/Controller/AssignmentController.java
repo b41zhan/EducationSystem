@@ -19,11 +19,12 @@ public class AssignmentController {
 
     private static final Logger logger = LoggerFactory.getLogger(AssignmentController.class);
 
-    @Autowired
-    private AssignmentService assignmentService;
-
-    @Autowired
-    private AuthService authService;
+    private final AssignmentService assignmentService;
+    private final AuthService authService;
+    public AssignmentController(AssignmentService assignmentService, AuthService authService) {
+        this.assignmentService = assignmentService;
+        this.authService = authService;
+    }
 
     @GetMapping
     public ResponseEntity<?> getAllAssignments(
@@ -68,6 +69,11 @@ public class AssignmentController {
             logger.error("Error getting assignment: {}", e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    @GetMapping("/my-class")
+    public ResponseEntity<?> getAssignmentsForMyClass(@RequestHeader("Authorization") String authorizationHeader) {
+        return ResponseEntity.status(404).body(Map.of("error", "Use /api/students/assignments/my-class endpoint"));
     }
 
     @GetMapping("/class/{classId}")

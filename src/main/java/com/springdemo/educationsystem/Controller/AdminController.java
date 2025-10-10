@@ -14,15 +14,13 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/admin")
 @CrossOrigin("*")
 public class AdminController {
-
     private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
-
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private AuthService authService;
-
+    private final UserService userService;
+    private final AuthService authService;
+    public AdminController(UserService userService, AuthService authService) {
+        this.userService = userService;
+        this.authService = authService;
+    }
     private boolean isAdminAuthorized(String authorizationHeader) {
         logger.info("Checking authorization header: {}", authorizationHeader);
 

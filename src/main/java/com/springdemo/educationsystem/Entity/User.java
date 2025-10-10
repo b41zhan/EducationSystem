@@ -32,6 +32,9 @@ public class User {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "profile_photo_path")
+    private String profilePhotoPath;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "school_id")
     @JsonIgnore
@@ -50,7 +53,11 @@ public class User {
         this.createdAt = LocalDateTime.now();
     }
 
-    // Геттеры и сеттеры
+
+    // Геттер и сеттер
+    public String getProfilePhotoPath() { return profilePhotoPath; }
+    public void setProfilePhotoPath(String profilePhotoPath) { this.profilePhotoPath = profilePhotoPath; }
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getEmail() { return email; }

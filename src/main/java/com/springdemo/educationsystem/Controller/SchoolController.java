@@ -11,8 +11,10 @@ import java.util.List;
 @RequestMapping("/api/schools")
 @CrossOrigin("*")
 public class SchoolController {
-    @Autowired
-    private SchoolService schoolService;
+    private final SchoolService schoolService;
+    public SchoolController(SchoolService schoolService) {
+        this.schoolService = schoolService;
+    }
 
     @GetMapping
     public List<School> getAllSchools() {

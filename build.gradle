@@ -40,6 +40,13 @@ dependencies {
     //Arafat jibergen
    // implementation 'org.springframework.cloud:spring-cloud-starter-config'
 
+    //3-4 zadanie
+    //для работы с файлами
+    implementation 'commons-io:commons-io:2.11.0'
+    implementation 'commons-fileupload:commons-fileupload:1.4'
+
+    // Для валидации файлов
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
 }
 
 tasks.named('test') {

@@ -22,18 +22,19 @@ public class TeacherAssignmentController {
 
     private static final Logger logger = LoggerFactory.getLogger(TeacherAssignmentController.class);
 
-    @Autowired
-    private AssignmentService assignmentService;
+    private final AssignmentService assignmentService;
+    private final AuthService authService;
+    private final TeacherService teacherService;
+    public TeacherAssignmentController(AssignmentService assignmentService, AuthService authService,TeacherService teacherService) {
+        this.assignmentService = assignmentService;
+        this.authService = authService;
+        this.teacherService = teacherService;
+    }
 
-    @Autowired
-    private AuthService authService;
-
-    @Autowired
-    private TeacherService teacherService;
 
     @PostMapping
     public ResponseEntity<?> createAssignment(
-            @RequestBody CreateAssignmentDTO createDTO, // Изменили на DTO
+            @RequestBody CreateAssignmentDTO createDTO,
             @RequestHeader("Authorization") String authorizationHeader) {
 
         logger.info("Creating assignment: {}", createDTO.getTitle());
