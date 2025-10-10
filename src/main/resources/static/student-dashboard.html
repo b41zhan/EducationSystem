@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Education System - Студент</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="dashboard">
+    <div class="header">
+        <div class="user-info">
+            <div>
+                <h1>Панель студента</h1>
+                <p id="welcome-message">Добро пожаловать!</p>
+                <p id="student-class">Класс: Загрузка...</p>
+            </div>
+            <div>
+                <button class="btn-logout" onclick="logout()">Выйти</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="content">
+        <!-- Левая колонка -->
+        <div class="left-column">
+            <div class="card">
+                <h2>Активные задания <small id="assignments-count">(0)</small></h2>
+                <div id="active-assignments">
+                    <div class="loading-state">
+                        <p>Загрузка заданий...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Сдать задание</h2>
+                <form id="submitAssignmentForm">
+                    <div class="form-group">
+                        <label for="assignmentSelect">Выберите задание:</label>
+                        <select id="assignmentSelect" required>
+                            <option value="">Выберите задание</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="assignmentFile">Файл задания:</label>
+                        <input type="file" id="assignmentFile" accept=".pdf,.doc,.docx,.jpg,.png" required>
+                        <small>Поддерживаемые форматы: PDF, DOC, JPG, PNG (макс. 5MB)</small>
+                        <div id="file-info" style="margin-top: 5px;"></div>
+                    </div>
+
+                    <button type="submit" class="btn-primary" id="submit-btn">Сдать задание</button>
+                    <div id="submit-message" style="display: none;"></div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Правая колонка -->
+        <div class="right-column">
+            <div class="card">
+                <h2>Мои оценки</h2>
+                <div id="grades-list">
+                    <p>Загрузка оценок...</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Статистика</h2>
+                <div id="student-stats">
+                    <p>Всего заданий: <span id="total-assignments">0</span></p>
+                    <p>Выполнено: <span id="completed-assignments">0</span></p>
+                    <p>Просрочено: <span id="overdue-assignments">0</span></p>
+                    <p>Средний балл: <span id="average-grade">0</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/student.js"></script>
+</body>
+</html>

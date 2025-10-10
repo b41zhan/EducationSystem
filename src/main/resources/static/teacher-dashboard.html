@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Education System - Учитель</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="dashboard">
+    <div class="header">
+        <div class="user-info">
+            <div>
+                <h1>Панель учителя</h1>
+                <p id="welcome-message">Добро пожаловать!</p>
+            </div>
+            <div>
+                <button class="btn-logout" onclick="logout()">Выйти</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="content">
+        <!-- Левая колонка -->
+        <div class="left-column">
+            <div class="card">
+                <h2>Быстрые действия</h2>
+                <button class="btn-primary" onclick="showCreateAssignmentModal()">
+                    Создать задание
+                </button>
+                <button class="btn-secondary" onclick="loadSubmissionsToGrade()">
+                    🔄 Обновить список на проверку
+                </button>
+                <div style="margin-top: 10px; font-size: 14px; color: #666;">
+                    <span id="pending-count">0</span> заданий ждут проверки
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Мои классы</h2>
+                <div id="classes-list">
+                    <p>Загрузка классов...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Правая колонка -->
+        <div class="right-column">
+            <div class="card">
+                <h2>Мои задания</h2>
+                <div id="assignments-list">
+                    <p>Загрузка заданий...</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Задания на проверку</h2>
+                <div id="submissions-to-grade">
+                    <p>Загрузка заданий на проверку...</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Статистика</h2>
+                <div id="teacher-stats">
+                    <p>Всего заданий: <span id="total-assignments">0</span></p>
+                    <p>На проверке: <span id="pending-submissions">0</span></p>
+                    <p>Проверено: <span id="graded-submissions">0</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно создания задания -->
+<div id="createAssignmentModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeCreateAssignmentModal()">&times;</span>
+        <h2>Создать новое задание</h2>
+        <form id="createAssignmentForm">
+            <div class="form-group">
+                <label for="assignmentTitle">Название:</label>
+                <input type="text" id="assignmentTitle" required>
+            </div>
+            <div class="form-group">
+                <label for="assignmentDescription">Описание:</label>
+                <textarea id="assignmentDescription" rows="4"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="assignmentType">Тип:</label>
+                <select id="assignmentType" required>
+                    <option value="homework">Домашнее задание</option>
+                    <option value="test">Тест</option>
+                    <option value="quiz">Викторина</option>
+                    <option value="sor">СОР</option>
+                    <option value="soch">СОЧ</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="assignmentMaxGrade">Макс. оценка:</label>
+                <input type="number" id="assignmentMaxGrade" value="100" min="1" max="100">
+            </div>
+            <div class="form-group">
+                <label for="assignmentDeadline">Срок сдачи:</label>
+                <input type="datetime-local" id="assignmentDeadline" required>
+            </div>
+            <div class="form-group">
+                <label for="assignmentClass">Класс:</label>
+                <select id="assignmentClass" required>
+                    <option value="">Выберите класс</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="assignmentSubject">Предмет:</label>
+                <select id="assignmentSubject" required>
+                    <option value="">Выберите предмет</option>
+                    <option value="1">Математика</option>
+                    <option value="2">Физика</option>
+                    <option value="3">Химия</option>
+                    <option value="4">История</option>
+                    <option value="5">Литература</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-primary">Создать задание</button>
+        </form>
+    </div>
+</div>
+
+<!-- Модальное окно оценки задания -->
+<div id="gradeSubmissionModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeGradeSubmissionModal()">&times;</span>
+        <h2>Оценка задания</h2>
+        <div id="submission-details">
+            <!-- Детали задания будут здесь -->
+        </div>
+        <form id="gradeSubmissionForm">
+            <input type="hidden" id="submissionId">
+            <div class="form-group">
+                <label for="gradeValue">Оценка:</label>
+                <input type="number" id="gradeValue" min="0" max="100" required>
+                <small>Максимальная оценка: <span id="max-grade">100</span></small>
+            </div>
+            <div class="form-group">
+                <label for="teacherComment">Комментарий:</label>
+                <textarea id="teacherComment" rows="4" placeholder="Обратная связь для студента..."></textarea>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">Поставить оценку</button>
+                <button type="button" class="btn-secondary" onclick="closeGradeSubmissionModal()">Отмена</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/teacher.js"></script>
+</body>
+</html>

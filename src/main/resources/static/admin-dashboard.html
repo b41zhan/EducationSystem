@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Education System - Администратор</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="dashboard">
+    <div class="header">
+        <div class="user-info">
+            <div>
+                <h1>Панель администратора</h1>
+                <p id="welcome-message">Добро пожаловать!</p>
+            </div>
+            <div>
+                <button class="btn-logout" onclick="logout()">Выйти</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="content">
+        <!-- Левая колонка -->
+        <div class="left-column">
+            <div class="card">
+                <h2>Управление пользователями</h2>
+                <button class="btn-primary" onclick="showRegisterTeacherModal()">
+                    Зарегистрировать учителя
+                </button>
+                <button class="btn-secondary" onclick="showRegisterStudentModal()">
+                    Зарегистрировать студента
+                </button>
+                <button class="btn-secondary" onclick="showRegisterParentModal()">
+                    Зарегистрировать родителя
+                </button>
+            </div>
+
+            <div class="card">
+                <h2>Статистика системы</h2>
+                <div id="system-stats">
+                    <p>Всего пользователей: <span id="total-users">0</span></p>
+                    <p>Учителей: <span id="total-teachers">0</span></p>
+                    <p>Студентов: <span id="total-students">0</span></p>
+                    <p>Родителей: <span id="total-parents">0</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Правая колонка -->
+        <div class="right-column">
+            <div class="card">
+                <h2>Список пользователей</h2>
+                <div id="users-list">
+                    <p>Загрузка пользователей...</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Быстрый поиск</h2>
+                <div class="form-group">
+                    <input type="text" id="search-users" placeholder="Поиск по email или имени...">
+                    <button class="btn-secondary" onclick="searchUsers()">Найти</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно регистрации учителя -->
+<div id="registerTeacherModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeRegisterTeacherModal()">&times;</span>
+        <h2>Регистрация учителя</h2>
+        <form id="registerTeacherForm">
+            <div class="form-group">
+                <label for="teacherEmail">Email:</label>
+                <input type="email" id="teacherEmail" required>
+            </div>
+            <div class="form-group">
+                <label for="teacherPassword">Пароль:</label>
+                <input type="password" id="teacherPassword" required>
+            </div>
+            <div class="form-group">
+                <label for="teacherFirstName">Имя:</label>
+                <input type="text" id="teacherFirstName" required>
+            </div>
+            <div class="form-group">
+                <label for="teacherLastName">Фамилия:</label>
+                <input type="text" id="teacherLastName" required>
+            </div>
+            <div class="form-group">
+                <label for="teacherPatronymic">Отчество:</label>
+                <input type="text" id="teacherPatronymic">
+            </div>
+            <button type="submit" class="btn-primary">Зарегистрировать</button>
+        </form>
+    </div>
+</div>
+
+<!-- Модальное окно регистрации студента -->
+<div id="registerStudentModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeRegisterStudentModal()">&times;</span>
+        <h2>Регистрация студента</h2>
+        <form id="registerStudentForm">
+            <div class="form-group">
+                <label for="studentEmail">Email:</label>
+                <input type="email" id="studentEmail" required>
+            </div>
+            <div class="form-group">
+                <label for="studentPassword">Пароль:</label>
+                <input type="password" id="studentPassword" required>
+            </div>
+            <div class="form-group">
+                <label for="studentFirstName">Имя:</label>
+                <input type="text" id="studentFirstName" required>
+            </div>
+            <div class="form-group">
+                <label for="studentLastName">Фамилия:</label>
+                <input type="text" id="studentLastName" required>
+            </div>
+            <div class="form-group">
+                <label for="studentPatronymic">Отчество:</label>
+                <input type="text" id="studentPatronymic">
+            </div>
+            <div class="form-group">
+                <label for="studentClass">Класс:</label>
+                <select id="studentClass" required>
+                    <option value="1">7А</option>
+                    <option value="2">8Б</option>
+                    <option value="3">9В</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-primary">Зарегистрировать</button>
+        </form>
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/admin.js"></script>
+</body>
+</html>
