@@ -14,7 +14,6 @@ async function loadTeacherData() {
         console.error('Error loading teacher data:', error);
     }
 }
-
 async function loadClasses() {
     try {
         const classes = await ApiService.get('/school-classes');
@@ -28,6 +27,7 @@ async function loadClasses() {
 
         if (classes && classes.length > 0) {
             classes.forEach(classItem => {
+                // Для списка классов
                 const classElement = document.createElement('div');
                 classElement.className = 'assignment-item';
                 classElement.innerHTML = `
@@ -36,6 +36,7 @@ async function loadClasses() {
                 `;
                 classesList.appendChild(classElement);
 
+                // Для выпадающего списка в форме
                 const option = document.createElement('option');
                 option.value = classItem.id;
                 option.textContent = `${classItem.name} (${classItem.academicYear})`;
@@ -49,20 +50,12 @@ async function loadClasses() {
     } catch (error) {
         console.error('Error loading classes:', error);
 
+        // Уберите fallback на статические данные, чтобы видеть ошибку
         const classesList = document.getElementById('classes-list');
         const classSelect = document.getElementById('assignmentClass');
 
-        classesList.innerHTML = `
-            <div class="assignment-item">
-                <div class="assignment-title">8А</div>
-                <div class="assignment-meta">Учебный год: 2024-2025</div>
-            </div>
-        `;
-
-        classSelect.innerHTML = `
-            <option value="">Выберите класс</option>
-            <option value="2">8А (2024-2025)</option>
-        `;
+        classesList.innerHTML = '<p>Ошибка загрузки классов</p>';
+        classSelect.innerHTML = '<option value="">Ошибка загрузки классов</option>';
     }
 }
 

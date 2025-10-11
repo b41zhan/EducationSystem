@@ -1,4 +1,5 @@
 package com.springdemo.educationsystem.Entity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;
@@ -22,9 +23,11 @@ public class SchoolClass {
     private School school;
 
     @OneToMany(mappedBy = "schoolClass", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<Student> students = new ArrayList<>();
 
     @OneToMany(mappedBy = "schoolClass", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<Assignment> assignments = new ArrayList<>();
 
     public SchoolClass() {}

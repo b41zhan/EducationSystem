@@ -1,5 +1,6 @@
 package com.springdemo.educationsystem.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
@@ -15,6 +16,7 @@ public class Student {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "class_id")
+    @JsonIgnore
     private SchoolClass schoolClass;
 
     @OneToMany(mappedBy = "student", cascade = CascadeType.ALL)

@@ -80,7 +80,7 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("Role 'teacher' not found"));
 
         if (user.getSchool() == null) {
-            School defaultSchool = schoolRepository.findById(2L)
+            School defaultSchool = schoolRepository.findById(1L)
                     .orElseThrow(() -> new RuntimeException("Default school not found"));
             user.setSchool(defaultSchool);
         }

@@ -25,4 +25,5 @@ public class SchoolClassController {
     public List<SchoolClass> getClassesBySchool(@PathVariable Long schoolId) {
         return schoolClassRepository.findBySchoolId(schoolId);
     }
+
 }
