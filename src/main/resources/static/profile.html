@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Мой профиль</title>
     <style>
-        /* Базовые стили */
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -62,7 +61,6 @@
             gap: 40px;
         }
 
-        /* Стили для аватарки */
         .avatar-container {
             text-align: center;
             margin-bottom: 20px;
@@ -105,7 +103,6 @@
             display: none;
         }
 
-        /* Кнопки */
         .btn-primary, .btn-secondary {
             padding: 10px 15px;
             border: none;
@@ -138,7 +135,6 @@
             font-size: 12px;
         }
 
-        /* Информация пользователя */
         .user-info {
             text-align: center;
         }
@@ -162,7 +158,6 @@
             font-size: 14px;
         }
 
-        /* Секция "О себе" */
         .bio-section {
             background: #f9f9f9;
             padding: 25px;
@@ -213,7 +208,6 @@
             margin-top: 10px;
         }
 
-        /* Сообщения */
         #message-container {
             margin-top: 20px;
         }
@@ -278,7 +272,6 @@
                 </div>
             </div>
 
-            <!-- Правая колонка - "О себе" -->
             <div class="profile-main">
                 <div class="bio-section">
                     <h3>Кратко о себе</h3>
@@ -302,7 +295,6 @@
                     </button>
                 </div>
 
-                <!-- Сообщения об ошибках/успехе -->
                 <div id="message-container"></div>
             </div>
         </div>
@@ -315,7 +307,6 @@
     let currentBio = '';
     let isEditingBio = false;
 
-    // Загрузка профиля при открытии страницы
     document.addEventListener('DOMContentLoaded', function() {
         loadProfile();
 
@@ -327,7 +318,6 @@
         });
     });
 
-    // Загрузка данных профиля
     async function loadProfile() {
         try {
             const profileData = await ApiService.get('/profile');
@@ -347,18 +337,15 @@
         }
     }
 
-    // Отображение данных профиля
     function displayProfile(profileData) {
         // Основная информация
         document.getElementById('user-name').textContent =
             `${profileData.firstName} ${profileData.lastName}`;
         document.getElementById('user-email').textContent = profileData.email;
 
-        // Инициалы
         const initials = getInitials(profileData.firstName, profileData.lastName);
         document.getElementById('user-initials').textContent = initials;
 
-        // Аватарка
         const avatarPlaceholder = document.getElementById('avatar-placeholder');
         const avatarImage = document.getElementById('avatar-image');
         const removeBtn = document.getElementById('remove-avatar-btn');
@@ -369,13 +356,11 @@
             const avatarUrl = `/api/files/download/${encodeURIComponent(profileData.profilePhotoPath)}?t=${new Date().getTime()}`;
             console.log('🔗 Avatar URL для загрузки:', avatarUrl);
 
-            // Прячем placeholder и показываем изображение
             avatarPlaceholder.style.display = 'none';
             avatarImage.style.display = 'block';
             avatarImage.src = avatarUrl;
             removeBtn.style.display = 'block';
 
-            // Проверяем загрузку изображения
             avatarImage.onload = function() {
                 console.log('✅ Аватарка загружена успешно!');
                 console.log('📏 Размеры:', this.naturalWidth + 'x' + this.naturalHeight);
@@ -395,19 +380,16 @@
             removeBtn.style.display = 'none';
         }
 
-        // "О себе"
         currentBio = profileData.bio || '';
         displayBio(currentBio);
     }
 
-    // Получение инициалов
     function getInitials(firstName, lastName) {
         const first = firstName ? firstName[0].toUpperCase() : '';
         const last = lastName ? lastName[0].toUpperCase() : '';
         return first + last;
     }
 
-    // Отображение текста "О себе"
     function displayBio(bio) {
         const bioDisplay = document.getElementById('bio-display');
         const bioEmpty = document.getElementById('bio-empty');
@@ -426,7 +408,6 @@
         }
     }
 
-    // Редактирование "О себе"
     function editBio() {
         isEditingBio = true;
 
@@ -438,7 +419,6 @@
         document.getElementById('bio-textarea').focus();
     }
 
-    // Отмена редактирования
     function cancelEditBio() {
         isEditingBio = false;
 
@@ -447,7 +427,6 @@
         document.getElementById('edit-bio-btn').style.display = 'block';
     }
 
-    // Сохранение "О себе"
     async function saveBio() {
         const newBio = document.getElementById('bio-textarea').value.trim();
 
@@ -466,7 +445,6 @@
         }
     }
 
-    // Загрузка аватарки
     async function uploadAvatar(file) {
         if (!file) return;
 
@@ -511,7 +489,6 @@
             }
             showMessage('Аватарка успешно обновлена!', 'success');
 
-            // Перезагружаем профиль для отображения новой аватарки
             await loadProfile();
 
             document.getElementById('avatar-upload').value = '';
@@ -522,7 +499,6 @@
         }
     }
 
-    // Удаление аватарки
     async function removeAvatar() {
         if (!confirm('Удалить аватарку?')) return;
 
@@ -531,7 +507,6 @@
 
             showMessage('Аватарка удалена', 'success');
 
-            // Обновляем отображение
             document.getElementById('avatar-placeholder').style.display = 'flex';
             document.getElementById('avatar-image').style.display = 'none';
             document.getElementById('remove-avatar-btn').style.display = 'none';
@@ -542,7 +517,6 @@
         }
     }
 
-    // Показ сообщений
     function showMessage(message, type) {
         const container = document.getElementById('message-container');
         const messageDiv = document.createElement('div');
@@ -551,7 +525,6 @@
 
         container.appendChild(messageDiv);
 
-        // Автоматическое удаление через 5 секунд
         setTimeout(() => {
             if (messageDiv.parentNode) {
                 messageDiv.parentNode.removeChild(messageDiv);
@@ -559,7 +532,6 @@
         }, 5000);
     }
 
-    // Выход (если нужно)
     function logout() {
         localStorage.removeItem('token');
         window.location.href = '/login.html';
