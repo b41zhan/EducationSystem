@@ -46,13 +46,44 @@
 
         <!-- Правая колонка -->
         <div class="right-column">
+            <!-- Блок с заданиями с поиском и пагинацией -->
             <div class="card">
                 <h2>Мои задания</h2>
+
+                <!-- Поиск -->
+                <!-- Поиск и фильтры -->
+                <div class="search-filters">
+                    <div class="form-group">
+                        <input type="text" id="searchAssignments" placeholder="Поиск по названию задания..."
+                               onkeyup="searchTeacherAssignments()">
+                    </div>
+                    <div class="filter-row">
+                        <div class="form-group">
+                            <label for="classFilter">Фильтр по классу:</label>
+                            <select id="classFilter" onchange="filterTeacherAssignments()">
+                                <option value="">Все классы</option>
+                                <!-- Классы будут добавлены динамически -->
+                            </select>
+                        </div>
+                        <button class="btn-secondary" onclick="clearFilters()" style="margin-top: 25px;">
+                            Очистить фильтры
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Список заданий -->
                 <div id="assignments-list">
                     <p>Загрузка заданий...</p>
                 </div>
-            </div>
 
+                <!-- Пагинация -->
+                <div id="pagination" class="pagination" style="display: none;">
+                    <button id="prev-page" class="btn-secondary" onclick="changePage(-1)">← Назад</button>
+                    <span id="page-info">Страница 1 из 1</span>
+                    <button id="next-page" class="btn-secondary" onclick="changePage(1)">Вперед →</button>
+                </div>
+
+            <!-- Блок с заданиями на проверку -->
             <div class="card">
                 <h2>Задания на проверку</h2>
                 <div id="submissions-to-grade">
@@ -60,6 +91,7 @@
                 </div>
             </div>
 
+            <!-- Блок со статистикой -->
             <div class="card">
                 <h2>Статистика</h2>
                 <div id="teacher-stats">

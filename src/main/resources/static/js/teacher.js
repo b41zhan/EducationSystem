@@ -5,6 +5,211 @@ document.addEventListener('DOMContentLoaded', function() {
     loadSubmissionsToGrade();
 });
 
+// Добавьте эти переменные в начало файла
+let allAssignments = [];
+let currentPage = 1;
+const assignmentsPerPage = 5;
+let filteredAssignments = [];
+
+// Обновите функцию loadTeacherAssignments
+async function loadTeacherAssignments() {
+    try {
+        console.log('Loading teacher assignments...');
+
+        // Пробуем получить задания учителя
+        try {
+            allAssignments = await ApiService.get('/teacher/assignments/my');
+            console.log('Loaded teacher assignments:', allAssignments);
+        } catch (error) {
+            console.log('Teacher assignments endpoint failed, trying general assignments...');
+            allAssignments = await ApiService.get('/assignments');
+        }
+
+        // Инициализируем отфильтрованные задания
+        filteredAssignments = [...allAssignments];
+
+        // Отображаем первую страницу
+        displayTeacherAssignmentsPage(1);
+
+        // Обновляем статистику
+        const submissions = await ApiService.get('/submissions/my');
+        updateTeacherStats(allAssignments, submissions);
+
+    } catch (error) {
+        console.error('Error loading assignments:', error);
+
+        // Если ошибка - показываем пустой список
+        allAssignments = [];
+        filteredAssignments = [];
+        displayTeacherAssignmentsPage(1);
+    }
+}
+
+// Функция поиска заданий
+function searchTeacherAssignments() {
+    const searchTerm = document.getElementById('searchAssignments').value.toLowerCase().trim();
+
+    filterTeacherAssignments();
+
+    if (searchTerm === '') {
+        // Если поиск пустой, показываем все задания
+        filteredAssignments = [...allAssignments];
+    } else {
+        // Фильтруем задания по названию
+        filteredAssignments = allAssignments.filter(assignment =>
+            assignment.title && assignment.title.toLowerCase().includes(searchTerm)
+        );
+    }
+
+    // Возвращаемся на первую страницу после поиска
+    currentPage = 1;
+    displayTeacherAssignmentsPage(currentPage);
+}
+
+
+function clearFilters() {
+    document.getElementById('searchAssignments').value = '';
+    document.getElementById('classFilter').value = '';
+
+    // Возвращаем все задания
+    filteredAssignments = [...allAssignments];
+    currentPage = 1;
+    displayTeacherAssignmentsPage(currentPage);
+}
+
+function getClassNameById(classId) {
+    const classItem = allClasses.find(c => c.id == classId);
+    return classItem ? classItem.name : '';
+}
+
+// Функция отображения страницы с заданиями
+function displayTeacherAssignmentsPage(page) {
+    const assignmentsList = document.getElementById('assignments-list');
+    const pagination = document.getElementById('pagination');
+
+    // Создаем элемент для информации о результатах
+    let resultsInfo = document.getElementById('results-info');
+    if (!resultsInfo) {
+        resultsInfo = document.createElement('div');
+        resultsInfo.id = 'results-info';
+        resultsInfo.className = 'results-info';
+        assignmentsList.parentNode.insertBefore(resultsInfo, assignmentsList);
+    }
+
+    if (!filteredAssignments || filteredAssignments.length === 0) {
+        const searchTerm = document.getElementById('searchAssignments').value;
+        const classFilterValue = document.getElementById('classFilter').value;
+        const className = classFilterValue ? getClassNameById(classFilterValue) : '';
+
+        let message = '';
+        if (searchTerm && classFilterValue) {
+            message = `По запросу "${searchTerm}" и классу "${className}" заданий не найдено`;
+        } else if (searchTerm) {
+            message = `По запросу "${searchTerm}" заданий не найдено`;
+        } else if (classFilterValue) {
+            message = `Для класса "${className}" заданий не найдено`;
+        } else {
+            message = 'Нет созданных заданий';
+        }
+
+        assignmentsList.innerHTML = `
+            <div class="no-assignments">
+                <p>${message}</p>
+                <small>${!searchTerm && !classFilterValue ? 'Создайте первое задание, используя кнопку "Создать задание"' : 'Попробуйте изменить параметры поиска'}</small>
+            </div>
+        `;
+        resultsInfo.textContent = '';
+        pagination.style.display = 'none';
+        return;
+    }
+
+    // Показываем информацию о результатах
+    const searchTerm = document.getElementById('searchAssignments').value;
+    const classFilterValue = document.getElementById('classFilter').value;
+    const className = classFilterValue ? getClassNameById(classFilterValue) : '';
+
+    let resultsText = `Найдено заданий: ${filteredAssignments.length}`;
+    if (searchTerm || classFilterValue) {
+        resultsText += ' (';
+        if (searchTerm) resultsText += `поиск: "${searchTerm}"`;
+        if (searchTerm && classFilterValue) resultsText += ', ';
+        if (classFilterValue) resultsText += `класс: ${className}`;
+        resultsText += ')';
+    }
+
+    resultsInfo.textContent = resultsText;
+
+    // Рассчитываем индексы для текущей страницы
+    const totalPages = Math.ceil(filteredAssignments.length / assignmentsPerPage);
+    const startIndex = (page - 1) * assignmentsPerPage;
+    const endIndex = Math.min(startIndex + assignmentsPerPage, filteredAssignments.length);
+    const currentAssignments = filteredAssignments.slice(startIndex, endIndex);
+
+    // Отображаем задания
+    assignmentsList.innerHTML = '';
+
+    currentAssignments.forEach(assignment => {
+        const assignmentElement = document.createElement('div');
+        assignmentElement.className = 'assignment-item';
+        assignmentElement.innerHTML = `
+            <div class="assignment-title">${assignment.title || 'Без названия'}</div>
+            <div class="assignment-meta">
+                Класс: ${assignment.className || 'Не указан'} |
+                Тип: ${getAssignmentTypeName(assignment.type)} |
+                Макс. оценка: ${assignment.maxGrade || 'N/A'}
+            </div>
+            <div class="assignment-deadline">
+                Срок: ${assignment.deadline ? new Date(assignment.deadline).toLocaleDateString('ru-RU') : 'Не указан'}
+            </div>
+            <button class="btn-secondary" onclick="viewAssignmentSubmissions(${assignment.id})">
+                Просмотреть сдачи
+            </button>
+        `;
+        assignmentsList.appendChild(assignmentElement);
+    });
+
+    // Обновляем пагинацию
+    updatePagination(page, totalPages, filteredAssignments.length);
+}
+
+// Функция обновления пагинации
+function updatePagination(currentPage, totalPages, totalAssignments) {
+    const pagination = document.getElementById('pagination');
+    const pageInfo = document.getElementById('page-info');
+    const prevButton = document.getElementById('prev-page');
+    const nextButton = document.getElementById('next-page');
+
+    if (totalPages <= 1) {
+        pagination.style.display = 'none';
+    } else {
+        pagination.style.display = 'flex';
+
+        // Обновляем информацию о странице
+        pageInfo.textContent = `Страница ${currentPage} из ${totalPages}`;
+
+        // Обновляем состояние кнопок
+        prevButton.disabled = currentPage === 1;
+        nextButton.disabled = currentPage === totalPages;
+
+        // Добавляем/убираем стили для disabled кнопок
+        prevButton.style.opacity = currentPage === 1 ? '0.5' : '1';
+        nextButton.style.opacity = currentPage === totalPages ? '0.5' : '1';
+    }
+}
+
+// Функция смены страницы
+function changePage(direction) {
+    const totalPages = Math.ceil(filteredAssignments.length / assignmentsPerPage);
+    const newPage = currentPage + direction;
+
+    if (newPage >= 1 && newPage <= totalPages) {
+        currentPage = newPage;
+        displayTeacherAssignmentsPage(currentPage);
+    }
+}
+
+// ВАЖНО: Остальные функции должны остаться без изменений!
+
 async function loadTeacherData() {
     try {
         const userData = await ApiService.get('/auth/me');
@@ -14,20 +219,27 @@ async function loadTeacherData() {
         console.error('Error loading teacher data:', error);
     }
 }
+
 async function loadClasses() {
     try {
         const classes = await ApiService.get('/school-classes');
         console.log('Classes loaded:', classes);
 
+        // Сохраняем классы для фильтрации
+        allClasses = classes;
+
         const classesList = document.getElementById('classes-list');
         const classSelect = document.getElementById('assignmentClass');
+        const classFilter = document.getElementById('classFilter');
 
+        // Очищаем списки
         classesList.innerHTML = '';
         classSelect.innerHTML = '<option value="">Выберите класс</option>';
+        classFilter.innerHTML = '<option value="">Все классы</option>';
 
         if (classes && classes.length > 0) {
             classes.forEach(classItem => {
-                // Для списка классов
+                // Для списка классов в левой колонке
                 const classElement = document.createElement('div');
                 classElement.className = 'assignment-item';
                 classElement.innerHTML = `
@@ -36,97 +248,72 @@ async function loadClasses() {
                 `;
                 classesList.appendChild(classElement);
 
-                // Для выпадающего списка в форме
+                // Для выпадающего списка в форме создания задания
                 const option = document.createElement('option');
                 option.value = classItem.id;
                 option.textContent = `${classItem.name} (${classItem.academicYear})`;
                 classSelect.appendChild(option);
+
+                // Для фильтра по классам
+                const filterOption = document.createElement('option');
+                filterOption.value = classItem.id;
+                filterOption.textContent = `${classItem.name} (${classItem.academicYear})`;
+                classFilter.appendChild(filterOption);
             });
         } else {
             classesList.innerHTML = '<p>Нет доступных классов</p>';
             classSelect.innerHTML = '<option value="">Нет доступных классов</option>';
+            classFilter.innerHTML = '<option value="">Нет доступных классов</option>';
         }
 
     } catch (error) {
         console.error('Error loading classes:', error);
 
-        // Уберите fallback на статические данные, чтобы видеть ошибку
         const classesList = document.getElementById('classes-list');
         const classSelect = document.getElementById('assignmentClass');
+        const classFilter = document.getElementById('classFilter');
 
         classesList.innerHTML = '<p>Ошибка загрузки классов</p>';
         classSelect.innerHTML = '<option value="">Ошибка загрузки классов</option>';
+        classFilter.innerHTML = '<option value="">Ошибка загрузки классов</option>';
     }
 }
 
-async function loadTeacherAssignments() {
-    try {
-        const assignments = await ApiService.get('/assignments');
-        displayTeacherAssignments(assignments);
+function filterTeacherAssignments() {
+    const searchTerm = document.getElementById('searchAssignments').value.toLowerCase().trim();
+    const classFilterValue = document.getElementById('classFilter').value;
 
-        const submissions = await ApiService.get('/submissions/my');
-        updateTeacherStats(assignments, submissions);
+    console.log('Filtering - Search:', searchTerm, 'Class:', classFilterValue);
 
-    } catch (error) {
-        console.error('Error loading teacher assignments:', error);
-        const assignments = [
-            {
-                id: 1,
-                title: 'Домашнее задание по математике',
-                type: 'homework',
-                deadline: '2024-12-25T23:59:00',
-                className: '7А',
-                maxGrade: 100
-            },
-            {
-                id: 2,
-                title: 'Тест по физике',
-                type: 'test',
-                deadline: '2024-12-20T23:59:00',
-                className: '8Б',
-                maxGrade: 100
-            }
-        ];
-        displayTeacherAssignments(assignments);
-    }
-}
+    // Начинаем со всех заданий
+    filteredAssignments = [...allAssignments];
 
-function displayTeacherAssignments(assignments) {
-    const assignmentsList = document.getElementById('assignments-list');
-
-    if (!assignments || assignments.length === 0) {
-        assignmentsList.innerHTML = '<p>Нет созданных заданий</p>';
-        return;
+    // Применяем поиск по названию
+    if (searchTerm !== '') {
+        filteredAssignments = filteredAssignments.filter(assignment =>
+            assignment.title && assignment.title.toLowerCase().includes(searchTerm)
+        );
     }
 
-    assignmentsList.innerHTML = '';
+    // Применяем фильтр по классу
+    if (classFilterValue !== '') {
+        filteredAssignments = filteredAssignments.filter(assignment =>
+            assignment.classId == classFilterValue || assignment.className === getClassNameById(classFilterValue)
+        );
+    }
 
-    assignments.forEach(assignment => {
-        const assignmentElement = document.createElement('div');
-        assignmentElement.className = 'assignment-item';
-        assignmentElement.innerHTML = `
-            <div class="assignment-title">${assignment.title}</div>
-            <div class="assignment-meta">
-                Класс: ${assignment.className} | 
-                Тип: ${getAssignmentTypeName(assignment.type)} |
-                Макс. оценка: ${assignment.maxGrade}
-            </div>
-            <div class="assignment-deadline">
-                Срок: ${new Date(assignment.deadline).toLocaleDateString('ru-RU')}
-            </div>
-            <button class="btn-secondary" onclick="viewAssignmentSubmissions(${assignment.id})">
-                Просмотреть сдачи
-            </button>
-        `;
-        assignmentsList.appendChild(assignmentElement);
-    });
+    // Возвращаемся на первую страницу после фильтрации
+    currentPage = 1;
+    displayTeacherAssignmentsPage(currentPage);
 }
+
+
 
 async function loadSubmissionsToGrade() {
     try {
         const submissions = await ApiService.get('/submissions/my');
         displaySubmissionsToGrade(submissions);
-        updateTeacherStats([], submissions); // Обновляем статистику
+        updateTeacherStats(allAssignments, submissions);
     } catch (error) {
         console.error('Error loading submissions to grade:', error);
         document.getElementById('submissions-to-grade').innerHTML =
@@ -157,8 +344,8 @@ function displaySubmissionsToGrade(submissions) {
         submissionElement.innerHTML = `
             <div class="assignment-title">${submission.assignmentTitle}</div>
             <div class="assignment-meta">
-                Студент: <strong>${submission.studentName}</strong> | 
-                Файл: ${submission.fileName} | 
+                Студент: <strong>${submission.studentName}</strong> |
+                Файл: ${submission.fileName} |
                 Размер: ${(submission.fileSize / 1024 / 1024).toFixed(2)} MB
             </div>
             <div class="assignment-meta">
@@ -215,7 +402,6 @@ async function viewSubmission(submissionId) {
 }
 
 function downloadSubmissionFile(filePath) {
-    // Открываем файл в новой вкладке
     window.open(`/api/files/download/${filePath}`, '_blank');
 }
 
@@ -295,11 +481,6 @@ document.getElementById('createAssignmentForm').addEventListener('submit', async
         return;
     }
 
-    if (classId === "") {
-        alert('Пожалуйста, выберите класс');
-        return;
-    }
-
     const formData = {
         title: title,
         description: description,
@@ -310,15 +491,17 @@ document.getElementById('createAssignmentForm').addEventListener('submit', async
         subjectId: parseInt(subjectId)
     };
 
-    console.log('Creating assignment with data:', formData);
-
     try {
         const response = await ApiService.post('/teacher/assignments', formData);
-        console.log('Assignment created:', response);
 
         alert('Задание создано успешно!');
         closeCreateAssignmentModal();
-        loadTeacherAssignments(); // Обновляем список
+
+        // Перезагружаем задания чтобы показать новое
+        await loadTeacherAssignments();
+
+        // Сбрасываем фильтры
+        clearFilters();
 
     } catch (error) {
         console.error('Error creating assignment:', error);

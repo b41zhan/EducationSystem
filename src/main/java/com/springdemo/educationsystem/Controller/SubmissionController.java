@@ -45,7 +45,11 @@ public class SubmissionController {
             String filePath = (String) submissionData.get("filePath");
             String fileName = (String) submissionData.get("fileName");
             Long fileSize = Long.valueOf(submissionData.get("fileSize").toString());
-            String comment = (String) submissionData.get("comment");
+
+            String comment = "";
+            if (submissionData.containsKey("comment")) {
+                comment = (String) submissionData.get("comment");
+            }
 
             submissionService.createSubmission(assignmentId, studentId, filePath, fileName, fileSize, comment);
 
@@ -55,6 +59,7 @@ public class SubmissionController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
 
     @PostMapping("/grade")
     public ResponseEntity<?> gradeSubmission(

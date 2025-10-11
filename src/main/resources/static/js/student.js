@@ -197,11 +197,13 @@ function loadStudentGrades() {
     });
 }
 
+// ОБНОВЛЕННЫЙ ОБРАБОТЧИК ФОРМЫ - ДОБАВЛЕН КОММЕНТАРИЙ
 document.getElementById('submitAssignmentForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
     const assignmentId = document.getElementById('assignmentSelect').value;
     const fileInput = document.getElementById('assignmentFile');
+    const comment = document.getElementById('assignmentComment').value; // ← ПОЛУЧАЕМ КОММЕНТАРИЙ
 
     if (!assignmentId) {
         alert('Выберите задание');
@@ -213,16 +215,18 @@ document.getElementById('submitAssignmentForm').addEventListener('submit', async
         return;
     }
 
-    await submitAssignment(assignmentId, fileInput.files[0]);
+    await submitAssignment(assignmentId, fileInput.files[0], comment);
 });
 
-async function submitAssignment(assignmentId, file) {
+// ОБНОВЛЕННАЯ ФУНКЦИЯ submitAssignment - ДОБАВЛЕН ПАРАМЕТР comment
+async function submitAssignment(assignmentId, file, comment = '') {
     const btn = document.querySelector('#submitAssignmentForm button');
     btn.disabled = true;
     btn.textContent = 'Отправка...';
 
     try {
         console.log('Starting file upload...', file);
+        console.log('Comment:', comment); // ← ЛОГИРУЕМ КОММЕНТАРИЙ
 
         const formData = new FormData();
         formData.append('file', file);
@@ -251,7 +255,7 @@ async function submitAssignment(assignmentId, file) {
             filePath: uploadResult.filePath,
             fileName: uploadResult.fileName,
             fileSize: uploadResult.fileSize,
-            comment: ''
+            comment: comment // ← ПЕРЕДАЕМ КОММЕНТАРИЙ НА БЭКЕНД
         };
 
         console.log('Submitting data:', submissionData);
