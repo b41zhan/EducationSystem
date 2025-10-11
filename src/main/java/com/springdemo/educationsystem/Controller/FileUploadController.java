@@ -116,4 +116,28 @@ public class FileUploadController {
             ));
         }
     }
+
+    @GetMapping("/download-test")
+    public ResponseEntity<?> downloadTestFile() {
+        try {
+            // Хардкодим конкретный файл который точно существует
+            String hardcodedFilePath = "assignments/5353bb24-20bc-4b41-b6e1-4342c828bb59_барлык.docx";
+
+            System.out.println("Пытаемся скачать файл: " + hardcodedFilePath);
+
+            byte[] fileContent = fileStorageService.loadFile(hardcodedFilePath);
+
+            System.out.println("Файл найден, размер: " + fileContent.length + " bytes");
+
+            return ResponseEntity.ok()
+                    .header("Content-Type", "application/octet-stream")
+                    .header("Content-Disposition", "attachment; filename=\"барлык.docx\"")
+                    .body(fileContent);
+
+        } catch (Exception e) {
+            System.out.println("Ошибка при хардкод скачивании: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("Test file not found: " + e.getMessage());
+        }
+    }
 }

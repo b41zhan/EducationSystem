@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мой профиль</title>
+    <style>
+        /* Базовые стили */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+
+        .dashboard {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .profile-container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .profile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+        }
+
+        .profile-header h1 {
+            margin: 0;
+            color: #333;
+        }
+
+        .back-btn {
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .back-btn:hover {
+            color: #333;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .profile-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 40px;
+        }
+
+        /* Стили для аватарки */
+        .avatar-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .avatar-placeholder {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            margin: 0 auto 15px;
+            border: 3px solid #ddd;
+        }
+
+        .avatar {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #007bff;
+            display: none;
+        }
+
+        .avatar.hidden {
+            display: none;
+        }
+
+        .avatar-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .avatar-upload {
+            display: none;
+        }
+
+        /* Кнопки */
+        .btn-primary, .btn-secondary {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+
+        .btn-small {
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+
+        /* Информация пользователя */
+        .user-info {
+            text-align: center;
+        }
+
+        .user-initials {
+            font-size: 18px;
+            font-weight: bold;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .user-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .user-email {
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* Секция "О себе" */
+        .bio-section {
+            background: #f9f9f9;
+            padding: 25px;
+            border-radius: 8px;
+        }
+
+        .bio-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .bio-display {
+            min-height: 100px;
+            margin-bottom: 15px;
+        }
+        .bio-empty {
+            color: #999;
+            font-style: italic;
+            padding: 20px;
+            text-align: center;
+            border: 2px dashed #ddd;
+            border-radius: 5px;
+        }
+
+        .bio-content {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #eee;
+            line-height: 1.5;
+        }
+
+        .bio-textarea {
+            width: 100%;
+            height: 120px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: inherit;
+            font-size: 14px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        /* Сообщения */
+        #message-container {
+            margin-top: 20px;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 5px;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 5px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+    <div class="profile-container">
+        <div class="profile-header">
+            <h1>Мой профиль</h1>
+            <a href="/student-dashboard.html" class="back-btn">← Назад в главное меню</a>
+        </div>
+
+        <div id="loading" class="loading">
+            <p>Загрузка профиля...</p>
+        </div>
+
+        <div id="profile-content" class="profile-content" style="display: none;">
+            <!-- Левая колонка - аватар и основная информация -->
+            <div class="profile-sidebar">
+                <div class="avatar-container">
+                    <div id="avatar-placeholder" class="avatar-placeholder">
+                        👤
+                    </div>
+                    <img id="avatar-image" class="avatar" src="" alt="Аватар" style="display: none;">
+
+                    <div class="avatar-actions">
+                        <input type="file" id="avatar-upload" class="avatar-upload" accept="image/*">
+                        <button class="btn-primary btn-small" onclick="document.getElementById('avatar-upload').click()">
+                            📷 Сменить фото
+                        </button>
+                        <button id="remove-avatar-btn" class="btn-secondary btn-small" onclick="removeAvatar()" style="display: none;">
+                            🗑 Удалить фото
+                        </button>
+                    </div>
+                </div>
+
+                <div class="user-info">
+                    <div id="user-initials" class="user-initials"></div>
+                    <div id="user-name" class="user-name"></div>
+                    <div id="user-email" class="user-email"></div>
+                </div>
+            </div>
+
+            <!-- Правая колонка - "О себе" -->
+            <div class="profile-main">
+                <div class="bio-section">
+                    <h3>Кратко о себе</h3>
+
+                    <div id="bio-display" class="bio-display">
+                        <div id="bio-empty" class="bio-empty">
+                            Расскажите немного о себе...
+                        </div>
+                        <div id="bio-content" style="display: none;"></div>
+                    </div>
+                    <div id="bio-edit" style="display: none;">
+                        <textarea id="bio-textarea" class="bio-textarea" placeholder="Расскажите о своих интересах, увлечениях или целях..."></textarea>
+                        <div class="form-actions">
+                            <button class="btn-primary" onclick="saveBio()">💾 Сохранить</button>
+                            <button class="btn-secondary" onclick="cancelEditBio()">❌ Отмена</button>
+                        </div>
+                    </div>
+
+                    <button id="edit-bio-btn" class="btn-primary" onclick="editBio()">
+                        ✏️ Редактировать
+                    </button>
+                </div>
+
+                <!-- Сообщения об ошибках/успехе -->
+                <div id="message-container"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+    let currentBio = '';
+    let isEditingBio = false;
+
+    // Загрузка профиля при открытии страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        loadProfile();
+
+        // Обработчик загрузки аватарки
+        document.getElementById('avatar-upload').addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                uploadAvatar(e.target.files[0]);
+            }
+        });
+    });
+
+    // Загрузка данных профиля
+    async function loadProfile() {
+        try {
+            const profileData = await ApiService.get('/profile');
+            displayProfile(profileData);
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('profile-content').style.display = 'grid';
+
+        } catch (error) {
+            console.error('Ошибка загрузки профиля:', error);
+            document.getElementById('loading').innerHTML = `
+                    <div class="error-message">
+                        Ошибка загрузки профиля: ${error.message}
+                        <button onclick="loadProfile()" style="margin-left: 10px;">Повторить</button>
+                    </div>
+                `;
+        }
+    }
+
+    // Отображение данных профиля
+    function displayProfile(profileData) {
+        // Основная информация
+        document.getElementById('user-name').textContent =
+            `${profileData.firstName} ${profileData.lastName}`;
+        document.getElementById('user-email').textContent = profileData.email;
+
+        // Инициалы
+        const initials = getInitials(profileData.firstName, profileData.lastName);
+        document.getElementById('user-initials').textContent = initials;
+
+        // Аватарка
+        const avatarPlaceholder = document.getElementById('avatar-placeholder');
+        const avatarImage = document.getElementById('avatar-image');
+        const removeBtn = document.getElementById('remove-avatar-btn');
+
+        if (profileData.profilePhotoPath) {
+            console.log('🖼 Profile photo path из API:', profileData.profilePhotoPath);
+
+            const avatarUrl = `/api/files/download/${encodeURIComponent(profileData.profilePhotoPath)}?t=${new Date().getTime()}`;
+            console.log('🔗 Avatar URL для загрузки:', avatarUrl);
+
+            // Прячем placeholder и показываем изображение
+            avatarPlaceholder.style.display = 'none';
+            avatarImage.style.display = 'block';
+            avatarImage.src = avatarUrl;
+            removeBtn.style.display = 'block';
+
+            // Проверяем загрузку изображения
+            avatarImage.onload = function() {
+                console.log('✅ Аватарка загружена успешно!');
+                console.log('📏 Размеры:', this.naturalWidth + 'x' + this.naturalHeight);
+            };
+
+            avatarImage.onerror = function() {
+                console.error('❌ Ошибка загрузки аватарки');
+                // Возвращаем placeholder при ошибке
+                avatarPlaceholder.style.display = 'flex';
+                avatarImage.style.display = 'none';
+                removeBtn.style.display = 'none';
+            };
+        } else {
+            console.log('ℹ️ Аватарка не установлена');
+            avatarPlaceholder.style.display = 'flex';
+            avatarImage.style.display = 'none';
+            removeBtn.style.display = 'none';
+        }
+
+        // "О себе"
+        currentBio = profileData.bio || '';
+        displayBio(currentBio);
+    }
+
+    // Получение инициалов
+    function getInitials(firstName, lastName) {
+        const first = firstName ? firstName[0].toUpperCase() : '';
+        const last = lastName ? lastName[0].toUpperCase() : '';
+        return first + last;
+    }
+
+    // Отображение текста "О себе"
+    function displayBio(bio) {
+        const bioDisplay = document.getElementById('bio-display');
+        const bioEmpty = document.getElementById('bio-empty');
+        const bioContent = document.getElementById('bio-content');
+        const editBtn = document.getElementById('edit-bio-btn');
+
+        if (bio && bio.trim() !== '') {
+            bioEmpty.style.display = 'none';
+            bioContent.style.display = 'block';
+            bioContent.textContent = bio;
+            editBtn.textContent = '✏️ Редактировать';
+        } else {
+            bioEmpty.style.display = 'block';
+            bioContent.style.display = 'none';
+            editBtn.textContent = '✏️ Добавить информацию о себе';
+        }
+    }
+
+    // Редактирование "О себе"
+    function editBio() {
+        isEditingBio = true;
+
+        document.getElementById('bio-display').style.display = 'none';
+        document.getElementById('bio-edit').style.display = 'block';
+        document.getElementById('edit-bio-btn').style.display = 'none';
+
+        document.getElementById('bio-textarea').value = currentBio;
+        document.getElementById('bio-textarea').focus();
+    }
+
+    // Отмена редактирования
+    function cancelEditBio() {
+        isEditingBio = false;
+
+        document.getElementById('bio-display').style.display = 'block';
+        document.getElementById('bio-edit').style.display = 'none';
+        document.getElementById('edit-bio-btn').style.display = 'block';
+    }
+
+    // Сохранение "О себе"
+    async function saveBio() {
+        const newBio = document.getElementById('bio-textarea').value.trim();
+
+        try {
+            await ApiService.put('/profile/bio', { bio: newBio });
+
+            currentBio = newBio;
+            displayBio(currentBio);
+            cancelEditBio();
+
+            showMessage('Информация успешно сохранена!', 'success');
+
+        } catch (error) {
+            console.error('Ошибка сохранения:', error);
+            showMessage(`Ошибка сохранения: ${error.message}`, 'error');
+        }
+    }
+
+    // Загрузка аватарки
+    async function uploadAvatar(file) {
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            showMessage('Пожалуйста, выберите изображение', 'error');
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            showMessage('Размер файла не должен превышать 5MB', 'error');
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            console.log('Начало загрузки аватарки...', file.name);
+
+            const response = await fetch('/api/profile/avatar', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: formData
+            });
+
+            console.log('Ответ сервера:', response.status, response.statusText);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Ошибка сервера:', errorText);
+                throw new Error(errorText || 'Ошибка загрузки');
+            }
+
+            const result = await response.json();
+            console.log('Полный ответ от сервера:', result);
+
+            if (!result.filePath) {
+                console.error('В ответе отсутствует filePath');
+                throw new Error('Не удалось получить путь к файлу');
+            }
+            showMessage('Аватарка успешно обновлена!', 'success');
+
+            // Перезагружаем профиль для отображения новой аватарки
+            await loadProfile();
+
+            document.getElementById('avatar-upload').value = '';
+
+        } catch (error) {
+            console.error('Ошибка загрузки аватарки:', error);
+            showMessage(`Ошибка загрузки: ${error.message}`, 'error');
+        }
+    }
+
+    // Удаление аватарки
+    async function removeAvatar() {
+        if (!confirm('Удалить аватарку?')) return;
+
+        try {
+            await ApiService.delete('/profile/avatar');
+
+            showMessage('Аватарка удалена', 'success');
+
+            // Обновляем отображение
+            document.getElementById('avatar-placeholder').style.display = 'flex';
+            document.getElementById('avatar-image').style.display = 'none';
+            document.getElementById('remove-avatar-btn').style.display = 'none';
+
+        } catch (error) {
+            console.error('Ошибка удаления аватарки:', error);
+            showMessage(`Ошибка удаления: ${error.message}`, 'error');
+        }
+    }
+
+    // Показ сообщений
+    function showMessage(message, type) {
+        const container = document.getElementById('message-container');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = type === 'error' ? 'error-message' : 'success-message';
+        messageDiv.textContent = message;
+
+        container.appendChild(messageDiv);
+
+        // Автоматическое удаление через 5 секунд
+        setTimeout(() => {
+            if (messageDiv.parentNode) {
+                messageDiv.parentNode.removeChild(messageDiv);
+            }
+        }, 5000);
+    }
+
+    // Выход (если нужно)
+    function logout() {
+        localStorage.removeItem('token');
+        window.location.href = '/login.html';
+    }
+</script>
+</body>
+</html>

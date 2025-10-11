@@ -4,6 +4,8 @@ import com.springdemo.educationsystem.Entity.*;
 import com.springdemo.educationsystem.Repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -107,5 +109,41 @@ public class UserService {
         parentRepository.save(parent);
 
         return convertToDTO(savedUser);
+    }public void updateUserBio(Long userId, String bio) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setBio(bio);
+        userRepository.save(user);
+    }
+
+    public String saveProfilePhoto(Long userId, MultipartFile file) {
+        // Логика сохранения файла
+        // Возвращает путь к сохраненному файлу
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Здесь реализация сохранения файла
+        String filePath = "uploads/profiles/" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
+        // Сохраняем файл...
+
+        user.setProfilePhotoPath(filePath);
+        userRepository.save(user);
+
+        return filePath;
+    }
+
+    public User findById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+    }
+
+    public void deleteProfilePhoto(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Удаляем файл с диска...
+
+        user.setProfilePhotoPath(null);
+        userRepository.save(user);
     }
 }

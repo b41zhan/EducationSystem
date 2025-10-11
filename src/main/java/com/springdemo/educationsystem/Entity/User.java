@@ -23,6 +23,9 @@ public class User {
     @Column(name = "first_name", nullable = false, length = 100)
     private String firstName;
 
+    @Column(name = "bio", length = 500)
+    private String bio;
+
     @Column(name = "last_name", nullable = false, length = 100)
     private String lastName;
 
@@ -76,4 +79,6 @@ public class User {
     public void setSchool(School school) { this.school = school; }
     public List<Role> getRoles() { return roles; }
     public void setRoles(List<Role> roles) { this.roles = roles; }
+    public String getBio() { return bio; }
+    public void setBio(String bio) { this.bio = bio; }
 }

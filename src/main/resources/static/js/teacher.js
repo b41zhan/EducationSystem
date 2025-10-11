@@ -401,6 +401,10 @@ async function viewSubmission(submissionId) {
     }
 }
 
+function testDownload() {
+    window.open('/api/files/download-test', '_blank');
+}
+
 function downloadSubmissionFile(filePath) {
     window.open(`/api/files/download/${filePath}`, '_blank');
 }

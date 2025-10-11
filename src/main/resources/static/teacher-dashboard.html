@@ -82,6 +82,7 @@
                     <span id="page-info">Страница 1 из 1</span>
                     <button id="next-page" class="btn-secondary" onclick="changePage(1)">Вперед →</button>
                 </div>
+            </div>
 
             <!-- Блок с заданиями на проверку -->
             <div class="card">
@@ -103,7 +104,6 @@
         </div>
     </div>
 </div>
-
 <!-- Модальное окно создания задания -->
 <div id="createAssignmentModal" class="modal" style="display: none;">
     <div class="modal-content">
@@ -181,6 +181,7 @@
                 <button type="submit" class="btn-primary">Поставить оценку</button>
                 <button type="button" class="btn-secondary" onclick="closeGradeSubmissionModal()">Отмена</button>
             </div>
+            <button onclick="testDownload()" class="btn-primary">Тест скачивания</button>
         </form>
     </div>
 </div>
