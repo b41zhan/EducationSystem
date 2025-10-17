@@ -355,9 +355,6 @@ function displaySubmissionsToGrade(submissions) {
                 <button class="btn-primary" onclick="viewSubmission(${submission.id})">
                     Просмотреть и оценить
                 </button>
-                <button class="btn-secondary" onclick="downloadSubmissionFile('${submission.filePath}')">
-                    Скачать файл
-                </button>
             </div>
         `;
         container.appendChild(submissionElement);
@@ -386,7 +383,8 @@ async function viewSubmission(submissionId) {
                 <p><strong>Сдано:</strong> ${new Date(submission.submittedAt).toLocaleString('ru-RU')}</p>
                 ${submission.comment ? `<p><strong>Комментарий студента:</strong> ${submission.comment}</p>` : ''}
                 <div class="file-preview">
-                    <button class="btn-secondary" onclick="downloadSubmissionFile('${submission.filePath}')">
+                    <button class="btn-secondary" 
+                            onclick="downloadSubmissionFile('${submission.filePath}', ${submission.id})">
                         📎 Скачать файл задания
                     </button>
                 </div>
@@ -401,13 +399,15 @@ async function viewSubmission(submissionId) {
     }
 }
 
-function testDownload() {
-    window.open('/api/files/download-test', '_blank');
+function downloadSubmissionFile(filePath, submissionId = null) {
+    if (submissionId) {
+        // Используем endpoint для скачивания файлов учеников
+        window.open(`/api/files/download/submission/${submissionId}`, '_blank');
+    } else {
+        console.error('Submission ID not provided');
+    }
 }
 
-function downloadSubmissionFile(filePath) {
-    window.open(`/api/files/download/${filePath}`, '_blank');
-}
 
 async function viewAssignmentSubmissions(assignmentId) {
     try {

@@ -1,11 +1,16 @@
 package com.springdemo.educationsystem.Controller;
 
+import com.springdemo.educationsystem.Entity.Submission;
+import com.springdemo.educationsystem.Repository.SubmissionRepository;
 import com.springdemo.educationsystem.Service.FileStorageService;
+import com.springdemo.educationsystem.Service.SubmissionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,8 +20,10 @@ import java.util.Map;
 public class FileUploadController {
 
     private final FileStorageService fileStorageService;
-    public FileUploadController(FileStorageService fileStorageService) {
+    private final SubmissionRepository submissionRepository;
+    public FileUploadController(FileStorageService fileStorageService, SubmissionRepository submissionRepository) {
         this.fileStorageService = fileStorageService;
+        this.submissionRepository = submissionRepository;
     }
 
     @PostMapping("/upload/submission")
@@ -89,55 +96,89 @@ public class FileUploadController {
     @GetMapping("/download/{filePath:.+}")
     public ResponseEntity<?> downloadFile(@PathVariable String filePath) {
         try {
-            byte[] fileContent = fileStorageService.loadFile(filePath);
+            // Декодируем путь, если он содержит спецсимволы
+            String decodedFilePath = URLDecoder.decode(filePath, StandardCharsets.UTF_8);
+
+            // Загружаем файл
+            byte[] fileContent = fileStorageService.loadFile(decodedFilePath);
+
+            // Получаем оригинальное имя файла из пути
+            String originalFileName = getOriginalFileName(decodedFilePath);
 
             // Определяем Content-Type
-            String contentType = "application/octet-stream";
-            if (filePath.endsWith(".pdf")) {
-                contentType = "application/pdf";
-            } else if (filePath.endsWith(".jpg") || filePath.endsWith(".jpeg")) {
-                contentType = "image/jpeg";
-            } else if (filePath.endsWith(".png")) {
-                contentType = "image/png";
-            } else if (filePath.endsWith(".doc")) {
-                contentType = "application/msword";
-            } else if (filePath.endsWith(".docx")) {
-                contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-            }
+            String contentType = determineContentType(decodedFilePath);
 
             return ResponseEntity.ok()
                     .header("Content-Type", contentType)
-                    .header("Content-Disposition", "inline; filename=\"" + filePath + "\"")
+                    .header("Content-Disposition", "attachment; filename=\"" + originalFileName + "\"")
                     .body(fileContent);
 
         } catch (Exception e) {
+            System.out.println("Ошибка скачивания файла: " + filePath);
+            e.printStackTrace();
             return ResponseEntity.badRequest().body(Map.of(
                     "error", "Файл не найден: " + e.getMessage()
             ));
         }
     }
 
-    @GetMapping("/download-test")
-    public ResponseEntity<?> downloadTestFile() {
+    private String getOriginalFileName(String filePath) {
+        // Извлекаем оригинальное имя файла после UUID
+        if (filePath.contains("_")) {
+            return filePath.substring(filePath.lastIndexOf("_") + 1);
+        }
+        return filePath.substring(filePath.lastIndexOf("/") + 1);
+    }
+
+    private String determineContentType(String filePath) {
+        String extension = filePath.substring(filePath.lastIndexOf(".") + 1).toLowerCase();
+
+        switch (extension) {
+            case "pdf": return "application/pdf";
+            case "jpg": case "jpeg": return "image/jpeg";
+            case "png": return "image/png";
+            case "doc": return "application/msword";
+            case "docx": return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+            case "txt": return "text/plain";
+            default: return "application/octet-stream";
+        }
+    }
+
+    @GetMapping("/download/submission/{submissionId}")
+    public ResponseEntity<?> downloadSubmissionFile(@PathVariable Long submissionId) {
         try {
-            // Хардкодим конкретный файл который точно существует
-            String hardcodedFilePath = "assignments/5353bb24-20bc-4b41-b6e1-4342c828bb59_барлык.docx";
+            // Получаем информацию о сдаче из базы данных
+            Submission submission = submissionRepository.findById(submissionId)
+                    .orElseThrow(() -> new RuntimeException("Submission not found"));
 
-            System.out.println("Пытаемся скачать файл: " + hardcodedFilePath);
+            String filePath = submission.getFilePath();
+            if (filePath == null || filePath.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Файл не найден"));
+            }
 
-            byte[] fileContent = fileStorageService.loadFile(hardcodedFilePath);
+            // Загружаем файл
+            byte[] fileContent = fileStorageService.loadFile(filePath);
 
-            System.out.println("Файл найден, размер: " + fileContent.length + " bytes");
+            // Получаем оригинальное имя файла
+            String originalFileName = submission.getFileName();
+            if (originalFileName == null || originalFileName.isEmpty()) {
+                originalFileName = getOriginalFileName(filePath);
+            }
+
+            // Определяем Content-Type
+            String contentType = determineContentType(filePath);
 
             return ResponseEntity.ok()
-                    .header("Content-Type", "application/octet-stream")
-                    .header("Content-Disposition", "attachment; filename=\"барлык.docx\"")
+                    .header("Content-Type", contentType)
+                    .header("Content-Disposition", "attachment; filename=\"" + originalFileName + "\"")
                     .body(fileContent);
 
         } catch (Exception e) {
-            System.out.println("Ошибка при хардкод скачивании: " + e.getMessage());
+            System.out.println("Ошибка скачивания файла submission: " + submissionId);
             e.printStackTrace();
-            return ResponseEntity.badRequest().body("Test file not found: " + e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Ошибка при скачивании файла: " + e.getMessage()
+            ));
         }
     }
 }
