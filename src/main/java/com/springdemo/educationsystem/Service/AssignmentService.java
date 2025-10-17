@@ -10,7 +10,6 @@ import com.springdemo.educationsystem.Repository.AssignmentRepository;
 import com.springdemo.educationsystem.Repository.SchoolClassRepository;
 import com.springdemo.educationsystem.Repository.SubjectRepository;
 import com.springdemo.educationsystem.Repository.TeacherRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,18 +17,18 @@ import java.util.stream.Collectors;
 
 @Service
 public class AssignmentService {
+    private final AssignmentRepository assignmentRepository;
+    private final SubjectRepository subjectRepository;
+    private final SchoolClassRepository schoolClassRepository;
+    private final TeacherRepository teacherRepository;
 
-    @Autowired
-    private AssignmentRepository assignmentRepository;
-
-    @Autowired
-    private SubjectRepository subjectRepository;
-
-    @Autowired
-    private SchoolClassRepository schoolClassRepository;
-
-    @Autowired
-    private TeacherRepository teacherRepository;
+    public AssignmentService(AssignmentRepository assignmentRepository, SubjectRepository subjectRepository,
+                             SchoolClassRepository schoolClassRepository, TeacherRepository teacherRepository) {
+        this.assignmentRepository = assignmentRepository;
+        this.subjectRepository = subjectRepository;
+        this.schoolClassRepository = schoolClassRepository;
+        this.teacherRepository = teacherRepository;
+    }
 
     public AssignmentDTO convertToDTO(Assignment assignment) {
         AssignmentDTO dto = new AssignmentDTO();

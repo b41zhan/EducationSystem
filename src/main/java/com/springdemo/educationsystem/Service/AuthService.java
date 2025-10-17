@@ -4,7 +4,6 @@ import com.springdemo.educationsystem.Entity.User;
 import com.springdemo.educationsystem.Repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,8 +12,10 @@ import java.util.UUID;
 @Service
 public class AuthService {
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    public AuthService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     private Map<String, UserInfo> activeTokens = new HashMap<>();
 

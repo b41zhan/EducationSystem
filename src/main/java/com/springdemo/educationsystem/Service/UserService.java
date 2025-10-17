@@ -2,22 +2,41 @@ package com.springdemo.educationsystem.Service;
 import com.springdemo.educationsystem.DTO.UserDTO;
 import com.springdemo.educationsystem.Entity.*;
 import com.springdemo.educationsystem.Repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
 public class UserService {
-    @Autowired private UserRepository userRepository;
-    @Autowired private RoleRepository roleRepository;
-    @Autowired private StudentRepository studentRepository;
-    @Autowired private TeacherRepository teacherRepository;
-    @Autowired private ParentRepository parentRepository;
-    @Autowired private SchoolClassRepository classRepository;
-    @Autowired private SchoolRepository schoolRepository;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final StudentRepository studentRepository;
+    private final TeacherRepository teacherRepository;
+    private final ParentRepository parentRepository;
+    private final SchoolClassRepository classRepository;
+    private final SchoolRepository schoolRepository;
+    public UserService (UserRepository userRepository, RoleRepository roleRepository,
+                        StudentRepository studentRepository, TeacherRepository teacherRepository,
+                        ParentRepository parentRepository, SchoolRepository schoolRepository, SchoolClassRepository classRepository) {
+        this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+        this.studentRepository = studentRepository;
+        this.teacherRepository = teacherRepository;
+        this.parentRepository = parentRepository;
+        this.schoolRepository = schoolRepository;
+        this.classRepository = classRepository;
+    }
+
+    @Value("${file.upload-dir:uploads}")
+    private String uploadDir;
 
     private UserDTO convertToDTO(User user) {
         UserDTO dto = new UserDTO();
@@ -109,7 +128,9 @@ public class UserService {
         parentRepository.save(parent);
 
         return convertToDTO(savedUser);
-    }public void updateUserBio(Long userId, String bio) {
+    }
+
+    public void updateUserBio(Long userId, String bio) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         user.setBio(bio);
@@ -117,19 +138,31 @@ public class UserService {
     }
 
     public String saveProfilePhoto(Long userId, MultipartFile file) {
-        // Логика сохранения файла
-        // Возвращает путь к сохраненному файлу
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Здесь реализация сохранения файла
-        String filePath = "uploads/profiles/" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
-        // Сохраняем файл...
+        try {
+            Path uploadPath = Paths.get(uploadDir, "profiles");
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
 
-        user.setProfilePhotoPath(filePath);
-        userRepository.save(user);
+            String fileName = System.currentTimeMillis() + "_" +
+                    UUID.randomUUID().toString().substring(0, 8) + "_" +
+                    file.getOriginalFilename();
 
-        return filePath;
+            Path filePath = uploadPath.resolve(fileName);
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            String relativePath = "profiles/" + fileName;
+            user.setProfilePhotoPath(relativePath);
+            userRepository.save(user);
+
+            return relativePath;
+
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to save profile photo", e);
+        }
     }
 
     public User findById(Long id) {
@@ -141,9 +174,16 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Удаляем файл с диска...
+        if (user.getProfilePhotoPath() != null) {
+            try {
+                Path filePath = Paths.get(uploadDir, user.getProfilePhotoPath());
+                Files.deleteIfExists(filePath);
+            } catch (IOException e) {
+                System.err.println("Failed to delete file: " + e.getMessage());
+            }
 
-        user.setProfilePhotoPath(null);
-        userRepository.save(user);
+            user.setProfilePhotoPath(null);
+            userRepository.save(user);
+        }
     }
 }

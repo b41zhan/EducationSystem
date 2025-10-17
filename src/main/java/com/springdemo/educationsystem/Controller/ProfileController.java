@@ -14,12 +14,12 @@ import java.util.HashMap;
 @RestController
 @RequestMapping("/api/profile")
 public class ProfileController {
-
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private AuthService authService;
+    private final UserService userService;
+    private final AuthService authService;
+    public ProfileController(UserService userService, AuthService authService) {
+        this.userService = userService;
+        this.authService = authService;
+    }
 
     // Получить данные профиля
     @GetMapping
@@ -43,6 +43,14 @@ public class ProfileController {
             profileData.put("email", user.getEmail());
             profileData.put("profilePhotoPath", user.getProfilePhotoPath());
             profileData.put("bio", user.getBio());
+
+            // ДОБАВЛЕНО: полный URL для фронтенда
+            if (user.getProfilePhotoPath() != null && !user.getProfilePhotoPath().isEmpty()) {
+                String fullImageUrl = "/uploads/" + user.getProfilePhotoPath();
+                profileData.put("profilePhotoUrl", fullImageUrl);
+            } else {
+                profileData.put("profilePhotoUrl", null);
+            }
 
             return ResponseEntity.ok(profileData);
 
@@ -85,18 +93,19 @@ public class ProfileController {
 
             Long userId = authService.getUserId(token);
 
-            // Здесь должна быть логика сохранения файла и получения пути
             String filePath = userService.saveProfilePhoto(userId, file);
 
             return ResponseEntity.ok(Map.of(
                     "message", "Avatar uploaded successfully",
-                    "filePath", filePath
+                    "filePath", filePath,
+                    "profilePhotoUrl", "/uploads/" + filePath // ДОБАВЛЕНО
             ));
 
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
     // Удалить аватарку
     @DeleteMapping("/avatar")
     public ResponseEntity<?> deleteAvatar(@RequestHeader("Authorization") String authorizationHeader) {

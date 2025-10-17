@@ -1,14 +1,15 @@
 package com.springdemo.educationsystem.Service;
 import com.springdemo.educationsystem.Entity.School;
 import com.springdemo.educationsystem.Repository.SchoolRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
 public class SchoolService {
-    @Autowired
-    private SchoolRepository schoolRepository;
+    private final SchoolRepository schoolRepository;
+    public SchoolService(SchoolRepository schoolRepository) {
+        this.schoolRepository = schoolRepository;
+    }
 
     public List<School> getAllSchools() {
         return schoolRepository.findAll();

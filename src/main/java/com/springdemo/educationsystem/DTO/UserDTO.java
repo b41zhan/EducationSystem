@@ -13,6 +13,7 @@ public class UserDTO {
     private Long schoolId;
     private String schoolName;
     private List<String> roles;
+    private String profilePhotoPath;
 
     public UserDTO() {}
 
@@ -35,4 +36,10 @@ public class UserDTO {
     public void setSchoolName(String schoolName) { this.schoolName = schoolName; }
     public List<String> getRoles() { return roles; }
     public void setRoles(List<String> roles) { this.roles = roles; }
+    public String getProfilePhotoPath() {
+        return profilePhotoPath;
+    }
+    public void setProfilePhotoPath(String profilePhotoPath) {
+        this.profilePhotoPath = profilePhotoPath;
+    }
 }

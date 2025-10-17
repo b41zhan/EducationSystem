@@ -4,7 +4,6 @@ import com.springdemo.educationsystem.DTO.SubmissionDTO;
 import com.springdemo.educationsystem.DTO.GradeDTO;
 import com.springdemo.educationsystem.Entity.*;
 import com.springdemo.educationsystem.Repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,21 +11,19 @@ import java.util.stream.Collectors;
 
 @Service
 public class SubmissionService {
-
-    @Autowired
-    private SubmissionRepository submissionRepository;
-
-    @Autowired
-    private GradeRepository gradeRepository;
-
-    @Autowired
-    private AssignmentRepository assignmentRepository;
-
-    @Autowired
-    private StudentRepository studentRepository;
-
-    @Autowired
-    private TeacherRepository teacherRepository;
+    private final SubmissionRepository submissionRepository;
+    private final GradeRepository gradeRepository;
+    private final AssignmentRepository assignmentRepository;
+    private final StudentRepository studentRepository;
+    private final TeacherRepository teacherRepository;
+    public SubmissionService(SubmissionRepository submissionRepository, GradeRepository gradeRepository,
+                             AssignmentRepository assignmentRepository, StudentRepository studentRepository, TeacherRepository teacherRepository) {
+        this.submissionRepository = submissionRepository;
+        this.gradeRepository = gradeRepository;
+        this.assignmentRepository = assignmentRepository;
+        this.studentRepository = studentRepository;
+        this.teacherRepository = teacherRepository;
+    }
 
     public SubmissionDTO convertToDTO(Submission submission) {
         SubmissionDTO dto = new SubmissionDTO();
