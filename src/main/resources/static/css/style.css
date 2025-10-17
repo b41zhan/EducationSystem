@@ -612,3 +612,10 @@ small {
     background-position: right 15px center;
     background-size: 20px 20px;
 }
+.assignment-item {
+    transition: background-color 0.2s;
+}
+
+.assignment-item:hover {
+    background-color: #f0f0f0;
+}

@@ -1,4 +1,5 @@
 package com.springdemo.educationsystem.Service;
+import com.springdemo.educationsystem.DTO.UpdateUserDTO;
 import com.springdemo.educationsystem.DTO.UserDTO;
 import com.springdemo.educationsystem.Entity.*;
 import com.springdemo.educationsystem.Repository.*;
@@ -10,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -186,4 +188,32 @@ public class UserService {
             userRepository.save(user);
         }
     }
+
+
+    public UserDTO updateUser(Long userId, UpdateUserDTO updateDTO, Long adminId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+
+        if (!user.getEmail().equals(updateDTO.getEmail())) {
+            if (userRepository.findByEmail(updateDTO.getEmail()).isPresent()) {
+                throw new RuntimeException("Email already exists: " + updateDTO.getEmail());
+            }
+        }
+
+        user.setEmail(updateDTO.getEmail());
+        user.setFirstName(updateDTO.getFirstName());
+        user.setLastName(updateDTO.getLastName());
+        user.setPatronymic(updateDTO.getPatronymic());
+
+        if (updateDTO.getPassword() != null && !updateDTO.getPassword().trim().isEmpty()) {
+            user.setPasswordHash(updateDTO.getPassword());
+        }
+
+        user.setLastModifiedAt(LocalDateTime.now());
+        user.setLastModifiedBy(adminId);
+
+        User savedUser = userRepository.save(user);
+        return convertToDTO(savedUser);
+    }
+
 }

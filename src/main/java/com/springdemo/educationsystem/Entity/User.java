@@ -38,6 +38,12 @@ public class User {
     @Column(name = "profile_photo_path")
     private String profilePhotoPath;
 
+    @Column(name = "last_modified_by")
+    private Long lastModifiedBy; // ID админа, который внес изменения
+
+    @Column(name = "last_modified_at")
+    private LocalDateTime lastModifiedAt;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "school_id")
     @JsonIgnore
@@ -54,6 +60,7 @@ public class User {
 
     public User() {
         this.createdAt = LocalDateTime.now();
+        this.lastModifiedAt = LocalDateTime.now();
     }
 
 
@@ -61,6 +68,10 @@ public class User {
     public String getProfilePhotoPath() { return profilePhotoPath; }
     public void setProfilePhotoPath(String profilePhotoPath) { this.profilePhotoPath = profilePhotoPath; }
 
+    public LocalDateTime getLastModifiedAt() { return lastModifiedAt; }
+    public void setLastModifiedAt(LocalDateTime lastModifiedAt) { this.lastModifiedAt = lastModifiedAt; }
+    public Long getLastModifiedBy() { return lastModifiedBy; }
+    public void setLastModifiedBy(Long lastModifiedBy) { this.lastModifiedBy = lastModifiedBy; }
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getEmail() { return email; }

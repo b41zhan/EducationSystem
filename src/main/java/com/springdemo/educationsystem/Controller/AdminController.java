@@ -1,5 +1,6 @@
 package com.springdemo.educationsystem.Controller;
 
+import com.springdemo.educationsystem.DTO.UpdateUserDTO;
 import com.springdemo.educationsystem.DTO.UserDTO;
 import com.springdemo.educationsystem.Entity.User;
 import com.springdemo.educationsystem.Service.AuthService;
@@ -103,4 +104,33 @@ public class AdminController {
             return ResponseEntity.badRequest().body("Error: " + e.getMessage());
         }
     }
+
+    @PutMapping("/users/{userId}")
+    public ResponseEntity<?> updateUser(
+            @PathVariable Long userId,
+            @RequestBody UpdateUserDTO updateDTO,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
+
+        logger.info("Received update request for user: {}", userId);
+
+        if (!isAdminAuthorized(authorizationHeader)) {
+            logger.error("Access denied - not admin");
+            return ResponseEntity.status(403).body("Access denied. Admin rights required.");
+        }
+
+        try {
+            // Получаем ID текущего админа из токена
+            String token = authorizationHeader.substring(7);
+            Long adminId = authService.getUserId(token);
+
+            UserDTO result = userService.updateUser(userId, updateDTO, adminId);
+            logger.info("User updated successfully: {}", result.getEmail());
+            return ResponseEntity.ok(result);
+
+        } catch (Exception e) {
+            logger.error("Error updating user: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        }
+    }
+
 }
