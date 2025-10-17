@@ -4,6 +4,8 @@ import com.springdemo.educationsystem.DTO.SubmissionDTO;
 import com.springdemo.educationsystem.DTO.GradeDTO;
 import com.springdemo.educationsystem.Entity.*;
 import com.springdemo.educationsystem.Repository.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,13 +18,25 @@ public class SubmissionService {
     private final AssignmentRepository assignmentRepository;
     private final StudentRepository studentRepository;
     private final TeacherRepository teacherRepository;
-    public SubmissionService(SubmissionRepository submissionRepository, GradeRepository gradeRepository,
-                             AssignmentRepository assignmentRepository, StudentRepository studentRepository, TeacherRepository teacherRepository) {
+    private final NotificationRepository notificationRepository; // ДОБАВЛЕНО
+    private final UserRepository userRepository; // ДОБАВЛЕНО
+
+    private static final Logger logger = LoggerFactory.getLogger(SubmissionService.class); // ДОБАВЛЕНО
+
+    public SubmissionService(SubmissionRepository submissionRepository,
+                             GradeRepository gradeRepository,
+                             AssignmentRepository assignmentRepository,
+                             StudentRepository studentRepository,
+                             TeacherRepository teacherRepository,
+                             NotificationRepository notificationRepository,
+                             UserRepository userRepository) {
         this.submissionRepository = submissionRepository;
         this.gradeRepository = gradeRepository;
         this.assignmentRepository = assignmentRepository;
         this.studentRepository = studentRepository;
         this.teacherRepository = teacherRepository;
+        this.notificationRepository = notificationRepository;
+        this.userRepository = userRepository;
     }
 
     public SubmissionDTO convertToDTO(Submission submission) {
@@ -39,7 +53,6 @@ public class SubmissionService {
         dto.setStatus(submission.getStatus());
         dto.setComment(submission.getComment());
 
-        // Добавляем оценку если есть
         Grade grade = gradeRepository.findBySubmissionId(submission.getId()).orElse(null);
         if (grade != null) {
             dto.setGrade(grade.getGradeValue());
@@ -75,7 +88,6 @@ public class SubmissionService {
         Teacher teacher = teacherRepository.findById(teacherId)
                 .orElseThrow(() -> new RuntimeException("Teacher not found"));
 
-        // Проверяем есть ли уже оценка
         Grade existingGrade = gradeRepository.findBySubmissionId(gradeDTO.getSubmissionId()).orElse(null);
 
         Grade grade;
@@ -90,11 +102,29 @@ public class SubmissionService {
         grade.setGradeValue(gradeDTO.getGradeValue());
         grade.setComment(gradeDTO.getComment());
 
-        // Обновляем статус сдачи
         submission.setStatus("graded");
         submissionRepository.save(submission);
 
-        return gradeRepository.save(grade);
+        Grade savedGrade = gradeRepository.save(grade);
+
+        createGradeNotification(submission, gradeDTO.getGradeValue());
+
+        return savedGrade;
+    }
+
+    private void createGradeNotification(Submission submission, Integer gradeValue) {
+        try {
+            User student = submission.getStudent().getUser();
+            String message = "Ваша работа \"" + submission.getAssignment().getTitle() + "\" оценена: " + gradeValue + "/100";
+
+            Notification notification = new Notification(student, message, "grade", submission.getId());
+            notificationRepository.save(notification);
+
+            logger.info("Created grade notification for student: {}", student.getEmail());
+
+        } catch (Exception e) {
+            logger.error("Error creating grade notification: {}", e.getMessage());
+        }
     }
 
     public List<SubmissionDTO> getSubmissionsByStudent(Long studentId) {

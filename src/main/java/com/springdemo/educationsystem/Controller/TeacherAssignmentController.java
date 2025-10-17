@@ -3,8 +3,12 @@ package com.springdemo.educationsystem.Controller;
 import com.springdemo.educationsystem.DTO.AssignmentDTO;
 import com.springdemo.educationsystem.DTO.CreateAssignmentDTO;
 import com.springdemo.educationsystem.Entity.Assignment;
+import com.springdemo.educationsystem.Entity.Student;
+import com.springdemo.educationsystem.Entity.User;
+import com.springdemo.educationsystem.Repository.StudentRepository;
 import com.springdemo.educationsystem.Service.AssignmentService;
 import com.springdemo.educationsystem.Service.AuthService;
+import com.springdemo.educationsystem.Service.NotificationService;
 import com.springdemo.educationsystem.Service.TeacherService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,10 +29,14 @@ public class TeacherAssignmentController {
     private final AssignmentService assignmentService;
     private final AuthService authService;
     private final TeacherService teacherService;
-    public TeacherAssignmentController(AssignmentService assignmentService, AuthService authService,TeacherService teacherService) {
+    private final NotificationService notificationService;
+    private final StudentRepository studentRepository;
+    public TeacherAssignmentController(AssignmentService assignmentService, AuthService authService,TeacherService teacherService, NotificationService notificationService, StudentRepository studentRepository) {
         this.assignmentService = assignmentService;
         this.authService = authService;
         this.teacherService = teacherService;
+        this.notificationService = notificationService;
+        this.studentRepository = studentRepository;
     }
 
 
@@ -48,12 +56,34 @@ public class TeacherAssignmentController {
         try {
             Assignment createdAssignment = assignmentService.createAssignmentWithDTO(createDTO, teacherId);
             AssignmentDTO assignmentDTO = assignmentService.convertToDTO(createdAssignment);
+
+            createNotificationsForNewAssignment(createdAssignment);
+
             return ResponseEntity.ok(assignmentDTO);
         } catch (Exception e) {
             logger.error("Error creating assignment: {}", e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+    private void createNotificationsForNewAssignment(Assignment assignment) {
+        try {
+            List<Student> students = studentRepository.findBySchoolClassId(assignment.getSchoolClass().getId());
+
+            for (Student student : students) {
+                User studentUser = student.getUser();
+                notificationService.createNewAssignmentNotification(
+                        studentUser,
+                        assignment.getTitle(),
+                        assignment.getId()
+                );
+            }
+
+            logger.info("Created notifications for {} students", students.size());
+        } catch (Exception e) {
+            logger.error("Error creating notifications: {}", e.getMessage());
+        }
+    }
+
 
     @GetMapping("/my")
     public ResponseEntity<?> getMyAssignments(

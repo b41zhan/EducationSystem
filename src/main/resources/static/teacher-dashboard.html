@@ -25,6 +25,7 @@
                 <p id="welcome-message">Добро пожаловать!</p>
             </div>
             <div>
+                <span id="notification-badge" style="display: none; background: #dc3545; color: white; border-radius: 50%; width: 20px; height: 20px; text-align: center; line-height: 20px; font-size: 12px; margin-right: 10px;"></span>
                 <a href="/profile.html" class="btn-primary" style="margin-right: 10px;">👤 Мой профиль</a>
                 <button class="btn-logout" onclick="logout()">Выйти</button>
             </div>
@@ -61,7 +62,6 @@
             <div class="card">
                 <h2>Мои задания</h2>
 
-                <!-- Поиск -->
                 <!-- Поиск и фильтры -->
                 <div class="search-filters">
                     <div class="form-group">
@@ -200,5 +200,6 @@
 <script src="/js/auth.js"></script>
 <script src="/js/teacher.js"></script>
 <script src="/js/wikipedia.js"></script>
+<script src="/js/notification.js"></script>
 </body>
 </html>
