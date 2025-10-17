@@ -9,6 +9,16 @@
 <body>
 <div class="dashboard">
     <div class="header">
+        <!-- Wikipedia Search Widget -->
+        <div class="wikipedia-widget">
+            <div class="search-container">
+                <input type="text"
+                       id="wikipediaSearch"
+                       placeholder="Найти материал в Wikipedia..."
+                       class="wikipedia-search-input">
+                <div id="wikipediaResults" class="wikipedia-results"></div>
+            </div>
+        </div>
         <div class="user-info">
             <div>
                 <h1>Панель студента</h1>
@@ -90,5 +100,6 @@
 <script src="/js/api.js"></script>
 <script src="/js/auth.js"></script>
 <script src="/js/student.js"></script>
+<script src="/js/wikipedia.js"></script>
 </body>
 </html>
