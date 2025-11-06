@@ -1,5 +1,8 @@
 package nba.studix.userservice.DTO;
 
+import nba.studix.userservice.Entity.ProfileVisibility;
+import nba.studix.userservice.Entity.UserStatus;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -9,17 +12,17 @@ public class UserDTO {
     private String firstName;
     private String lastName;
     private String patronymic;
-    private LocalDateTime createdAt;
-    private Long schoolId;
-    private String schoolName;
-    private List<String> roles;
+    private UserStatus status;
+    private ProfileVisibility profileVisibility;
     private String profilePhotoPath;
     private String bio;
+    private Long schoolId;
+    private String schoolName;
+    private LocalDateTime createdAt;
+    private List<String> roles;
 
-    // Конструкторы
     public UserDTO() {}
 
-    // Геттеры и сеттеры
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -35,8 +38,17 @@ public class UserDTO {
     public String getPatronymic() { return patronymic; }
     public void setPatronymic(String patronymic) { this.patronymic = patronymic; }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public UserStatus getStatus() { return status; }
+    public void setStatus(UserStatus status) { this.status = status; }
+
+    public ProfileVisibility getProfileVisibility() { return profileVisibility; }
+    public void setProfileVisibility(ProfileVisibility profileVisibility) { this.profileVisibility = profileVisibility; }
+
+    public String getProfilePhotoPath() { return profilePhotoPath; }
+    public void setProfilePhotoPath(String profilePhotoPath) { this.profilePhotoPath = profilePhotoPath; }
+
+    public String getBio() { return bio; }
+    public void setBio(String bio) { this.bio = bio; }
 
     public Long getSchoolId() { return schoolId; }
     public void setSchoolId(Long schoolId) { this.schoolId = schoolId; }
@@ -44,12 +56,9 @@ public class UserDTO {
     public String getSchoolName() { return schoolName; }
     public void setSchoolName(String schoolName) { this.schoolName = schoolName; }
 
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
     public List<String> getRoles() { return roles; }
     public void setRoles(List<String> roles) { this.roles = roles; }
-
-    public String getProfilePhotoPath() { return profilePhotoPath; }
-    public void setProfilePhotoPath(String profilePhotoPath) { this.profilePhotoPath = profilePhotoPath; }
-
-    public String getBio() { return bio; }
-    public void setBio(String bio) { this.bio = bio; }
 }

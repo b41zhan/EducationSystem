@@ -2,7 +2,7 @@ package nba.studix.authservice.DTO;
 
 import java.util.List;
 
-public class LoginResponse {
+public class LoginResponseDTO {
     private String token;
     private Long userId;
     private String email;
@@ -12,19 +12,7 @@ public class LoginResponse {
     private String message;
     private List<String> roles;
 
-    // Конструкторы
-    public LoginResponse() {}
-
-    public LoginResponse(String token, Long userId, String email, String firstName,
-                         String lastName, String role, String message) {
-        this.token = token;
-        this.userId = userId;
-        this.email = email;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.role = role;
-        this.message = message;
-    }
+    public LoginResponseDTO() {}
 
     // Геттеры и сеттеры
     public String getToken() { return token; }

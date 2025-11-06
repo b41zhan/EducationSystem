@@ -1,21 +1,20 @@
 package nba.studix.authservice.DTO;
 
-public class TokenValidationResponse {
+public class TokenValidationResponseDTO {
     private boolean valid;
     private String role;
     private Long userId;
     private String error;
 
-    // Конструкторы
-    public TokenValidationResponse() {}
+    public TokenValidationResponseDTO() {}
 
-    public TokenValidationResponse(boolean valid, String role, Long userId) {
+    public TokenValidationResponseDTO(boolean valid, String role, Long userId) {
         this.valid = valid;
         this.role = role;
         this.userId = userId;
     }
 
-    public TokenValidationResponse(String error) {
+    public TokenValidationResponseDTO(String error) {
         this.valid = false;
         this.error = error;
     }

@@ -1,148 +1,124 @@
 package nba.studix.authservice.Service;
 
-import nba.studix.authservice.DTO.LoginRequest;
-import nba.studix.authservice.DTO.LoginResponse;
-import nba.studix.authservice.DTO.TokenValidationResponse;
+import nba.studix.authservice.Client.UserServiceClient;
+import nba.studix.authservice.DTO.LoginRequestDTO;
+import nba.studix.authservice.DTO.LoginResponseDTO;
+import nba.studix.authservice.DTO.TokenValidationResponseDTO;
+import nba.studix.authservice.DTO.UserInfoDTO;
 import nba.studix.authservice.Entity.ActiveToken;
-import nba.studix.authservice.Entity.User;
-import nba.studix.authservice.Entity.UserRole;
 import nba.studix.authservice.Repository.ActiveTokenRepository;
-import nba.studix.authservice.Repository.UserRepository;
-import nba.studix.authservice.Repository.UserRoleRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @Transactional
 public class AuthService {
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
 
-    private final UserRepository userRepository;
-    private final UserRoleRepository userRoleRepository;
     private final ActiveTokenRepository activeTokenRepository;
+    private final UserServiceClient userServiceClient;
 
     @Value("${app.auth.token-expiration-hours:24}")
     private int tokenExpirationHours;
 
-    // Демо пользователи (временное решение)
-    private final String ADMIN_EMAIL = "admin@school.kz";
-    private final String ADMIN_PASSWORD = "admin";
-    private final String TEACHER_EMAIL = "teacher.m@school.kz";
-    private final String TEACHER_PASSWORD = "teacher123";
-    private final String STUDENT_EMAIL = "student@school.kz";
-    private final String STUDENT_PASSWORD = "password";
-
-    public AuthService(UserRepository userRepository,
-                       UserRoleRepository userRoleRepository,
-                       ActiveTokenRepository activeTokenRepository) {
-        this.userRepository = userRepository;
-        this.userRoleRepository = userRoleRepository;
+    public AuthService(ActiveTokenRepository activeTokenRepository, UserServiceClient userServiceClient) {
         this.activeTokenRepository = activeTokenRepository;
+        this.userServiceClient = userServiceClient;
     }
 
-    public LoginResponse login(LoginRequest loginRequest) {
+    public LoginResponseDTO login(LoginRequestDTO loginRequest) {
         logger.info("Login attempt for email: {}", loginRequest.getEmail());
 
-        String email = loginRequest.getEmail();
-        String password = loginRequest.getPassword();
+        try {
+            // Подготавливаем данные для user-service
+            Map<String, String> credentials = new HashMap<>();
+            credentials.put("email", loginRequest.getEmail());
+            credentials.put("password", loginRequest.getPassword());
 
-        // Проверка демо пользователей
-        if (ADMIN_EMAIL.equals(email) && ADMIN_PASSWORD.equals(password)) {
-            return handleDemoUserLogin(email, "admin", "Системный", "Администратор");
+            // РЕАЛЬНАЯ ПРОВЕРКА через user-service
+            ResponseEntity<Map<String, Object>> validationResponse = userServiceClient.validateCredentials(credentials);
+
+            logger.info("Validation response status: {}", validationResponse.getStatusCode());
+
+            if (validationResponse.getStatusCode() != HttpStatus.OK) {
+                throw new RuntimeException("Authentication failed with status: " + validationResponse.getStatusCode());
+            }
+
+            Map<String, Object> validationResult = validationResponse.getBody();
+
+            if (validationResult == null) {
+                throw new RuntimeException("Empty response from user service");
+            }
+
+            Boolean isValid = (Boolean) validationResult.get("valid");
+            if (!Boolean.TRUE.equals(isValid)) {
+                String error = (String) validationResult.get("error");
+                throw new RuntimeException(error != null ? error : "Invalid credentials");
+            }
+
+            Long userId = ((Number) validationResult.get("userId")).longValue();
+
+            // РЕАЛЬНОЕ ПОЛУЧЕНИЕ ИНФОРМАЦИИ О ПОЛЬЗОВАТЕЛЕ
+            ResponseEntity<UserInfoDTO> userInfoResponse = userServiceClient.getUserInfoByEmail(loginRequest.getEmail());
+
+            if (userInfoResponse.getStatusCode() != HttpStatus.OK) {
+                throw new RuntimeException("Failed to get user info: " + userInfoResponse.getStatusCode());
+            }
+
+            UserInfoDTO userInfo = userInfoResponse.getBody();
+
+            if (userInfo == null) {
+                throw new RuntimeException("Empty user info response");
+            }
+
+            String primaryRole = userInfo.getRoles().isEmpty() ? "USER" : userInfo.getRoles().get(0);
+
+            // Создание токена
+            String token = generateToken();
+            LocalDateTime expiresAt = LocalDateTime.now().plusHours(tokenExpirationHours);
+
+            ActiveToken activeToken = new ActiveToken(token, userId, loginRequest.getEmail(), primaryRole, expiresAt);
+            activeTokenRepository.save(activeToken);
+
+            logger.info("User login successful, email: {}, role: {}, token: {}",
+                    loginRequest.getEmail(), primaryRole, token);
+
+            return createLoginResponse(token, userId, loginRequest.getEmail(),
+                    userInfo.getFirstName(), userInfo.getLastName(), primaryRole,
+                    "Login successful", userInfo.getRoles());
+
+        } catch (Exception e) {
+            logger.error("Login failed for email: {}", loginRequest.getEmail(), e);
+            throw new RuntimeException("Login failed: " + e.getMessage());
         }
-        if (TEACHER_EMAIL.equals(email) && TEACHER_PASSWORD.equals(password)) {
-            return handleDemoUserLogin(email, "teacher", "Учитель", "Математики");
-        }
-        if (STUDENT_EMAIL.equals(email) && STUDENT_PASSWORD.equals(password)) {
-            return handleDemoUserLogin(email, "student", "Студент", "Примеров");
-        }
-
-        // Поиск в базе данных
-        User user = userRepository.findActiveByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Invalid credentials"));
-
-        // Проверка пароля (пока простое сравнение, позже добавим шифрование)
-        if (!user.getPasswordHash().equals(password)) {
-            throw new RuntimeException("Invalid credentials");
-        }
-
-        // Обновление времени последнего входа
-        user.setLastLogin(LocalDateTime.now());
-        userRepository.save(user);
-
-        // Получение ролей пользователя
-        List<String> roles = userRoleRepository.findRoleNamesByUserId(user.getId());
-        String primaryRole = roles.isEmpty() ? "unknown" : roles.get(0);
-
-        // Создание токена
-        String token = generateToken();
-        LocalDateTime expiresAt = LocalDateTime.now().plusHours(tokenExpirationHours);
-
-        ActiveToken activeToken = new ActiveToken(token, user.getId(), user.getEmail(), primaryRole, expiresAt);
-        activeTokenRepository.save(activeToken);
-
-        logger.info("User login successful, email: {}, role: {}, token: {}", email, primaryRole, token);
-
-        return createLoginResponse(token, user.getId(), user.getEmail(),
-                "User", "Name", primaryRole, "Login successful", roles);
     }
 
-    private LoginResponse handleDemoUserLogin(String email, String role, String firstName, String lastName) {
-        Long demoUserId = role.equals("admin") ? 1L : role.equals("teacher") ? 2L : 3L;
-
-        String token = generateToken();
-        LocalDateTime expiresAt = LocalDateTime.now().plusHours(tokenExpirationHours);
-
-        ActiveToken activeToken = new ActiveToken(token, demoUserId, email, role, expiresAt);
-        activeTokenRepository.save(activeToken);
-
-        logger.info("Demo {} login successful, token: {}", role, token);
-        return createLoginResponse(token, demoUserId, email, firstName, lastName, role, "Login successful", List.of(role));
-    }
-
-    public TokenValidationResponse validateToken(String token) {
+    public TokenValidationResponseDTO validateToken(String token) {
         logger.info("Validating token: {}", token);
 
-        // Очистка устаревших токенов
         cleanExpiredTokens();
 
-        ActiveToken activeToken = activeTokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Invalid token"));
+        Optional<ActiveToken> activeTokenOpt = activeTokenRepository.findByToken(token);
+        if (activeTokenOpt.isEmpty()) {
+            return new TokenValidationResponseDTO("Invalid token");
+        }
+
+        ActiveToken activeToken = activeTokenOpt.get();
 
         if (activeToken.getExpiresAt().isBefore(LocalDateTime.now())) {
             activeTokenRepository.delete(activeToken);
-            throw new RuntimeException("Token expired");
+            return new TokenValidationResponseDTO("Token expired");
         }
 
-        return new TokenValidationResponse(true, activeToken.getUserRole(), activeToken.getUserId());
-    }
-
-    public Long getUserId(String token) {
-        ActiveToken activeToken = activeTokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Invalid token"));
-        return activeToken.getUserId();
-    }
-
-    public String getUserRole(String token) {
-        ActiveToken activeToken = activeTokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Invalid token"));
-        return activeToken.getUserRole();
-    }
-
-    public boolean isValidToken(String token) {
-        try {
-            validateToken(token);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+        return new TokenValidationResponseDTO(true, activeToken.getUserRole(), activeToken.getUserId());
     }
 
     public void logout(String token) {
@@ -159,10 +135,10 @@ public class AuthService {
         return UUID.randomUUID().toString();
     }
 
-    private LoginResponse createLoginResponse(String token, Long userId, String email,
-                                              String firstName, String lastName, String role,
-                                              String message, List<String> roles) {
-        LoginResponse response = new LoginResponse();
+    private LoginResponseDTO createLoginResponse(String token, Long userId, String email,
+                                                 String firstName, String lastName, String role,
+                                                 String message, List<String> roles) {
+        LoginResponseDTO response = new LoginResponseDTO();
         response.setToken(token);
         response.setUserId(userId);
         response.setEmail(email);

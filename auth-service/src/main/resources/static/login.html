@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EducationSystem - Вход</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            color: #333;
+            font-size: 28px;
+            font-weight: 300;
+        }
+
+        .logo .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert-error {
+            background: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+        }
+
+        .alert-success {
+            background: #efe;
+            border: 1px solid #cfc;
+            color: #363;
+        }
+
+        .demo-credentials {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .demo-credentials h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+<div class="login-container">
+    <div class="logo">
+        <h1>STUDIX</h1>
+        <div class="subtitle">Образовательная платформа</div>
+    </div>
+
+    <div id="alert" class="alert"></div>
+
+    <form id="loginForm">
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required
+                   placeholder="Введите ваш email">
+        </div>
+
+        <div class="form-group">
+            <label for="password">Пароль:</label>
+            <input type="password" id="password" name="password" required
+                   placeholder="Введите ваш пароль">
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <span>Вход в систему...</span>
+        </div>
+
+        <button type="submit" class="login-btn">Войти</button>
+    </form>
+
+    <div class="demo-credentials">
+        <h3>Демо доступ:</h3>
+        <p><strong>Email:</strong> admin@educationsystem.com</p>
+        <p><strong>Пароль:</strong> admin123</p>
+    </div>
+</div>
+
+<script>
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const alertDiv = document.getElementById('alert');
+        const loadingDiv = document.getElementById('loading');
+
+        // Показываем загрузку
+        loadingDiv.style.display = 'block';
+        alertDiv.style.display = 'none';
+
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Сохраняем токен и информацию о пользователе
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify({
+                    id: data.userId,
+                    email: data.email,
+                    firstName: data.firstName,
+                    lastName: data.lastName,
+                    role: data.role,
+                    roles: data.roles
+                }));
+
+                // Проверяем роль и перенаправляем
+                if (data.roles && data.roles.includes('ADMIN')) {
+                    window.location.href = '/admin/dashboard';
+                } else {
+                    showAlert('Доступ запрещен. Только администраторы могут войти в систему.', 'error');
+                }
+            } else {
+                showAlert(data.message || 'Ошибка входа', 'error');
+            }
+        } catch (error) {
+            showAlert('Ошибка сети. Попробуйте еще раз.', 'error');
+        } finally {
+            loadingDiv.style.display = 'none';
+        }
+    });
+
+    function showAlert(message, type) {
+        const alertDiv = document.getElementById('alert');
+        alertDiv.textContent = message;
+        alertDiv.className = `alert alert-${type}`;
+        alertDiv.style.display = 'block';
+    }
+
+    // Проверяем, если пользователь уже авторизован
+    window.addEventListener('load', function() {
+        const token = localStorage.getItem('token');
+        const user = localStorage.getItem('user');
+
+        if (token && user) {
+            const userData = JSON.parse(user);
+            if (userData.roles && userData.roles.includes('ADMIN')) {
+                window.location.href = '/admin/dashboard';
+            } else {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+            }
+        }
+    });
+</script>
+</body>
+</html>

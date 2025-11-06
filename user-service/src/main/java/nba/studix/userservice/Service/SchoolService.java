@@ -3,11 +3,14 @@ package nba.studix.userservice.Service;
 import nba.studix.userservice.Entity.School;
 import nba.studix.userservice.Repository.SchoolRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@Transactional
 public class SchoolService {
+
     private final SchoolRepository schoolRepository;
 
     public SchoolService(SchoolRepository schoolRepository) {
@@ -18,25 +21,16 @@ public class SchoolService {
         return schoolRepository.findAll();
     }
 
-    public School getSchoolById(Long id) {
-        return schoolRepository.findById(id).orElse(null);
-    }
-
     public School createSchool(School school) {
         return schoolRepository.save(school);
     }
 
-    public School updateSchool(Long id, School schoolDetails) {
-        School school = schoolRepository.findById(id).orElse(null);
-        if (school != null) {
-            school.setName(schoolDetails.getName());
-            school.setAddress(schoolDetails.getAddress());
-            return schoolRepository.save(school);
-        }
-        return null;
+    public long getSchoolsCount() {
+        return schoolRepository.count();
     }
 
-    public void deleteSchool(Long id) {
-        schoolRepository.deleteById(id);
+    public School getSchoolById(Long id) {
+        return schoolRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("School not found with id: " + id));
     }
 }

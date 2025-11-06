@@ -1,11 +1,12 @@
 package nba.studix.authservice.Controller;
 
-import nba.studix.authservice.DTO.LoginRequest;
-import nba.studix.authservice.DTO.LoginResponse;
-import nba.studix.authservice.DTO.TokenValidationResponse;
 import nba.studix.authservice.Service.AuthService;
+import nba.studix.authservice.DTO.LoginRequestDTO;
+import nba.studix.authservice.DTO.LoginResponseDTO;
+import nba.studix.authservice.DTO.TokenValidationResponseDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,7 +14,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin("*")
+@CrossOrigin(origins = "*")
 public class AuthController {
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
@@ -24,71 +25,99 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<?> login(@RequestBody LoginRequestDTO loginRequest) {
         try {
-            logger.info("Received login request for email: {}", loginRequest.getEmail());
+            logger.info("Login request for email: {}", loginRequest.getEmail());
 
-            LoginResponse response = authService.login(loginRequest);
-            return ResponseEntity.ok(response);
+            LoginResponseDTO response = authService.login(loginRequest);
+
+            // Проверяем, что пользователь имеет роль ADMIN
+            if (response.getRoles() != null && response.getRoles().contains("ADMIN")) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of(
+                                "error", "Доступ запрещен",
+                                "message", "Только администраторы могут войти в систему."
+                        ));
+            }
+        } catch (RuntimeException e) {
+            logger.error("Login failed for email: {}", loginRequest.getEmail(), e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of(
+                            "error", "Ошибка входа",
+                            "message", e.getMessage()
+                    ));
+        } catch (Exception e) {
+            logger.error("Unexpected error during login for email: {}", loginRequest.getEmail(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "error", "Внутренняя ошибка сервера",
+                            "message", "Попробуйте позже"
+                    ));
+        }
+    }
+
+    @PostMapping("/validate")
+    public ResponseEntity<?> validateToken(@RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
+        try {
+            if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("valid", false, "message", "Token is required"));
+            }
+
+            String token = authorizationHeader.substring(7);
+            TokenValidationResponseDTO validationResponse = authService.validateToken(token);
+
+            if (validationResponse.isValid()) {
+                return ResponseEntity.ok(validationResponse);
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("valid", false, "message", validationResponse.getError()));
+            }
 
         } catch (Exception e) {
-            logger.error("Login failed for email: {}", loginRequest.getEmail(), e);
-            return ResponseEntity.badRequest().body(
-                    Map.of("error", "Login failed", "message", e.getMessage())
-            );
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("valid", false, "message", e.getMessage()));
         }
     }
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout(@RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
-        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            String token = authorizationHeader.substring(7);
-            authService.logout(token);
-        }
-        return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
-    }
-
-    @GetMapping("/validate")
-    public ResponseEntity<?> validateToken(@RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(401).body(Map.of("error", "Invalid token"));
-        }
-
         try {
-            String token = authorizationHeader.substring(7);
-            TokenValidationResponse validationResponse = authService.validateToken(token);
-            return ResponseEntity.ok(validationResponse);
+            if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+                String token = authorizationHeader.substring(7);
+                authService.logout(token);
+            }
+
+            return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
 
         } catch (Exception e) {
-            return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "Logout failed", "message", e.getMessage()));
         }
     }
 
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(@RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
-        }
-
         try {
-            String token = authorizationHeader.substring(7);
-
-            if (!authService.isValidToken(token)) {
-                return ResponseEntity.status(401).body(Map.of("error", "Invalid token"));
+            if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Authentication required"));
             }
 
-            Long userId = authService.getUserId(token);
-            String role = authService.getUserRole(token);
+            String token = authorizationHeader.substring(7);
+            TokenValidationResponseDTO validation = authService.validateToken(token);
 
-            // Здесь позже добавим вызов user-service для получения полной информации
             return ResponseEntity.ok(Map.of(
-                    "userId", userId,
-                    "role", role,
-                    "message", "User info will be fetched from user-service"
+                    "userId", validation.getUserId(),
+                    "role", validation.getRole(),
+                    "valid", true
             ));
 
         } catch (Exception e) {
-            return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 }
