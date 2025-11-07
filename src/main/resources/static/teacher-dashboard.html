@@ -5,6 +5,296 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Education System - Учитель</title>
     <link rel="stylesheet" href="/css/style.css">
+    <style>
+        /* Стили для статистики студентов */
+        .statistics-section {
+            margin-top: 30px;
+        }
+
+        .statistics-controls {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .statistics-controls .form-group {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .class-summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .class-summary h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 24px;
+            text-align: center;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+        }
+
+        .summary-stat {
+            text-align: center;
+            padding: 20px 15px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+
+        .students-statistics {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .students-statistics h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .students-table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid #e1e5e9;
+        }
+
+        .students-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            min-width: 800px;
+        }
+
+        .students-table th {
+            background: #f8f9fa;
+            color: #333;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #667eea;
+            position: sticky;
+            top: 0;
+            white-space: nowrap;
+        }
+
+        .students-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #e9ecef;
+            transition: background-color 0.2s;
+        }
+
+        .students-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .students-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .student-name {
+            font-weight: 600;
+            min-width: 160px;
+            color: #333;
+        }
+
+        .grade-cell {
+            text-align: center;
+            min-width: 60px;
+            font-weight: 500;
+            padding: 8px 5px;
+        }
+
+        .grade-excellent {
+            background: #d4edda;
+            color: #155724;
+            font-weight: bold;
+            border-radius: 4px;
+        }
+        .grade-good {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-radius: 4px;
+        }
+        .grade-average {
+            background: #fff3cd;
+            color: #856404;
+            border-radius: 4px;
+        }
+        .grade-poor {
+            background: #ffeaa7;
+            color: #e17055;
+            border-radius: 4px;
+        }
+        .grade-fail {
+            background: #f8d7da;
+            color: #721c24;
+            font-weight: bold;
+            border-radius: 4px;
+        }
+        .grade-missing {
+            color: #6c757d;
+            font-style: italic;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .average-grade {
+            font-weight: bold;
+            text-align: center;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        .completion-cell {
+            text-align: center;
+            min-width: 100px;
+        }
+
+        .completion-rate {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #28a745;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .no-statistics {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+            font-style: italic;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border: 2px dashed #dee2e6;
+        }
+
+        .no-statistics p {
+            font-size: 18px;
+            margin: 0;
+        }
+
+        .statistics-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn-statistics {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-statistics-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-statistics-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .btn-statistics-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-statistics-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .statistics-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .statistics-controls .form-group {
+                min-width: auto;
+            }
+
+            .summary-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .stat-value {
+                font-size: 24px;
+            }
+
+            .students-table-container {
+                margin: 0 -10px;
+                border-radius: 0;
+                border-left: none;
+                border-right: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .summary-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .class-summary {
+                padding: 20px 15px;
+            }
+        }
+    </style>
 </head>
 <body>
 <div class="dashboard">
@@ -114,7 +404,52 @@
             </div>
         </div>
     </div>
+
+    <!-- Секция статистики студентов - ПЕРЕМЕЩЕНА ВНИЗ -->
+    <div class="statistics-section">
+        <div class="card">
+            <h2>📊 Статистика успеваемости студентов</h2>
+
+            <div class="statistics-controls">
+                <div class="form-group">
+                    <label for="class-select">Выберите класс для просмотра статистики:</label>
+                    <select id="class-select" onchange="statisticsManager.loadClassStatistics(this.value)">
+                        <option value="">-- Выберите класс --</option>
+                    </select>
+                </div>
+
+                <div class="statistics-actions">
+                    <button class="btn-statistics btn-statistics-primary" onclick="statisticsManager.loadTeacherClasses()">
+                        🔄 Обновить список классов
+                    </button>
+                    <button class="btn-statistics btn-statistics-secondary" onclick="statisticsManager.exportStatistics()">
+                        📥 Экспорт в Excel
+                    </button>
+                </div>
+            </div>
+
+            <div id="class-statistics" style="display: none;">
+                <div class="class-summary" id="class-summary">
+                    <!-- Статистика класса будет здесь -->
+                </div>
+
+                <div class="students-statistics">
+                    <h3>📈 Детальная статистика студентов</h3>
+                    <div class="students-table-container">
+                        <div id="students-stats-table">
+                            <!-- Таблица студентов будет здесь -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="no-statistics" class="no-statistics">
+                <p>Выберите класс из выпадающего списка для просмотра статистики успеваемости</p>
+            </div>
+        </div>
+    </div>
 </div>
+
 <!-- Модальное окно создания задания -->
 <div id="createAssignmentModal" class="modal" style="display: none;">
     <div class="modal-content">
@@ -201,5 +536,15 @@
 <script src="/js/teacher.js"></script>
 <script src="/js/wikipedia.js"></script>
 <script src="/js/notification.js"></script>
+<script src="/js/statistics.js"></script>
+
+<script>
+    // Дополнительные функции для StatisticsManager
+    if (typeof StatisticsManager !== 'undefined') {
+        StatisticsManager.prototype.exportStatistics = function() {
+            alert('Функция экспорта в Excel будет реализована в ближайшее время!');
+        };
+    }
+</script>
 </body>
 </html>
