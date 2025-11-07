@@ -3,6 +3,9 @@ package com.springdemo.educationsystem.Entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "students")
 public class Student {
@@ -22,6 +25,15 @@ public class Student {
     @OneToMany(mappedBy = "student", cascade = CascadeType.ALL)
     private java.util.List<ParentStudent> parentAssociations = new java.util.ArrayList<>();
 
+    // НОВОЕ: Добавляем связь с тегами
+    @ManyToMany
+    @JoinTable(
+            name = "student_tags",
+            joinColumns = @JoinColumn(name = "student_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private List<Tag> tags = new ArrayList<>();
+
     public Student() {}
 
     // Геттеры и сеттеры
@@ -33,4 +45,6 @@ public class Student {
     public void setSchoolClass(SchoolClass schoolClass) { this.schoolClass = schoolClass; }
     public java.util.List<ParentStudent> getParentAssociations() { return parentAssociations; }
     public void setParentAssociations(java.util.List<ParentStudent> parentAssociations) { this.parentAssociations = parentAssociations; }
+    public List<Tag> getTags() { return tags; }
+    public void setTags(List<Tag> tags) { this.tags = tags; }
 }

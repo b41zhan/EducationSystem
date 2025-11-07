@@ -513,7 +513,156 @@
                 <div id="message-container"></div>
             </div>
         </div>
+        <!-- После секции "О себе" добавим: -->
+        <div class="tags-section" id="tags-section" style="display: none;">
+            <h3>🏷️ Мои теги</h3>
 
+            <div class="tags-info">
+                <p>Выберите до 3 тегов, которые лучше всего описывают вас:</p>
+                <div class="tags-counter">
+                    Выбрано: <span id="selected-tags-count">0</span>/3
+                </div>
+            </div>
+
+            <div class="tags-container" id="tags-container">
+                <!-- Теги будут загружены динамически -->
+            </div>
+
+            <div class="tags-actions">
+                <button class="btn-primary" onclick="tagsManager.saveTags()">
+                    💾 Сохранить теги
+                </button>
+                <button class="btn-secondary" onclick="tagsManager.cancelEditing()">
+                    ❌ Отмена
+                </button>
+            </div>
+
+            <div id="tags-message-container"></div>
+        </div>
+
+        <style>
+            .tags-section {
+                background: #f9f9f9;
+                padding: 25px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+            }
+
+            .tags-info {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 20px;
+                padding: 15px;
+                background: white;
+                border-radius: 6px;
+                border-left: 4px solid #667eea;
+            }
+
+            .tags-counter {
+                font-weight: bold;
+                color: #667eea;
+                font-size: 16px;
+            }
+
+            .tags-container {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 12px;
+                margin-bottom: 20px;
+            }
+
+            .tag-item {
+                background: white;
+                border: 2px solid #e1e5e9;
+                border-radius: 25px;
+                padding: 12px 20px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                text-align: center;
+                user-select: none;
+            }
+
+            .tag-item:hover {
+                border-color: #667eea;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(102, 126, 234, 0.2);
+            }
+
+            .tag-item.selected {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border-color: #667eea;
+                transform: translateY(-2px);
+                box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3);
+            }
+
+            .tag-item.disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+                background: #f8f9fa;
+            }
+
+            .tag-item.disabled:hover {
+                border-color: #e1e5e9;
+                transform: none;
+                box-shadow: none;
+            }
+
+            .tag-name {
+                font-weight: 600;
+                font-size: 14px;
+                margin-bottom: 4px;
+            }
+
+            .tag-description {
+                font-size: 12px;
+                opacity: 0.8;
+            }
+
+            .tags-actions {
+                display: flex;
+                gap: 10px;
+                margin-top: 20px;
+            }
+
+            .tags-display {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                margin-top: 15px;
+            }
+
+            .display-tag {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border-radius: 20px;
+                padding: 8px 16px;
+                font-size: 14px;
+                font-weight: 500;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .edit-tags-btn {
+                margin-top: 15px;
+            }
+
+            @media (max-width: 768px) {
+                .tags-container {
+                    grid-template-columns: 1fr;
+                }
+
+                .tags-info {
+                    flex-direction: column;
+                    gap: 10px;
+                    align-items: flex-start;
+                }
+            }
+        </style>
+
+        <script src="/js/tags.js"></script>
         <!-- Секция друзей - ВНЕ основного контента профиля -->
         <div class="friends-section">
             <h3>👥 Друзья</h3>

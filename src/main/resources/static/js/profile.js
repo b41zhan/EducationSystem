@@ -52,6 +52,15 @@ function displayProfile(profileData) {
     userRole = determineUserRole(profileData);
     displayUserRole(userRole);
 
+    const tagsSection = document.getElementById('tags-section');
+    if (tagsSection) {
+        if (userRole === 'student') {
+            tagsSection.style.display = 'block';
+        } else {
+            tagsSection.style.display = 'none';
+        }
+    }
+
     // Обновляем ссылку "Назад" в зависимости от роли
     updateBackLink(userRole);
 
