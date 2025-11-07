@@ -59,6 +59,7 @@
             display: grid;
             grid-template-columns: 300px 1fr;
             gap: 40px;
+            margin-bottom: 30px;
         }
 
         .avatar-container {
@@ -162,6 +163,7 @@
             background: #f9f9f9;
             padding: 25px;
             border-radius: 8px;
+            margin-bottom: 20px;
         }
 
         .bio-section h3 {
@@ -231,6 +233,216 @@
         .hidden {
             display: none !important;
         }
+
+        /* Стили для секции друзей */
+        .friends-section {
+            padding: 25px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .friends-section h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+
+        .friends-stats {
+            margin-bottom: 20px;
+        }
+
+        .friends-search {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .friends-search input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .friends-search input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .user-result-item, .friend-item, .pending-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .user-result-item:hover, .friend-item:hover, .pending-item:hover {
+            background: #f5f5f5;
+        }
+
+        .user-result-item:last-child, .friend-item:last-child, .pending-item:last-child {
+            border-bottom: none;
+        }
+
+        .user-avatar, .friend-avatar, .pending-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 12px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .user-avatar img, .friend-avatar img, .pending-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .avatar-placeholder-small {
+            width: 100%;
+            height: 100%;
+            background: #667eea;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .user-info, .friend-info, .pending-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-name, .friend-name, .pending-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .user-email, .friend-email, .pending-email {
+            font-size: 12px;
+            color: #666;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .friendship-status {
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .status-accepted {
+            background: #d4edda;
+            color: #155724;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .status-self {
+            background: #e2e3e5;
+            color: #383d41;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .friends-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .friends-actions button {
+            flex: 1;
+        }
+
+        .friends-list, .pending-requests {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e1e5e9;
+            border-radius: 6px;
+            background: white;
+        }
+
+        .no-results, .no-friends {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .stats-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            flex: 1;
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .pending-actions {
+            display: flex;
+            gap: 8px;
+            margin-left: 10px;
+        }
+
+        .btn-tiny {
+            padding: 4px 8px;
+            font-size: 11px;
+        }
     </style>
 </head>
 <body>
@@ -245,6 +457,7 @@
             <p>Загрузка профиля...</p>
         </div>
 
+        <!-- Основной контент профиля -->
         <div id="profile-content" class="profile-content" style="display: none;">
             <!-- Левая колонка - аватар и основная информация -->
             <div class="profile-sidebar">
@@ -269,9 +482,11 @@
                     <div id="user-initials" class="user-initials"></div>
                     <div id="user-name" class="user-name"></div>
                     <div id="user-email" class="user-email"></div>
+                    <div id="user-role" class="user-role" style="margin-top: 10px; font-size: 14px; color: #666;"></div>
                 </div>
             </div>
 
+            <!-- Правая колонка - основная информация -->
             <div class="profile-main">
                 <div class="bio-section">
                     <h3>Кратко о себе</h3>
@@ -298,11 +513,90 @@
                 <div id="message-container"></div>
             </div>
         </div>
+
+        <!-- Секция друзей - ВНЕ основного контента профиля -->
+        <div class="friends-section">
+            <h3>👥 Друзья</h3>
+
+            <div class="friends-stats" id="friends-stats">
+                <div class="stats-container">
+                    <div class="stat-item">
+                        <div class="stat-number" id="friends-count">0</div>
+                        <div class="stat-label">Друзей</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="pending-count">0</div>
+                        <div class="stat-label">Запросов</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="friends-search">
+                <input type="text" id="friend-search" placeholder="Поиск пользователей по имени, фамилии или email...">
+                <div id="search-results" class="search-results"></div>
+            </div>
+
+            <div class="friends-actions">
+                <button class="btn-primary" onclick="friendsManager.loadFriendsList()">
+                    📋 Мои друзья
+                </button>
+                <button class="btn-secondary" onclick="friendsManager.loadPendingRequests()">
+                    📥 Запросы в друзья
+                </button>
+            </div>
+
+            <div id="friends-list" class="friends-list">
+                <div class="no-friends">
+                    Нажмите "Мои друзья" чтобы загрузить список
+                </div>
+            </div>
+
+            <div id="pending-requests" class="pending-requests" style="display: none;">
+                <div class="no-results">
+                    Нажмите "Запросы в друзья" чтобы загрузить запросы
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <script src="/js/api.js"></script>
 <script src="/js/auth.js"></script>
 <script src="/js/profile.js"></script>
+<script src="/js/friends.js"></script>
+
+<script>
+    // Инициализация менеджера друзей
+    let friendsManager;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Инициализируем менеджер друзей после загрузки DOM
+        setTimeout(() => {
+            if (typeof FriendsManager !== 'undefined') {
+                friendsManager = new FriendsManager();
+                console.log('FriendsManager initialized');
+            } else {
+                console.error('FriendsManager not found');
+            }
+        }, 100);
+    });
+
+    // Временная заглушка если friends.js не загружен
+    if (typeof FriendsManager === 'undefined') {
+        console.warn('FriendsManager not loaded, creating placeholder');
+
+        friendsManager = {
+            loadFriendsList: function() {
+                alert('Функционал друзей загружается...');
+            },
+            loadPendingRequests: function() {
+                alert('Функционал запросов в друзья загружается...');
+            },
+            loadFriendsStats: function() {
+                console.log('Loading friends stats...');
+            }
+        };
+    }
+</script>
 </body>
 </html>

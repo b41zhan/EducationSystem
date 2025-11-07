@@ -67,4 +67,10 @@ public class NotificationService {
         Notification notification = new Notification(user, message, "new_assignment", assignmentId);
         notificationRepository.save(notification);
     }
+
+    public void createFriendRequestNotification(User user, String requesterName, Long requesterId) {
+        String message = String.format("%s отправил(а) вам запрос на дружбу", requesterName);
+        Notification notification = new Notification(user, message, "friend_request", requesterId);
+        notificationRepository.save(notification);
+    }
 }
