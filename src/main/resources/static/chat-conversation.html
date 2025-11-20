@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Чат - Education System</title>
+    <link rel="stylesheet" href="/css/chat.css">
+</head>
+<body>
+<div class="chat-container">
+    <div class="chat-header">
+        <button id="back-btn" class="btn-back">← Назад</button>
+        <h1 id="chat-title">Чат</h1>
+    </div>
+
+    <div class="chat-window-single">
+        <div id="chat-partner-info" class="chat-partner-info"></div>
+
+        <div id="messages-container" class="messages-container"></div>
+
+        <div class="message-input-container">
+            <textarea id="message-input" placeholder="Введите сообщение..." rows="3"></textarea>
+            <button id="send-message-btn" class="btn-primary">Отправить</button>
+        </div>
+    </div>
+</div>
+
+<script src="/js/api-service.js"></script>
+<script src="/js/chat-conversation.js"></script>
+</body>
+</html>

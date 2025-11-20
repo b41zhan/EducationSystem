@@ -481,3 +481,42 @@ window.viewUserProfile = function(userId) {
         notificationManager.viewUserProfile(userId);
     }
 };
+
+// Добавить в auth.js или notifications.js
+
+// Функция для обновления бейджа непрочитанных сообщений
+async function updateChatBadge() {
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const response = await ApiService.get('/chat/unread-count');
+        const badge = document.getElementById('chat-badge');
+
+        if (badge && response.unreadCount > 0) {
+            badge.textContent = response.unreadCount > 99 ? '99+' : response.unreadCount;
+            badge.style.display = 'inline-block';
+        } else if (badge) {
+            badge.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error updating chat badge:', error);
+        const badge = document.getElementById('chat-badge');
+        if (badge) {
+            badge.style.display = 'none';
+        }
+    }
+}
+
+// Запуск обновления бейджа
+function startChatBadgePolling() {
+    updateChatBadge();
+    setInterval(updateChatBadge, 30000); // Обновлять каждые 30 секунд
+}
+
+// Вызывать при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('chat-badge')) {
+        startChatBadgePolling();
+    }
+});

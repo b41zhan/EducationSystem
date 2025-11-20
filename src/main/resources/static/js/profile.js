@@ -38,6 +38,51 @@ async function loadProfile() {
     }
 }
 
+// Обработчик кнопки "Написать сообщение"
+document.getElementById('send-message-btn').addEventListener('click', function() {
+    // Открываем чат с текущим пользователем (если это чужой профиль)
+    // или переходим к списку чатов (если это свой профиль)
+    const currentProfileUserId = getCurrentProfileUserId(); // Нужно реализовать эту функцию
+    const currentUserId = localStorage.getItem('userId');
+
+    if (currentProfileUserId && currentProfileUserId !== currentUserId) {
+        // Если просматриваем чужой профиль - открываем чат с этим пользователем
+        window.location.href = `/chat-conversation.html?userId=${currentProfileUserId}`;
+    } else {
+        // Если это свой профиль - переходим к общему списку чатов
+        window.location.href = '/chat.html';
+    }
+});
+
+// Функция для получения ID пользователя профиля (нужно адаптировать под вашу логику)
+function getCurrentProfileUserId() {
+    // Если страница профиля отображает другого пользователя
+    const urlParams = new URLSearchParams(window.location.search);
+    const profileUserId = urlParams.get('id');
+
+    if (profileUserId) {
+        return profileUserId;
+    }
+
+    // Если просматриваем свой профиль
+    return localStorage.getItem('userId');
+}
+
+// Обработчик кнопки "Написать сообщение"
+document.getElementById('send-message-btn').addEventListener('click', function() {
+    // Всегда переходим к общему списку чатов
+    window.location.href = '/chat.html';
+});
+
+// Убираем сложную логику, просто показываем кнопку
+function updateMessageButton() {
+    const button = document.getElementById('send-message-btn');
+    if (button) {
+        button.style.display = 'block';
+        button.textContent = '✉️ Сообщения';
+    }
+}
+
 function displayProfile(profileData) {
     console.log('📋 Получены данные профиля:', profileData);
 

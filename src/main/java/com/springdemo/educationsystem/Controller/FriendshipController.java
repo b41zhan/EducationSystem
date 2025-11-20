@@ -131,6 +131,27 @@ public class FriendshipController {
         }
     }
 
+    @GetMapping("/search-users")
+    public ResponseEntity<?> searchUsersForChat(
+            @RequestParam String query,
+            @RequestHeader("Authorization") String authorizationHeader) {
+
+        String token = extractToken(authorizationHeader);
+        if (!authService.isValidToken(token)) {
+            return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
+        }
+
+        Long currentUserId = authService.getUserId(token);
+
+        try {
+            List<UserSearchDTO> users = friendshipService.searchUsers(query, currentUserId);
+            return ResponseEntity.ok(users);
+        } catch (Exception e) {
+            logger.error("Error searching users for chat: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @GetMapping("/my")
     public ResponseEntity<?> getFriends(
             @RequestHeader("Authorization") String authorizationHeader) {

@@ -15,8 +15,12 @@ class ApiService {
             config.headers['Authorization'] = `Bearer ${token}`;
         }
 
+        console.log(`API Request: ${endpoint}`, config);
+
         try {
             const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+
+            console.log(`API Response: ${response.status}`, response);
 
             if (!response.ok) {
                 // Попробуем получить текст ошибки
