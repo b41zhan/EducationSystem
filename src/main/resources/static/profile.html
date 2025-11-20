@@ -443,6 +443,35 @@
             padding: 4px 8px;
             font-size: 11px;
         }
+        /* Стили для кнопки сообщений - одинаковые с кнопкой смены фото */
+        #send-message-btn {
+            margin-top: 12px;
+            padding: 8px 12px !important;
+            font-size: 12px !important;
+            width: 100% !important;
+            min-width: 120px;
+            height: auto !important;
+            border-radius: 5px;
+            background: #007bff !important;
+            color: white !important;
+            border: none !important;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-weight: normal;
+            text-decoration: none;
+        }
+
+        #send-message-btn:hover {
+            background: #0056b3 !important;
+            transform: none;
+            box-shadow: none;
+        }
+
+
     </style>
 </head>
 <body>
@@ -484,11 +513,11 @@
                     <div id="user-email" class="user-email"></div>
                     <div id="user-role" class="user-role" style="margin-top: 10px; font-size: 14px; color: #666;"></div>
                 </div>
+                <button id="send-message-btn" class="btn-primary" style="margin-top: 12px; padding: 8px 12px; font-size: 12px; width: auto; min-width: 120px; background: #007bff; color: white; border: none; border-radius: 5px;">
+                    ✉️ Сообщения
+                </button>
             </div>
 
-            <button id="send-message-btn" class="btn-primary btn-small" style="margin-top: 10px; width: auto; padding: 8px 12px;">
-                ✉️ Сообщения
-            </button>
 
             <!-- Правая колонка - основная информация -->
             <div class="profile-main">
