@@ -111,9 +111,11 @@ class ChatManager {
 
     displayMessages(messages) {
         const container = document.getElementById('messages-container');
+        const wasAtBottom = this.isScrolledToBottom(container);
+
         container.innerHTML = '';
 
-        console.log('Messages to display:', messages); // Отладочная информация
+        console.log('Messages to display:', messages);
 
         if (!messages || messages.length === 0) {
             container.innerHTML = `
@@ -131,8 +133,15 @@ class ChatManager {
             container.appendChild(messageElement);
         });
 
-        // Прокручиваем вниз
-        container.scrollTop = container.scrollHeight;
+        // Прокручиваем вниз только если пользователь уже был внизу
+        if (wasAtBottom) {
+            container.scrollTop = container.scrollHeight;
+        }
+    }
+
+// Проверяем, прокручен ли контейнер до конца
+    isScrolledToBottom(container) {
+        return container.scrollTop + container.clientHeight >= container.scrollHeight - 50;
     }
 
     createMessageElement(message) {
@@ -373,6 +382,7 @@ class ChatManager {
         const messageInput = document.getElementById('message-input');
         if (messageInput) {
             messageInput.addEventListener('input', (e) => {
+                this.autoResizeTextarea(e.target);
                 this.updateMessageCounter(e.target.value.length);
             });
 
@@ -383,6 +393,11 @@ class ChatManager {
                 }
             });
         }
+    }
+
+    autoResizeTextarea(textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px'; // Максимум 150px
     }
 
     updateMessageCounter(length) {

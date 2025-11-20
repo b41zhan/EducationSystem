@@ -530,3 +530,101 @@ body {
     flex-shrink: 0;
 }
 
+.chat-layout {
+    display: flex;
+    height: calc(100vh - 80px);
+    min-height: 600px; /* Минимальная высота */
+}
+
+.messages-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* Важно для правильной работы flex */
+}
+
+.chat-window {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* Важно для правильной работы flex */
+}
+
+.messages-container {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto; /* Всегда показываем скроллбар если нужно */
+    background: #f8f9fa;
+    min-height: 0; /* Важно для правильной работы flex */
+    max-height: calc(100vh - 250px); /* Ограничиваем максимальную высоту */
+}
+
+.message-input-container {
+    padding: 20px;
+    border-top: 1px solid #e1e5e9;
+    background: white;
+    display: flex;
+    gap: 15px;
+    align-items: flex-end;
+    min-height: 120px;
+}
+
+.message-input-container textarea {
+    flex: 1;
+    padding: 15px;
+    border: 2px solid #e1e5e9;
+    border-radius: 12px;
+    font-size: 16px;
+    font-family: inherit;
+    resize: vertical;
+    outline: none;
+    min-height: 80px; /* Увеличиваем минимальную высоту */
+    max-height: 200px;
+    line-height: 1.4;
+    transition: all 0.3s ease;
+    width: 100%; /* Убедимся, что занимает всю доступную ширину */
+}
+
+/* Укорачиваем кнопку */
+#send-message-btn {
+    padding: 12px 20px; /* Уменьшаем горизонтальные отступы */
+    height: fit-content;
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: 100px; /* Минимальная ширина кнопки */
+    max-width: 150px; /* Максимальная ширина кнопки */
+}
+
+/* Улучшаем отзывчивость для мобильных устройств */
+@media (max-width: 768px) {
+    .message-input-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        min-height: auto;
+    }
+
+    .message-input-container textarea {
+        min-height: 60px;
+        max-height: 120px;
+    }
+
+    #send-message-btn {
+        align-self: flex-end;
+        width: auto;
+        min-width: 80px;
+        max-width: 120px;
+    }
+}
+
+/* Быстрое исправление для текстового поля и кнопки */
+.message-input-container textarea {
+    min-height: 90px !important;
+    padding: 16px !important;
+}
+
+#send-message-btn {
+    min-width: 100px !important;
+    max-width: 120px !important;
+    padding: 12px 16px !important;
+}
