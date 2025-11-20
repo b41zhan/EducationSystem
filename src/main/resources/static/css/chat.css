@@ -628,3 +628,149 @@ body {
     max-width: 120px !important;
     padding: 12px 16px !important;
 }
+
+/* Стили для контекстного меню */
+.context-menu {
+    background: white;
+    border: 1px solid #e1e5e9;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    padding: 8px 0;
+    min-width: 180px;
+    z-index: 1000;
+}
+
+.context-menu-item {
+    padding: 8px 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.context-menu-item:hover {
+    background: #f8f9fa;
+}
+
+.menu-icon {
+    font-size: 16px;
+}
+
+/* Стили для индикатора ответа */
+.reply-indicator {
+    background: #f8f9fa;
+    border-left: 4px solid #667eea;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    border-radius: 0 8px 8px 0;
+}
+
+.reply-indicator-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.reply-label {
+    font-size: 12px;
+    color: #667eea;
+    font-weight: 500;
+}
+
+.btn-cancel-reply {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    padding: 2px 5px;
+    border-radius: 3px;
+}
+
+.btn-cancel-reply:hover {
+    background: #e9ecef;
+}
+
+.reply-indicator-preview {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.3;
+}
+
+/* Стили для превью ответа в сообщении */
+.reply-preview {
+    background: rgba(102, 126, 234, 0.1);
+    border-left: 3px solid #667eea;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    border-radius: 0 4px 4px 0;
+    font-size: 14px;
+}
+
+.reply-sender {
+    font-weight: bold;
+    color: #667eea;
+    margin-bottom: 2px;
+    font-size: 12px;
+}
+
+.reply-content {
+    color: #666;
+    line-height: 1.3;
+}
+
+/* Стили для реакций */
+.reaction-picker {
+    background: white;
+    border: 1px solid #e1e5e9;
+    border-radius: 20px;
+    padding: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    display: flex;
+    gap: 5px;
+}
+
+.reaction-picker button {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.reaction-picker button:hover {
+    background: #f8f9fa;
+    transform: scale(1.2);
+}
+
+.message-reactions {
+    display: flex;
+    gap: 4px;
+    margin-top: 5px;
+    flex-wrap: wrap;
+}
+
+.reaction-bubble {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #e1e5e9;
+    border-radius: 12px;
+    padding: 2px 6px;
+    font-size: 12px;
+    line-height: 1;
+}
+
+/* Футер сообщения */
+.message-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 4px;
+}
+
+.message-status {
+    color: #667eea;
+    font-size: 12px;
+}

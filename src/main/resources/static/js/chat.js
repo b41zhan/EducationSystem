@@ -149,16 +149,54 @@ class ChatManager {
         const isSent = message.senderId == this.currentUserId;
 
         messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
+        messageDiv.dataset.messageId = message.id;
 
         const time = new Date(message.createdAt).toLocaleTimeString('ru-RU', {
             hour: '2-digit',
             minute: '2-digit'
         });
 
+        // Формируем содержимое сообщения с учетом ответа
+        let messageContent = '';
+
+        if (message.replyTo) {
+            messageContent += `
+                <div class="reply-preview">
+                    <div class="reply-sender">${message.replyTo.senderName}</div>
+                    <div class="reply-content">${this.escapeHtml(message.replyTo.content)}</div>
+                </div>
+            `;
+        }
+
+        messageContent += `
+            <div class="message-content">${this.escapeHtml(message.content)}</div>
+        `;
+
+        // Добавляем реакции, если они есть
+        let reactionsHtml = '';
+        if (message.reactions && Object.keys(message.reactions).length > 0) {
+            const reactionCounts = {};
+            Object.values(message.reactions).forEach(reaction => {
+                reactionCounts[reaction] = (reactionCounts[reaction] || 0) + 1;
+            });
+
+            reactionsHtml = `
+                <div class="message-reactions">
+                    ${Object.entries(reactionCounts).map(([reaction, count]) =>
+                `<span class="reaction-bubble">${reaction} ${count}</span>`
+            ).join('')}
+                </div>
+            `;
+        }
+
         messageDiv.innerHTML = `
             <div class="message-bubble">
-                <div class="message-content">${this.escapeHtml(message.content)}</div>
-                <div class="message-time">${time}</div>
+                ${messageContent}
+                <div class="message-footer">
+                    <div class="message-time">${time}</div>
+                    ${isSent ? '<div class="message-status">✓</div>' : ''}
+                </div>
+                ${reactionsHtml}
             </div>
         `;
 
@@ -168,8 +206,6 @@ class ChatManager {
     async sendMessage() {
         const input = document.getElementById('message-input');
         const content = input.value.trim();
-
-        console.log('Sending message:', content, 'to user:', this.currentConversation); // Отладочная информация
 
         if (!content) {
             this.showMessage('Введите сообщение', 'error');
@@ -188,18 +224,23 @@ class ChatManager {
             sendBtn.disabled = true;
             sendBtn.textContent = 'Отправка...';
 
-            const response = await ApiService.post('/chat/send', {
+            const messageData = {
                 receiverId: this.currentConversation,
                 content: content
-            });
+            };
 
-            console.log('Message sent successfully:', response); // Отладочная информация
+            // Добавляем ID сообщения для ответа, если есть
+            if (this.replyingTo) {
+                messageData.replyToId = this.replyingTo.id;
+            }
+
+            const response = await ApiService.post('/chat/send', messageData);
 
             input.value = '';
+            this.cancelReply(); // Сбрасываем ответ после отправки
             await this.loadMessages(this.currentConversation);
             await this.loadConversations();
 
-            // Прокручиваем к последнему сообщению
             const container = document.getElementById('messages-container');
             container.scrollTop = container.scrollHeight;
 
@@ -393,7 +434,296 @@ class ChatManager {
                 }
             });
         }
+
+        this.setupContextMenu();
+
+        // НОВОЕ: Закрытие контекстного меню при клике вне его
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.context-menu') && !e.target.closest('.message-bubble')) {
+                this.hideContextMenu();
+                this.hideReactionPicker();
+            }
+        });
     }
+
+    setupContextMenu() {
+        const messagesContainer = document.getElementById('messages-container');
+
+        messagesContainer.addEventListener('contextmenu', (e) => {
+            const messageElement = e.target.closest('.message');
+            if (messageElement && !messageElement.classList.contains('sent')) {
+                e.preventDefault();
+                this.showContextMenu(e.clientX, e.clientY, messageElement);
+            }
+        });
+    }
+
+    showContextMenu(x, y, messageElement) {
+        this.hideContextMenu();
+        this.hideReactionPicker();
+
+        const messageId = messageElement.dataset.messageId;
+        const menu = document.createElement('div');
+        menu.className = 'context-menu';
+        menu.style.position = 'fixed';
+        menu.style.left = x + 'px';
+        menu.style.top = y + 'px';
+        menu.style.background = 'white';
+        menu.style.border = '1px solid #ccc';
+        menu.style.borderRadius = '8px';
+        menu.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        menu.style.zIndex = '1000';
+        menu.style.padding = '8px 0';
+
+        menu.innerHTML = `
+            <div class="context-menu-item" data-action="reply" data-message-id="${messageId}">
+                <span class="menu-icon">↩️</span> Ответить
+            </div>
+            <div class="context-menu-item" data-action="react" data-message-id="${messageId}">
+                <span class="menu-icon">😊</span> Добавить реакцию
+            </div>
+            <div class="context-menu-item" data-action="copy" data-message-id="${messageId}">
+                <span class="menu-icon">📋</span> Копировать текст
+            </div>
+        `;
+
+        document.body.appendChild(menu);
+
+        // Обработчики для пунктов меню
+        menu.querySelectorAll('.context-menu-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const action = e.currentTarget.dataset.action;
+                const msgId = e.currentTarget.dataset.messageId;
+                this.handleContextMenuAction(action, msgId, messageElement);
+                this.hideContextMenu();
+            });
+        });
+
+        // Скрываем меню при клике вне его
+        setTimeout(() => {
+            document.addEventListener('click', this.hideContextMenu.bind(this), { once: true });
+        });
+    }
+
+    hideContextMenu() {
+        const menu = document.querySelector('.context-menu');
+        if (menu) {
+            menu.remove();
+        }
+    }
+
+    hideReactionPicker() {
+        const picker = document.querySelector('.reaction-picker');
+        if (picker) {
+            picker.remove();
+        }
+    }
+
+    handleContextMenuAction(action, messageId, messageElement) {
+        switch (action) {
+            case 'reply':
+                this.startReply(messageId, messageElement);
+                break;
+            case 'react':
+                this.showReactionPicker(messageElement);
+                break;
+            case 'copy':
+                this.copyMessageText(messageElement);
+                break;
+        }
+    }
+
+
+    startReply(messageId, messageElement) {
+        const messageContent = messageElement.querySelector('.message-content').textContent;
+        const senderName = messageElement.querySelector('.sender-name')?.textContent || 'Пользователь';
+
+        this.replyingTo = {
+            id: messageId,
+            content: messageContent,
+            senderName: senderName
+        };
+
+        // Показываем индикатор ответа
+        this.showReplyIndicator();
+    }
+
+    showReplyIndicator() {
+        let indicator = document.getElementById('reply-indicator');
+
+        if (!indicator) {
+            indicator = document.createElement('div');
+            indicator.id = 'reply-indicator';
+            indicator.className = 'reply-indicator';
+            indicator.innerHTML = `
+                <div class="reply-indicator-content">
+                    <div class="reply-indicator-header">
+                        <span class="reply-label">Ответ на:</span>
+                        <button class="btn-cancel-reply">✕</button>
+                    </div>
+                    <div class="reply-indicator-preview"></div>
+                </div>
+            `;
+
+            const inputContainer = document.querySelector('.message-input-container');
+            inputContainer.parentNode.insertBefore(indicator, inputContainer);
+
+            // Обработчик отмены ответа
+            indicator.querySelector('.btn-cancel-reply').addEventListener('click', () => {
+                this.cancelReply();
+            });
+        }
+
+        const preview = indicator.querySelector('.reply-indicator-preview');
+        preview.innerHTML = `
+            <strong>${this.replyingTo.senderName}:</strong> 
+            ${this.replyingTo.content.length > 50 ?
+            this.replyingTo.content.substring(0, 50) + '...' :
+            this.replyingTo.content}
+        `;
+
+        indicator.style.display = 'block';
+
+        // Фокусируемся на поле ввода
+        document.getElementById('message-input').focus();
+    }
+
+
+    cancelReply() {
+        this.replyingTo = null;
+        const indicator = document.getElementById('reply-indicator');
+        if (indicator) {
+            indicator.style.display = 'none';
+        }
+    }
+
+    showReactionPicker(messageElement) {
+        this.hideReactionPicker();
+
+        const rect = messageElement.getBoundingClientRect();
+        const picker = document.createElement('div');
+        picker.className = 'reaction-picker';
+        picker.style.position = 'fixed';
+        picker.style.left = rect.left + 'px';
+        picker.style.top = (rect.top - 60) + 'px';
+        picker.style.background = 'white';
+        picker.style.border = '1px solid #ccc';
+        picker.style.borderRadius = '20px';
+        picker.style.padding = '8px';
+        picker.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        picker.style.zIndex = '1001';
+        picker.style.display = 'flex';
+        picker.style.gap = '5px';
+
+        const reactions = ['👍', '❤️', '😂', '😮', '😢', '😡'];
+        const messageId = messageElement.dataset.messageId;
+
+        reactions.forEach(reaction => {
+            const btn = document.createElement('button');
+            btn.textContent = reaction;
+            btn.style.background = 'none';
+            btn.style.border = 'none';
+            btn.style.fontSize = '20px';
+            btn.style.cursor = 'pointer';
+            btn.style.padding = '5px';
+            btn.style.borderRadius = '50%';
+
+            btn.addEventListener('click', () => {
+                this.addReaction(messageId, reaction);
+                this.hideReactionPicker();
+            });
+
+            picker.appendChild(btn);
+        });
+
+        document.body.appendChild(picker);
+    }
+
+    async addReaction(messageId, reaction) {
+        try {
+            await ApiService.post(`/chat/${messageId}/react`, { reaction });
+            // Перезагружаем сообщения для обновления реакций
+            if (this.currentConversation) {
+                await this.loadMessages(this.currentConversation);
+            }
+        } catch (error) {
+            console.error('Error adding reaction:', error);
+            this.showMessage('Ошибка добавления реакции', 'error');
+        }
+    }
+
+
+    async removeReaction(messageId) {
+        try {
+            await ApiService.post(`/chat/${messageId}/react`, { reaction: null });
+            if (this.currentConversation) {
+                await this.loadMessages(this.currentConversation);
+            }
+        } catch (error) {
+            console.error('Error removing reaction:', error);
+        }
+    }
+
+    copyMessageText(messageElement) {
+        const text = messageElement.querySelector('.message-content').textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            this.showMessage('Текст скопирован', 'success');
+        });
+    }
+
+    async sendMessage() {
+        const input = document.getElementById('message-input');
+        const content = input.value.trim();
+
+        if (!content) {
+            this.showMessage('Введите сообщение', 'error');
+            return;
+        }
+
+        if (!this.currentConversation) {
+            this.showMessage('Выберите пользователя для чата', 'error');
+            return;
+        }
+
+        const sendBtn = document.getElementById('send-message-btn');
+        const originalText = sendBtn.textContent;
+
+        try {
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Отправка...';
+
+            const messageData = {
+                receiverId: this.currentConversation,
+                content: content
+            };
+
+            // Добавляем ID сообщения для ответа, если есть
+            if (this.replyingTo) {
+                messageData.replyToId = this.replyingTo.id;
+            }
+
+            const response = await ApiService.post('/chat/send', messageData);
+
+            input.value = '';
+            this.cancelReply(); // Сбрасываем ответ после отправки
+            await this.loadMessages(this.currentConversation);
+            await this.loadConversations();
+
+            const container = document.getElementById('messages-container');
+            container.scrollTop = container.scrollHeight;
+
+            this.showMessage('Сообщение отправлено!', 'success');
+
+        } catch (error) {
+            console.error('Error sending message:', error);
+            this.showMessage('Ошибка отправки сообщения: ' + error.message, 'error');
+        } finally {
+            sendBtn.disabled = false;
+            sendBtn.textContent = originalText;
+        }
+    }
+
+
 
     autoResizeTextarea(textarea) {
         textarea.style.height = 'auto';
