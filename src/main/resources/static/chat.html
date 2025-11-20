@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Чаты - Education System</title>
+    <link rel="stylesheet" href="/css/chat.css">
+</head>
+<body>
+<div class="chat-container">
+    <div class="chat-header">
+        <h1>💬 Мои чаты</h1>
+        <div class="header-actions">
+            <button id="new-chat-btn" class="btn-primary">Новый чат</button>
+            <button id="back-btn" class="btn-secondary">Назад</button>
+        </div>
+    </div>
+
+    <div class="chat-layout">
+        <!-- Список диалогов -->
+        <div class="conversations-sidebar">
+            <div class="search-container">
+                <input type="text" id="user-search" placeholder="Поиск пользователей...">
+                <div id="search-results" class="search-results"></div>
+            </div>
+
+            <div id="conversations-list" class="conversations-list">
+                <!-- Диалоги будут загружены здесь -->
+            </div>
+        </div>
+
+        <!-- Область сообщений -->
+        <div class="messages-area">
+            <div id="no-chat-selected" class="no-chat-selected">
+                <p>Выберите диалог или начните новый чат</p>
+            </div>
+
+            <div id="chat-window" class="chat-window" style="display: none;">
+                <div class="chat-header">
+                    <div id="chat-partner-info" class="chat-partner-info"></div>
+                </div>
+
+                <div id="messages-container" class="messages-container"></div>
+
+                <div class="message-input-container">
+                    <textarea id="message-input" placeholder="Введите сообщение..." rows="3"></textarea>
+                    <button id="send-message-btn" class="btn-primary">Отправить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/chat.js"></script>
+</body>
+</html>

@@ -619,3 +619,66 @@ small {
 .assignment-item:hover {
     background-color: #f0f0f0;
 }
+
+
+/* Стили для основной навигации */
+.main-nav {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+    padding: 0;
+    flex-wrap: wrap;
+    border-top: 1px solid #e1e5e9;
+    padding-top: 15px;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: white;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.nav-item:hover {
+    border-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.nav-item.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: #667eea;
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.header-actions .nav-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #dc3545;
+    color: white;
+    border-radius: 10px;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: bold;
+    min-width: 18px;
+    text-align: center;
+}
+
+.header-actions .btn-primary {
+    position: relative;
+}
