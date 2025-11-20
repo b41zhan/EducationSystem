@@ -61,7 +61,7 @@ function displayProfile(profileData) {
         }
     }
 
-    // Обновляем ссылку "Назад" в зависимости от роли
+
     updateBackLink(userRole);
 
     const avatarPlaceholder = document.getElementById('avatar-placeholder');
