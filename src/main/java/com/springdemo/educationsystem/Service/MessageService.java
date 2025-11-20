@@ -2,12 +2,15 @@ package com.springdemo.educationsystem.Service;
 
 import com.springdemo.educationsystem.DTO.ConversationDTO;
 import com.springdemo.educationsystem.DTO.MessageDTO;
+
+import com.springdemo.educationsystem.DTO.ReplyMessageDTO;
 import com.springdemo.educationsystem.Entity.Message;
 import com.springdemo.educationsystem.Entity.User;
 import com.springdemo.educationsystem.Repository.MessageRepository;
 import com.springdemo.educationsystem.Repository.UserRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,22 +25,38 @@ public class MessageService {
         this.userRepository = userRepository;
     }
 
-    public MessageDTO sendMessage(Long senderId, Long receiverId, String content) {
-        System.out.println("Sending message from " + senderId + " to " + receiverId + ": " + content);
-
+    public MessageDTO sendMessage(Long senderId, Long receiverId, String content, Long replyToId) {
         User sender = userRepository.findById(senderId)
                 .orElseThrow(() -> new RuntimeException("Sender not found"));
         User receiver = userRepository.findById(receiverId)
                 .orElseThrow(() -> new RuntimeException("Receiver not found"));
 
-        System.out.println("Sender: " + sender.getEmail());
-        System.out.println("Receiver: " + receiver.getEmail());
-
         Message message = new Message(sender, receiver, content);
+
+        // Если это ответ на сообщение
+        if (replyToId != null) {
+            Message replyToMessage = messageRepository.findById(replyToId)
+                    .orElseThrow(() -> new RuntimeException("Reply message not found"));
+            message.setReplyTo(replyToMessage);
+        }
+
         Message savedMessage = messageRepository.save(message);
+        return convertToDTO(savedMessage);
+    }
 
-        System.out.println("Message saved with ID: " + savedMessage.getId());
+    public MessageDTO addReaction(Long messageId, Long userId, String reaction) {
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() -> new RuntimeException("Message not found"));
 
+        if (reaction == null || reaction.trim().isEmpty()) {
+            // Удаляем реакцию
+            message.removeReaction(userId);
+        } else {
+            // Добавляем/обновляем реакцию
+            message.addReaction(userId, reaction);
+        }
+
+        Message savedMessage = messageRepository.save(message);
         return convertToDTO(savedMessage);
     }
 
@@ -103,6 +122,19 @@ public class MessageService {
         dto.setRead(message.isRead());
         dto.setCreatedAt(message.getCreatedAt());
         dto.setConversationId(message.getConversationId());
+        dto.setReactions(new HashMap<>(message.getReactions()));
+
+        // Конвертируем сообщение-ответ
+        if (message.getReplyTo() != null) {
+            Message replyTo = message.getReplyTo();
+            ReplyMessageDTO replyDTO = new ReplyMessageDTO(
+                    replyTo.getId(),
+                    replyTo.getSender().getFirstName() + " " + replyTo.getSender().getLastName(),
+                    replyTo.getContent()
+            );
+            dto.setReplyTo(replyDTO);
+        }
+
         return dto;
     }
 

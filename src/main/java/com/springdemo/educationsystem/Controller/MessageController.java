@@ -37,8 +37,12 @@ public class MessageController {
         Long receiverId = Long.valueOf(messageData.get("receiverId").toString());
         String content = (String) messageData.get("content");
 
+        // НОВОЕ: ID сообщения, на которое отвечаем (может быть null)
+        Long replyToId = messageData.containsKey("replyToId") ?
+                Long.valueOf(messageData.get("replyToId").toString()) : null;
+
         try {
-            MessageDTO message = messageService.sendMessage(senderId, receiverId, content);
+            MessageDTO message = messageService.sendMessage(senderId, receiverId, content, replyToId);
             return ResponseEntity.ok(message);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -79,6 +83,28 @@ public class MessageController {
         try {
             List<ConversationDTO> conversations = messageService.getRecentConversations(currentUserId);
             return ResponseEntity.ok(conversations);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{messageId}/react")
+    public ResponseEntity<?> addReaction(
+            @PathVariable Long messageId,
+            @RequestBody Map<String, String> reactionData,
+            @RequestHeader("Authorization") String authorizationHeader) {
+
+        String token = extractToken(authorizationHeader);
+        if (!authService.isValidToken(token)) {
+            return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
+        }
+
+        Long userId = authService.getUserId(token);
+        String reaction = reactionData.get("reaction"); // Может быть null для удаления реакции
+
+        try {
+            MessageDTO message = messageService.addReaction(messageId, userId, reaction);
+            return ResponseEntity.ok(message);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
