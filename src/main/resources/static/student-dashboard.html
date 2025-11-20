@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Education System - Студент</title>
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/schedule.css">
 </head>
 <body>
 <div class="dashboard">
@@ -34,13 +35,25 @@
                 <button class="btn-logout" onclick="logout()">Выйти</button>
             </div>
         </div>
-
     </div>
 
-
     <div class="content">
-        <!-- Левая колонка -->
+        <!-- Левая колонка - РАСПИСАНИЕ -->
         <div class="left-column">
+            <!-- Блок расписания -->
+            <div class="card">
+                <div class="schedule-section">
+                    <div class="view-switcher">
+                        <button id="day-view-btn" class="view-btn active">День</button>
+                        <button id="week-view-btn" class="view-btn">Неделя</button>
+                    </div>
+
+                    <div id="schedule-container">
+                        <div class="loading">Загрузка расписания...</div>
+                    </div>
+                </div>
+            </div>
+
             <div class="card">
                 <h2>Активные задания <small id="assignments-count">(0)</small></h2>
                 <div id="active-assignments">
@@ -49,7 +62,10 @@
                     </div>
                 </div>
             </div>
+        </div>
 
+        <!-- Правая колонка -->
+        <div class="right-column">
             <div class="card">
                 <h2>Сдать задание</h2>
                 <form id="submitAssignmentForm">
@@ -76,10 +92,7 @@
                     <div id="submit-message" style="display: none;"></div>
                 </form>
             </div>
-        </div>
 
-        <!-- Правая колонка -->
-        <div class="right-column">
             <div class="card">
                 <h2>Мои оценки</h2>
                 <div id="grades-list">
@@ -105,5 +118,10 @@
 <script src="/js/student.js"></script>
 <script src="/js/wikipedia.js"></script>
 <script src="/js/notification.js"></script>
+<script src="/js/schedule.js"></script>
+<script>
+    // Загружаем имя пользователя
+    document.getElementById('user-name').textContent = localStorage.getItem('userName') || 'Ученик';
+</script>
 </body>
 </html>

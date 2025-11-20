@@ -11,11 +11,15 @@ import java.util.Optional;
 @Repository
 public interface StudentRepository extends JpaRepository<Student, Long> {
     List<Student> findBySchoolClassId(Long classId);
-    Optional<Student> findByUserId(Long userId);
+    // В StudentRepository.java добавить:
+    @Query("SELECT s FROM Student s WHERE s.user.id = :userId")
+    Optional<Student> findByUserId(@Param("userId") Long userId);
 
     @Query("SELECT s FROM Student s " +
             "JOIN FETCH s.user u " +
             "WHERE s.schoolClass.id = :classId " +
             "ORDER BY u.lastName, u.firstName")
     List<Student> findBySchoolClassIdWithUser(@Param("classId") Long classId);
+
+
 }
