@@ -13,19 +13,50 @@ body {
     justify-content: center;
 }
 
+/* ===== ОСНОВНЫЕ КОМПОНЕНТЫ ===== */
 .login-container {
     width: 100%;
     max-width: 400px;
     padding: 20px;
 }
 
-.login-card {
+.login-card, .card, .modal-content, .header {
     background: white;
-    padding: 40px 30px;
     border-radius: 10px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
+.login-card {
+    padding: 40px 30px;
+}
+
+.card {
+    padding: 20px;
+    border: 1px solid #e1e5e9;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+
+.header {
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.modal-content {
+    margin: 5% auto;
+    padding: 30px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* ===== ТИПОГРАФИЯ ===== */
 h1 {
     text-align: center;
     color: #333;
@@ -40,6 +71,18 @@ h1 {
     font-size: 16px;
 }
 
+.card-title {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.card-description {
+    color: #666;
+    font-size: 14px;
+}
+
+/* ===== ФОРМЫ И ИНПУТЫ ===== */
 .form-group {
     margin-bottom: 20px;
 }
@@ -52,24 +95,32 @@ label {
 }
 
 input[type="email"],
-input[type="password"] {
+input[type="password"],
+input[type="text"],
+textarea,
+select {
     width: 100%;
     padding: 12px 15px;
     border: 2px solid #e1e5e9;
     border-radius: 6px;
     font-size: 16px;
     transition: border-color 0.3s;
+    font-family: inherit;
 }
 
-input[type="email"]:focus,
-input[type="password"]:focus {
+input:focus,
+textarea:focus,
+select:focus {
     outline: none;
     border-color: #667eea;
 }
 
+textarea {
+    resize: vertical;
+}
+
+/* ===== КНОПКИ ===== */
 .btn-primary {
-    width: 100%;
-    padding: 12px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
@@ -88,55 +139,17 @@ input[type="password"]:focus {
     transform: translateY(0);
 }
 
-.error-message {
-    background: #fee;
-    color: #c33;
-    padding: 10px;
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 10px 15px;
     border-radius: 5px;
-    margin-top: 15px;
-    text-align: center;
-    border: 1px solid #fcc;
+    cursor: pointer;
 }
 
-.demo-accounts {
-    margin-top: 30px;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 6px;
-    border-left: 4px solid #667eea;
-}
-
-.demo-accounts h3 {
-    color: #333;
-    margin-bottom: 10px;
-    font-size: 14px;
-}
-
-.demo-accounts p {
-    font-size: 12px;
-    color: #666;
-    margin-bottom: 5px;
-}
-
-/* Общие стили для дашбордов */
-.dashboard {
-    padding: 20px;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-.header {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
-}
-
-.user-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.btn-secondary:hover {
+    background: #5a6268;
 }
 
 .btn-logout {
@@ -148,81 +161,120 @@ input[type="password"]:focus {
     cursor: pointer;
 }
 
-.content {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-}
+/* Размеры кнопок */
+.btn-primary { padding: 12px; }
+.btn-primary.full-width { width: 100%; }
 
-.card {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-/* Стили для дашбордов */
-.left-column, .right-column {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.btn-secondary {
-    background: #6c757d;
-    color: white;
-    border: none;
-    padding: 10px 15px;
+/* ===== СООБЩЕНИЯ ===== */
+.message {
+    padding: 10px;
     border-radius: 5px;
-    cursor: pointer;
-    margin: 5px;
-    width: 100%;
+    margin-top: 15px;
+    text-align: center;
+    border: 1px solid;
 }
 
-.btn-secondary:hover {
-    background: #5a6268;
+.success-message {
+    background: #d4edda;
+    color: #155724;
+    border-color: #c3e6cb;
 }
 
-/* Модальные окна */
-.modal {
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.5);
+.error-message {
+    background: #f8d7da;
+    color: #721c24;
+    border-color: #f5c6cb;
 }
 
-.modal-content {
-    background-color: white;
-    margin: 5% auto;
-    padding: 30px;
+.warning-message {
+    background: #fff3cd;
+    color: #856404;
+    border-color: #ffeaa7;
+}
+
+/* ===== НАВИГАЦИЯ ===== */
+.main-nav {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+    padding: 15px 0 0;
+    flex-wrap: wrap;
+    border-top: 1px solid #e1e5e9;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: white;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.nav-item:hover {
+    border-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.nav-item.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: #667eea;
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.nav-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #dc3545;
+    color: white;
     border-radius: 10px;
-    width: 90%;
-    max-width: 600px;
-    max-height: 90vh;
-    overflow-y: auto;
-}
-
-.close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
+    padding: 2px 6px;
+    font-size: 10px;
     font-weight: bold;
-    cursor: pointer;
+    min-width: 18px;
+    text-align: center;
 }
 
-.close:hover {
-    color: black;
+/* ===== СТАТУСЫ И СОСТОЯНИЯ ===== */
+.status {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
 }
 
-/* Списки заданий */
+.status-pending { background: #fff3cd; color: #856404; }
+.status-completed { background: #d1ecf1; color: #0c5460; }
+.status-overdue { background: #f8d7da; color: #721c24; }
+.status-graded { background: #d4edda; color: #155724; }
+.status-submitted { background: #fff3cd; color: #856404; }
+
+/* ===== СПИСКИ И ЭЛЕМЕНТЫ ===== */
 .assignment-item {
     border: 1px solid #e1e5e9;
     border-radius: 5px;
     padding: 15px;
     margin-bottom: 10px;
     background: #f8f9fa;
+    transition: background-color 0.2s;
+}
+
+.assignment-item:hover {
+    background-color: #f0f0f0;
 }
 
 .assignment-title {
@@ -242,263 +294,32 @@ input[type="password"]:focus {
     font-weight: bold;
 }
 
-.assignment-status {
-    display: inline-block;
-    padding: 3px 8px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: bold;
+/* ===== LAYOUT ===== */
+.dashboard {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
-.status-pending {
-    background: #fff3cd;
-    color: #856404;
-}
-
-.status-completed {
-    background: #d1ecf1;
-    color: #0c5460;
-}
-
-.status-overdue {
-    background: #f8d7da;
-    color: #721c24;
-}
-
-.status-graded {
-    background: #d4edda;
-    color: #155724;
-}
-
-/* Формы */
-textarea {
-    width: 100%;
-    padding: 12px 15px;
-    border: 2px solid #e1e5e9;
-    border-radius: 6px;
-    font-size: 16px;
-    font-family: inherit;
-    resize: vertical;
-}
-
-select {
-    width: 100%;
-    padding: 12px 15px;
-    border: 2px solid #e1e5e9;
-    border-radius: 6px;
-    font-size: 16px;
-    background: white;
-}
-
-small {
-    color: #666;
-    font-size: 12px;
-    display: block;
-    margin-top: 5px;
-}
-
-/* Стили для админ-панели */
-.system-stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-}
-
-.system-stats p {
-    margin: 5px 0;
-    padding: 8px;
-    background: #f8f9fa;
-    border-radius: 5px;
-    border-left: 3px solid #667eea;
-}
-
-/* Адаптивность для мобильных */
-@media (max-width: 768px) {
-    .content {
-        grid-template-columns: 1fr;
-    }
-
-    .user-info {
-        flex-direction: column;
-        gap: 10px;
-        text-align: center;
-    }
-}
-.success-message {
-    background: #d4edda;
-    color: #155724;
-    padding: 10px;
-    border-radius: 5px;
-    margin-top: 10px;
-    border: 1px solid #c3e6cb;
-}
-
-.error-message {
-    background: #f8d7da;
-    color: #721c24;
-    padding: 10px;
-    border-radius: 5px;
-    margin-top: 10px;
-    border: 1px solid #f5c6cb;
-}
-/* Стили для заданий на проверку */
-.submission-actions {
-    margin-top: 10px;
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.submission-actions button {
-    padding: 8px 12px;
-    font-size: 14px;
-}
-
-.submission-info {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 5px;
-    margin-bottom: 20px;
-    border-left: 4px solid #667eea;
-}
-
-.submission-info h3 {
-    margin-top: 0;
-    color: #333;
-}
-
-.submission-info p {
-    margin: 5px 0;
-}
-
-.file-preview {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid #e1e5e9;
-}
-
-.form-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 20px;
-}
-
-.form-actions button {
-    flex: 1;
-}
-
-/* Счетчик заданий на проверку */
-#pending-count {
-    font-weight: bold;
-    color: #dc3545;
-}
-
-/* Статусы заданий */
-.status-submitted {
-    background: #fff3cd;
-    color: #856404;
-}
-
-.status-graded {
-    background: #d4edda;
-    color: #155724;
-}
-
-.status-overdue {
-    background: #f8d7da;
-    color: #721c24;
-}
-
-/* Пагинация */
-.pagination {
+.user-info {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 20px;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border: 1px solid #e1e5e9;
 }
 
-#page-info {
-    font-weight: bold;
-    color: #333;
+.content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
 }
 
-/* Стили для поиска */
-.search-box {
-    margin-bottom: 20px;
-}
-
-.search-box input {
-    width: 100%;
-    padding: 12px 15px;
-    border: 2px solid #e1e5e9;
-    border-radius: 6px;
-    font-size: 16px;
-}
-
-.search-box input:focus {
-    outline: none;
-    border-color: #667eea;
-}
-
-/* Счетчик результатов */
-.results-count {
-    color: #666;
-    font-size: 14px;
-    margin-bottom: 15px;
-    text-align: center;
-}
-
-.no-assignments {
-    text-align: center;
-    padding: 40px 20px;
-    color: #666;
-}
-
-.no-assignments p {
-    font-size: 18px;
-    margin-bottom: 10px;
-}
-
-.no-assignments small {
-    font-size: 14px;
-    color: #888;
-}
-
-/* Стили для поиска и фильтров */
-.search-filters {
-    margin-bottom: 20px;
-}
-
-.filter-row {
+.left-column, .right-column {
     display: flex;
-    gap: 15px;
-    align-items: flex-end;
+    flex-direction: column;
+    gap: 20px;
 }
 
-.filter-row .form-group {
-    flex: 1;
-}
-
-.filter-row label {
-    font-size: 14px;
-    font-weight: 500;
-    color: #333;
-    margin-bottom: 5px;
-}
-
-/* Счетчик результатов */
-.results-info {
-    text-align: center;
-    margin: 10px 0;
-    color: #666;
-    font-size: 14px;
-}
-
-/* Wikipedia Search Styles */
+/* ===== WIKIPEDIA WIDGET ===== */
 .wikipedia-widget {
     position: absolute;
     top: 20px;
@@ -583,9 +404,6 @@ small {
     text-decoration: none;
     font-size: 14px;
     font-weight: 500;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
 }
 
 .wikipedia-result-link:hover {
@@ -593,123 +411,181 @@ small {
     text-decoration: underline;
 }
 
-.wikipedia-loading {
-    padding: 20px;
-    text-align: center;
-    color: #666;
+/* ===== УТИЛИТЫ ===== */
+.demo-accounts {
+    margin-top: 30px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 4px solid #667eea;
 }
 
-.wikipedia-no-results {
-    padding: 20px;
-    text-align: center;
-    color: #999;
-    font-style: italic;
-}
-
-.wikipedia-search-input.loading {
-    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23667eea"><path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm0 18a8 8 0 118-8 8 8 0 01-8 8z" opacity=".5"/><path d="M12 2a10 10 0 0110 10h-2a8 8 0 00-8-8z"/></svg>');
-    background-repeat: no-repeat;
-    background-position: right 15px center;
-    background-size: 20px 20px;
-}
-.assignment-item {
-    transition: background-color 0.2s;
-}
-
-.assignment-item:hover {
-    background-color: #f0f0f0;
-}
-
-
-/* Стили для основной навигации */
-.main-nav {
-    display: flex;
-    gap: 10px;
-    margin: 20px 0;
-    padding: 0;
-    flex-wrap: wrap;
-    border-top: 1px solid #e1e5e9;
-    padding-top: 15px;
-}
-
-.nav-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 20px;
-    background: white;
-    border: 2px solid #e1e5e9;
-    border-radius: 8px;
-    text-decoration: none;
+.demo-accounts h3 {
     color: #333;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    position: relative;
+    margin-bottom: 10px;
+    font-size: 14px;
 }
 
-.nav-item:hover {
-    border-color: #667eea;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+.demo-accounts p {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 5px;
 }
 
-.nav-item.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-color: #667eea;
-}
-
-.header-actions {
+.submission-actions {
+    margin-top: 10px;
     display: flex;
     gap: 10px;
+    flex-wrap: wrap;
+}
+
+.submission-actions button {
+    padding: 8px 12px;
+    font-size: 14px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.form-actions button {
+    flex: 1;
+}
+
+.pagination {
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-}
-
-.header-actions .nav-badge {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    background: #dc3545;
-    color: white;
-    border-radius: 10px;
-    padding: 2px 6px;
-    font-size: 10px;
-    font-weight: bold;
-    min-width: 18px;
-    text-align: center;
-}
-
-.header-actions .btn-primary {
-    position: relative;
-}
-.card {
-    background: white;
-    padding: 20px;
+    margin-top: 20px;
+    padding: 15px;
+    background: #f8f9fa;
     border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    cursor: pointer;
-    transition: all 0.3s ease;
     border: 1px solid #e1e5e9;
 }
 
-.card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+.search-filters {
+    margin-bottom: 20px;
 }
 
+.filter-row {
+    display: flex;
+    gap: 15px;
+    align-items: flex-end;
+}
+
+.filter-row .form-group {
+    flex: 1;
+}
+
+/* ===== АДАПТИВНОСТЬ ===== */
+@media (max-width: 768px) {
+    .content {
+        grid-template-columns: 1fr;
+    }
+
+    .user-info {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    .filter-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .wikipedia-widget {
+        position: static;
+        width: 100%;
+        margin-bottom: 20px;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .submission-actions {
+        flex-direction: column;
+    }
+
+    .header-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .main-nav {
+        flex-direction: column;
+    }
+}
+
+/* ===== ИКОНКИ И ДЕКОРАТИВНЫЕ ЭЛЕМЕНТЫ ===== */
 .card-icon {
     font-size: 24px;
     margin-bottom: 10px;
 }
 
-.card-title {
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
     font-weight: bold;
-    color: #333;
-    margin-bottom: 5px;
+    cursor: pointer;
 }
 
-.card-description {
+.close:hover {
+    color: black;
+}
+
+/* ===== СПЕЦИФИЧЕСКИЕ СЕКЦИИ ===== */
+.system-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.system-stats p {
+    margin: 5px 0;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    border-left: 3px solid #667eea;
+}
+
+.submission-info {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    border-left: 4px solid #667eea;
+}
+
+.file-preview {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #e1e5e9;
+}
+
+.no-assignments {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+}
+
+.results-info {
+    text-align: center;
+    margin: 10px 0;
     color: #666;
     font-size: 14px;
 }
-/* Быстрое исправление размера кнопки */
+
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
