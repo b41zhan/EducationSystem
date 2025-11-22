@@ -99,6 +99,94 @@ public class ScheduleController {
         }
     }
 
+    // Создать расписание для класса с автоматическим назначением учителей
+    @PostMapping("/admin/class-with-teachers")
+    public ResponseEntity<?> createClassScheduleWithTeachers(
+            @RequestBody CreateScheduleTemplateDTO createDTO,
+            @RequestHeader("Authorization") String authorizationHeader) {
+
+        logger.info("Creating class schedule with teachers for class: {}", createDTO.getClassId());
+
+        if (!isAdmin(authorizationHeader)) {
+            return ResponseEntity.status(403).body(Map.of("error", "Access denied. Admin rights required."));
+        }
+
+        try {
+            SchoolClass schoolClass = schoolClassRepository.findById(createDTO.getClassId())
+                    .orElseThrow(() -> new RuntimeException("Class not found"));
+
+            ScheduleTemplate template = new ScheduleTemplate();
+            template.setSchoolClass(schoolClass);
+            template.setQuarter(createDTO.getQuarter());
+            template.setWeekNumber(createDTO.getWeekNumber());
+            template.setWeekStart(createDTO.getWeekStart());
+            template.setWeekEnd(createDTO.getWeekEnd());
+
+            ScheduleTemplate savedTemplate = scheduleTemplateService.createTemplate(template);
+
+            // Создаем дни и уроки
+            if (createDTO.getDays() != null) {
+                for (CreateScheduleDayDTO dayDTO : createDTO.getDays()) {
+                    ScheduleDay day = new ScheduleDay();
+                    day.setTemplate(savedTemplate);
+                    day.setDayOfWeek(java.time.DayOfWeek.valueOf(dayDTO.getDayOfWeek()));
+                    day.setDate(dayDTO.getDate());
+                    day.setIsHoliday(dayDTO.getIsHoliday());
+
+                    ScheduleDay savedDay = scheduleDayService.createDay(day);
+
+                    // Создаем уроки с автоматическим назначением учителей
+                    if (dayDTO.getLessons() != null) {
+                        for (CreateLessonDTO lessonDTO : dayDTO.getLessons()) {
+                            Lesson lesson = new Lesson();
+                            lesson.setDay(savedDay);
+                            lesson.setLessonNumber(lessonDTO.getLessonNumber());
+                            lesson.setStartTime(lessonDTO.getStartTime());
+                            lesson.setEndTime(lessonDTO.getEndTime());
+
+                            Subject subject = subjectRepository.findById(lessonDTO.getSubjectId())
+                                    .orElseThrow(() -> new RuntimeException("Subject not found"));
+                            lesson.setSubject(subject);
+
+                            // Автоматически назначаем учителя по предмету
+                            if (lessonDTO.getTeacherId() == null) {
+                                // Ищем учителя по предмету
+                                Teacher teacher = findTeacherBySubject(subject.getId());
+                                if (teacher != null) {
+                                    lesson.setTeacher(teacher);
+                                }
+                            } else {
+                                Teacher teacher = teacherRepository.findById(lessonDTO.getTeacherId())
+                                        .orElseThrow(() -> new RuntimeException("Teacher not found"));
+                                lesson.setTeacher(teacher);
+                            }
+
+                            lesson.setClassroom(lessonDTO.getClassroom());
+                            lessonService.createLesson(lesson);
+                        }
+                    }
+                }
+            }
+
+            ScheduleTemplateDTO resultDTO = convertToDTO(savedTemplate);
+            return ResponseEntity.ok(resultDTO);
+
+        } catch (Exception e) {
+            logger.error("Error creating class schedule with teachers: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // Вспомогательный метод для поиска учителя по предмету
+    private Teacher findTeacherBySubject(Long subjectId) {
+        // Здесь можно реализовать логику поиска подходящего учителя
+        // Пока возвращаем первого попавшегося учителя
+        List<Teacher> allTeachers = teacherRepository.findAll();
+        return allTeachers.stream()
+                .findFirst()
+                .orElse(null);
+    }
+
     @GetMapping("/student/week")
     public ResponseEntity<?> getMyWeekSchedule(
             @RequestParam LocalDate startDate,
@@ -281,6 +369,20 @@ public class ScheduleController {
                 dto.setTeacherName(lesson.getTeacher().getUser().getFirstName() + " " +
                         lesson.getTeacher().getUser().getLastName());
             }
+        }
+
+        // Добавляем информацию о классе
+        if (lesson.getDay() != null && lesson.getDay().getTemplate() != null) {
+            var schoolClass = lesson.getDay().getTemplate().getSchoolClass();
+            if (schoolClass != null) {
+                dto.setClassName(schoolClass.getName());
+            }
+        }
+
+        // ДОБАВЛЯЕМ ДЕНЬ НЕДЕЛИ И ДАТУ
+        if (lesson.getDay() != null) {
+            dto.setDayOfWeek(lesson.getDay().getDayOfWeek().name());
+            dto.setDate(lesson.getDay().getDate());
         }
 
         return dto;

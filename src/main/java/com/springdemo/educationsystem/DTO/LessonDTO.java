@@ -1,5 +1,6 @@
 package com.springdemo.educationsystem.DTO;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 
 public class LessonDTO {
@@ -13,6 +14,9 @@ public class LessonDTO {
     private Long teacherId;
     private String teacherName;
     private String classroom;
+    private String className;
+    private String dayOfWeek; // ДОБАВЛЯЕМ ПОЛЕ ДЛЯ ДНЯ НЕДЕЛИ
+    private LocalDate date;
 
     public LessonDTO() {}
 
@@ -46,4 +50,13 @@ public class LessonDTO {
 
     public String getClassroom() { return classroom; }
     public void setClassroom(String classroom) { this.classroom = classroom; }
+
+    public String getClassName() { return className; }
+    public void setClassName(String className) { this.className = className; }
+
+    public String getDayOfWeek() { return dayOfWeek; }
+    public void setDayOfWeek(String dayOfWeek) { this.dayOfWeek = dayOfWeek; }
+
+    public LocalDate getDate() { return date; }
+    public void setDate(LocalDate date) { this.date = date; }
 }

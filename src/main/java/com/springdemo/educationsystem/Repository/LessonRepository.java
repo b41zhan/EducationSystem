@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @Repository
@@ -35,4 +36,17 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
     // Найти уроки класса на определенную дату
     @Query("SELECT l FROM Lesson l WHERE l.day.template.schoolClass = :schoolClass AND l.day.date = :date ORDER BY l.lessonNumber")
     List<Lesson> findBySchoolClassAndDate(@Param("schoolClass") SchoolClass schoolClass, @Param("date") LocalDate date);
+
+    // Проверить наличие конфликта для учителя в определенное время
+    @Query("SELECT COUNT(l) > 0 FROM Lesson l WHERE " +
+            "l.teacher.id = :teacherId AND l.day.date = :date AND " +
+            "((l.startTime <= :endTime AND l.endTime >= :startTime))")
+    boolean existsTeacherTimeConflict(@Param("teacherId") Long teacherId,
+                                      @Param("date") LocalDate date,
+                                      @Param("startTime") LocalTime startTime,
+                                      @Param("endTime") LocalTime endTime);
+
+    // Найти уроки по учителю и предмету
+    @Query("SELECT l FROM Lesson l WHERE l.teacher.id = :teacherId AND l.subject.id = :subjectId ORDER BY l.day.date, l.startTime")
+    List<Lesson> findByTeacherAndSubject(@Param("teacherId") Long teacherId, @Param("subjectId") Long subjectId);
 }

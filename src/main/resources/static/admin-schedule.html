@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление расписанием - Админ панель</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-bottom: 1px solid #e1e5e9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 24px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .content {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+            min-height: 600px;
+        }
+
+        .sidebar {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .main-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e1e5e9;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .form-control:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .schedule-grid {
+            display: grid;
+            grid-template-columns: 100px repeat(6, 1fr);
+            gap: 1px;
+            background: #e1e5e9;
+            border: 1px solid #e1e5e9;
+        }
+
+        .schedule-header {
+            background: #667eea;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .schedule-cell {
+            background: white;
+            padding: 10px;
+            min-height: 80px;
+            border: 1px solid #e1e5e9;
+        }
+
+        .time-cell {
+            background: #f8f9fa;
+            font-weight: bold;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lesson-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            font-size: 12px;
+        }
+
+        .lesson-card .subject {
+            font-weight: bold;
+        }
+
+        .lesson-card .classroom {
+            font-size: 11px;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e1e5e9;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab.active {
+            border-bottom-color: #667eea;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .teacher-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .teacher-item {
+            padding: 10px;
+            border: 1px solid #e1e5e9;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .teacher-item:hover {
+            background: #f8f9fa;
+        }
+
+        .teacher-item.active {
+            background: #e3f2fd;
+            border-color: #667eea;
+        }
+
+        .teacher-name {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .teacher-subject {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .alert {
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>📅 Управление расписанием</h1>
+        <div class="header-actions">
+            <button class="btn btn-secondary" onclick="goBack()">← Назад</button>
+            <button class="btn btn-primary" onclick="logout()">Выйти</button>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="sidebar">
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('teachers')">Учителя</div>
+                <div class="tab" onclick="switchTab('classes')">Классы</div>
+            </div>
+
+            <div id="teachers-tab" class="tab-content active">
+                <div class="form-group">
+                    <label>Поиск учителя:</label>
+                    <input type="text" id="teacherSearch" class="form-control" placeholder="ФИО или предмет..." onkeyup="searchTeachers()">
+                </div>
+                <div class="teacher-list" id="teacherList">
+                    <div class="loading">Загрузка учителей...</div>
+                </div>
+            </div>
+
+            <div id="classes-tab" class="tab-content">
+                <div class="form-group">
+                    <label>Выберите класс:</label>
+                    <select id="classSelect" class="form-control" onchange="loadClassSchedule()">
+                        <option value="">-- Выберите класс --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Дата:</label>
+                    <input type="date" id="scheduleDate" class="form-control" onchange="loadClassSchedule()">
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div id="no-selection" class="loading">
+                Выберите учителя или класс для просмотра расписания
+            </div>
+
+            <div id="teacher-schedule" style="display: none;">
+                <div class="header-actions" style="margin-bottom: 20px;">
+                    <h2 id="selected-teacher-name">Расписание учителя</h2>
+                    <button class="btn btn-success" onclick="showAddLessonModal()">+ Добавить урок</button>
+                </div>
+
+                <div class="form-group">
+                    <label>Дата просмотра:</label>
+                    <input type="date" id="teacherScheduleDate" class="form-control" onchange="loadTeacherSchedule()" style="width: 200px;">
+                </div>
+
+                <div id="teacher-schedule-content">
+                    <!-- Расписание учителя будет загружено здесь -->
+                </div>
+            </div>
+
+            <div id="class-schedule" style="display: none;">
+                <h2 id="selected-class-name">Расписание класса</h2>
+                <div id="class-schedule-content">
+                    <!-- Расписание класса будет загружено здесь -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно добавления урока -->
+<div id="addLessonModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 10px; width: 500px;">
+        <h3 style="margin-bottom: 20px;">Добавить урок</h3>
+
+        <div class="form-group">
+            <label>Дата:</label>
+            <input type="date" id="lessonDate" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+            <label>Номер урока:</label>
+            <select id="lessonNumber" class="form-control" required>
+                <option value="1">1 урок (8:00-8:40)</option>
+                <option value="2">2 урок (8:45-9:25)</option>
+                <option value="3">3 урок (9:35-10:15)</option>
+                <option value="4">4 урок (10:20-11:00)</option>
+                <option value="5">5 урок (11:10-11:50)</option>
+                <option value="6">6 урок (11:55-12:35)</option>
+                <option value="7">7 урок (12:45-13:25)</option>
+                <option value="8">8 урок (13:30-14:10)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Предмет:</label>
+            <select id="lessonSubject" class="form-control" required>
+                <option value="">-- Выберите предмет --</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Класс:</label>
+            <select id="lessonClass" class="form-control" required>
+                <option value="">-- Выберите класс --</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Кабинет:</label>
+            <input type="text" id="lessonClassroom" class="form-control" placeholder="каб. 201" required>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button class="btn btn-primary" onclick="addLesson()" style="flex: 1;">Добавить</button>
+            <button class="btn btn-secondary" onclick="hideAddLessonModal()" style="flex: 1;">Отмена</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentTeacherId = null;
+    let currentClassId = null;
+    const token = localStorage.getItem('token');
+
+    // Проверка авторизации
+    if (!token) {
+        window.location.href = '/login.html';
+    }
+
+    // Загрузка при старте
+    document.addEventListener('DOMContentLoaded', function() {
+        loadTeachers();
+        loadClasses();
+        document.getElementById('scheduleDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('teacherScheduleDate').value = new Date().toISOString().split('T')[0];
+    });
+
+    // Загрузка списка учителей
+    async function loadTeachers() {
+        try {
+            const response = await fetch('/api/users?role=teacher', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                const teachers = await response.json();
+                displayTeachers(teachers);
+            } else {
+                showError('Ошибка загрузки учителей');
+            }
+        } catch (error) {
+            showError('Ошибка соединения');
+        }
+    }
+
+    // Отображение списка учителей
+    function displayTeachers(teachers) {
+        const teacherList = document.getElementById('teacherList');
+        teacherList.innerHTML = '';
+
+        teachers.forEach(teacher => {
+            const teacherItem = document.createElement('div');
+            teacherItem.className = 'teacher-item';
+            teacherItem.onclick = () => selectTeacher(teacher);
+
+            teacherItem.innerHTML = `
+                    <div class="teacher-name">${teacher.firstName} ${teacher.lastName}</div>
+                    <div class="teacher-subject">${teacher.roles && teacher.roles.length > 0 ? teacher.roles[0] : 'Учитель'}</div>
+                `;
+
+            teacherList.appendChild(teacherItem);
+        });
+    }
+
+    // Выбор учителя
+    function selectTeacher(teacher) {
+        // Снимаем выделение со всех учителей
+        document.querySelectorAll('.teacher-item').forEach(item => {
+            item.classList.remove('active');
+        });
+
+        // Выделяем выбранного учителя
+        event.currentTarget.classList.add('active');
+
+        currentTeacherId = teacher.id;
+        document.getElementById('selected-teacher-name').textContent = `Расписание: ${teacher.firstName} ${teacher.lastName}`;
+
+        // Показываем расписание учителя
+        document.getElementById('no-selection').style.display = 'none';
+        document.getElementById('class-schedule').style.display = 'none';
+        document.getElementById('teacher-schedule').style.display = 'block';
+
+        loadTeacherSchedule();
+    }
+
+    // Загрузка расписания учителя
+    async function loadTeacherSchedule() {
+        if (!currentTeacherId) return;
+
+        const date = document.getElementById('teacherScheduleDate').value;
+
+        try {
+            const response = await fetch(`/api/admin/schedule/teacher/${currentTeacherId}?date=${date}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                const schedule = await response.json();
+                displayTeacherSchedule(schedule);
+            } else {
+                showError('Ошибка загрузки расписания');
+            }
+        } catch (error) {
+            showError('Ошибка соединения');
+        }
+    }
+
+    // Отображение расписания учителя
+    // Отображение расписания учителя - ИСПРАВЛЕННАЯ ВЕРСИЯ
+    function displayTeacherSchedule(lessons) {
+        const content = document.getElementById('teacher-schedule-content');
+
+        if (lessons.length === 0) {
+            content.innerHTML = '<div class="loading">Нет уроков на выбранную дату</div>';
+            return;
+        }
+
+        // Группируем уроки по датам
+        const lessonsByDate = {};
+        lessons.forEach(lesson => {
+            if (!lessonsByDate[lesson.date]) {
+                lessonsByDate[lesson.date] = [];
+            }
+            lessonsByDate[lesson.date].push(lesson);
+        });
+
+        let html = '<div class="schedule-view">';
+
+        // Сортируем даты
+        const sortedDates = Object.keys(lessonsByDate).sort();
+
+        sortedDates.forEach(date => {
+            const dateLessons = lessonsByDate[date];
+            const formattedDate = formatDate(date);
+
+            html += `
+            <div class="day-schedule">
+                <div class="day-header">
+                    ${formattedDate} (${getRussianDayOfWeek(dateLessons[0].dayOfWeek)})
+                </div>
+                <div class="lessons-list">
+        `;
+
+            // Сортируем уроки по времени
+            dateLessons.sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+            dateLessons.forEach(lesson => {
+                html += `
+                <div class="lesson-item">
+                    <div class="lesson-time">${lesson.startTime} - ${lesson.endTime}</div>
+                    <div class="lesson-info">
+                        <div class="lesson-subject">${lesson.subjectName}</div>
+                        <div class="lesson-details">
+                            ${lesson.className ? `Класс: ${lesson.className}` : ''}
+                            ${lesson.classroom ? `• Кабинет: ${lesson.classroom}` : ''}
+                        </div>
+                    </div>
+                    <button class="btn btn-danger btn-small" onclick="deleteLesson(${lesson.id})"
+                            style="padding: 5px 10px; font-size: 12px;">Удалить</button>
+                </div>
+            `;
+            });
+
+            html += `
+                </div>
+            </div>
+        `;
+        });
+
+        html += '</div>';
+        content.innerHTML = html;
+    }
+
+    // Функция для получения русского названия дня недели
+    function getRussianDayOfWeek(englishDay) {
+        const days = {
+            'MONDAY': 'Понедельник',
+            'TUESDAY': 'Вторник',
+            'WEDNESDAY': 'Среда',
+            'THURSDAY': 'Четверг',
+            'FRIDAY': 'Пятница',
+            'SATURDAY': 'Суббота',
+            'SUNDAY': 'Воскресенье'
+        };
+        return days[englishDay] || englishDay;
+    }
+
+    // Форматирование даты
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('ru-RU', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+    }
+
+    // Вспомогательная функция для определения дня недели
+    function getDayOfWeek(dayId) {
+        // Здесь должна быть логика определения дня недели по dayId
+        // Пока используем простую заглушку
+        return 1;
+    }
+
+    // Поиск учителей
+    function searchTeachers() {
+        const searchText = document.getElementById('teacherSearch').value.toLowerCase();
+        const teacherItems = document.querySelectorAll('.teacher-item');
+
+        teacherItems.forEach(item => {
+            const teacherName = item.querySelector('.teacher-name').textContent.toLowerCase();
+            const teacherSubject = item.querySelector('.teacher-subject').textContent.toLowerCase();
+
+            if (teacherName.includes(searchText) || teacherSubject.includes(searchText)) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+
+    // Переключение вкладок
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+        document.querySelector(`.tab[onclick="switchTab('${tabName}')"]`).classList.add('active');
+        document.getElementById(`${tabName}-tab`).classList.add('active');
+    }
+
+    // Загрузка списка классов
+    async function loadClasses() {
+        try {
+            const response = await fetch('/api/school-classes', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                const classes = await response.json();
+                displayClasses(classes);
+            }
+        } catch (error) {
+            console.error('Error loading classes:', error);
+        }
+    }
+
+    function displayClasses(classes) {
+        const classSelect = document.getElementById('classSelect');
+        const lessonClass = document.getElementById('lessonClass');
+
+        classes.forEach(cls => {
+            const option = document.createElement('option');
+            option.value = cls.id;
+            option.textContent = cls.name;
+
+            classSelect.appendChild(option.cloneNode(true));
+            lessonClass.appendChild(option);
+        });
+    }
+
+    // Загрузка расписания класса
+    async function loadClassSchedule() {
+        const classId = document.getElementById('classSelect').value;
+        const date = document.getElementById('scheduleDate').value;
+
+        if (!classId) return;
+
+        currentClassId = classId;
+        const className = document.getElementById('classSelect').selectedOptions[0].text;
+
+        document.getElementById('selected-class-name').textContent = `Расписание: ${className}`;
+        document.getElementById('no-selection').style.display = 'none';
+        document.getElementById('teacher-schedule').style.display = 'none';
+        document.getElementById('class-schedule').style.display = 'block';
+
+        // Здесь должна быть загрузка расписания класса
+        // Пока заглушка
+        document.getElementById('class-schedule-content').innerHTML = `
+                <div class="loading">Функциональность расписания классов в разработке</div>
+            `;
+    }
+
+    // Показать модальное окно добавления урока
+    async function showAddLessonModal() {
+        if (!currentTeacherId) return;
+
+        // Загружаем предметы
+        await loadSubjects();
+
+        document.getElementById('addLessonModal').style.display = 'block';
+    }
+
+    // Скрыть модальное окно
+    function hideAddLessonModal() {
+        document.getElementById('addLessonModal').style.display = 'none';
+    }
+
+    // Загрузка предметов
+    async function loadSubjects() {
+        try {
+            const response = await fetch('/api/subjects', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                const subjects = await response.json();
+                const subjectSelect = document.getElementById('lessonSubject');
+                subjectSelect.innerHTML = '<option value="">-- Выберите предмет --</option>';
+
+                subjects.forEach(subject => {
+                    const option = document.createElement('option');
+                    option.value = subject.id;
+                    option.textContent = subject.name;
+                    subjectSelect.appendChild(option);
+                });
+            } else {
+                console.error('Error loading subjects:', response.status);
+                showError('Ошибка загрузки предметов');
+            }
+        } catch (error) {
+            console.error('Error loading subjects:', error);
+            showError('Ошибка соединения при загрузке предметов');
+        }
+    }
+
+    // Показать модальное окно добавления урока
+    async function showAddLessonModal() {
+        if (!currentTeacherId) {
+            showError('Сначала выберите учителя');
+            return;
+        }
+
+        console.log('Loading subjects for modal...');
+
+        // Загружаем предметы
+        await loadSubjects();
+
+        // Сбрасываем форму
+        document.getElementById('lessonSubject').value = '';
+        document.getElementById('lessonClass').value = '';
+        document.getElementById('lessonClassroom').value = '';
+        document.getElementById('lessonNumber').value = '1';
+        document.getElementById('lessonDate').value = new Date().toISOString().split('T')[0];
+
+        // Проверяем, загрузились ли предметы
+        const subjectSelect = document.getElementById('lessonSubject');
+        if (subjectSelect.options.length <= 1) {
+            console.warn('No subjects loaded');
+            showError('Не удалось загрузить список предметов');
+        } else {
+            console.log('Subjects loaded successfully:', subjectSelect.options.length - 1, 'items');
+        }
+
+        document.getElementById('addLessonModal').style.display = 'block';
+    }
+
+    // Добавление урока
+    // Добавление урока
+    async function addLesson() {
+        const lessonDate = document.getElementById('lessonDate').value;
+        const lessonNumber = document.getElementById('lessonNumber').value;
+        const subjectId = document.getElementById('lessonSubject').value;
+        const classId = document.getElementById('lessonClass').value;
+        const classroom = document.getElementById('lessonClassroom').value;
+
+        // Валидация
+        if (!lessonDate || !subjectId || !classId || !classroom) {
+            showError('Заполните все обязательные поля');
+            return;
+        }
+
+        try {
+            // Создаем или получаем dayId
+            const dayIdResponse = await fetch('/api/admin/schedule/day-id', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    date: lessonDate,
+                    classId: classId
+                })
+            });
+
+            if (!dayIdResponse.ok) {
+                const error = await dayIdResponse.json();
+                throw new Error(error.error || 'Ошибка создания расписания');
+            }
+
+            const dayIdData = await dayIdResponse.json();
+            const dayId = dayIdData.dayId;
+
+            console.log('Using dayId:', dayId);
+
+            const lessonData = {
+                teacherId: currentTeacherId,
+                dayId: dayId,
+                lessonNumber: parseInt(lessonNumber),
+                startTime: getStartTime(lessonNumber),
+                endTime: getEndTime(lessonNumber),
+                subjectId: parseInt(subjectId),
+                classId: parseInt(classId),
+                classroom: classroom
+            };
+
+            console.log('Sending lesson data:', lessonData);
+
+            const response = await fetch('/api/admin/schedule/teacher', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(lessonData)
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                showSuccess('Урок успешно добавлен');
+                hideAddLessonModal();
+                loadTeacherSchedule();
+            } else {
+                const error = await response.json();
+                console.error('Error response:', error);
+                showError(error.error || 'Ошибка добавления урока');
+            }
+        } catch (error) {
+            console.error('Error adding lesson:', error);
+            showError('Ошибка: ' + error.message);
+        }
+    }
+
+    // Удаление урока
+    async function deleteLesson(lessonId) {
+        if (!confirm('Вы уверены, что хотите удалить этот урок?')) return;
+
+        try {
+            const response = await fetch(`/api/admin/schedule/teacher/lesson/${lessonId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                showSuccess('Урок успешно удален');
+                loadTeacherSchedule();
+            } else {
+                showError('Ошибка удаления урока');
+            }
+        } catch (error) {
+            showError('Ошибка соединения');
+        }
+    }
+
+    // Вспомогательные функции для времени
+    function getStartTime(lessonNumber) {
+        const times = {
+            '1': '08:00:00', '2': '08:45:00', '3': '09:35:00',
+            '4': '10:20:00', '5': '11:10:00', '6': '11:55:00',
+            '7': '12:45:00', '8': '13:30:00'
+        };
+        return times[lessonNumber] || '08:00:00';
+    }
+
+    function getEndTime(lessonNumber) {
+        const times = {
+            '1': '08:40:00', '2': '09:25:00', '3': '10:15:00',
+            '4': '11:00:00', '5': '11:50:00', '6': '12:35:00',
+            '7': '13:25:00', '8': '14:10:00'
+        };
+        return times[lessonNumber] || '08:40:00';
+    }
+
+    // Утилиты
+    function showSuccess(message) {
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-success';
+        alert.textContent = message;
+        document.querySelector('.main-content').prepend(alert);
+        setTimeout(() => alert.remove(), 3000);
+    }
+
+    function showError(message) {
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-error';
+        alert.textContent = message;
+        document.querySelector('.main-content').prepend(alert);
+        setTimeout(() => alert.remove(), 3000);
+    }
+
+    function goBack() {
+        window.history.back();
+    }
+
+    function logout() {
+        localStorage.removeItem('token');
+        window.location.href = '/login.html';
+    }
+</script>
+</body>
+</html>

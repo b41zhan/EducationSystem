@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мое расписание - Учитель</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+            /* УБИРАЕМ ВСЕ ФИКСИРОВАННЫЕ ВЫСОТЫ */
+            height: auto;
+            min-height: auto;
+        }
+
+        .header {
+            background: white;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e1e5e9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 22px;
+        }
+
+        .content {
+            padding: 20px;
+            /* УБИРАЕМ ФИКСИРОВАННУЮ ВЫСОТУ */
+            height: auto;
+            min-height: auto;
+        }
+
+        /* ОСТАЛЬНЫЕ СТИЛИ ОСТАВЛЯЕМ КАК БЫЛО */
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .filters {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 15px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 500;
+            color: #333;
+            font-size: 13px;
+        }
+
+        .form-control {
+            padding: 8px 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .schedule-view {
+            margin-top: 15px;
+        }
+
+        .day-schedule {
+            margin-bottom: 20px;
+        }
+
+        .day-header {
+            background: #667eea;
+            color: white;
+            padding: 12px 15px;
+            border-radius: 8px 8px 0 0;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .lesson-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid #e1e5e9;
+            background: white;
+        }
+
+        .lesson-time {
+            width: 100px;
+            font-weight: bold;
+            color: #333;
+            font-size: 13px;
+        }
+
+        .lesson-info {
+            flex: 1;
+        }
+
+        .lesson-subject {
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .lesson-details {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .week-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+        }
+
+        .day-column {
+            background: white;
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            /* УБИРАЕМ ФИКСИРОВАННУЮ ВЫСОТУ */
+            height: auto;
+            min-height: auto;
+        }
+
+        .day-title {
+            background: #667eea;
+            color: white;
+            padding: 8px 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 13px;
+            border-radius: 8px 8px 0 0;
+            line-height: 1.3;
+        }
+
+        .day-lessons {
+            padding: 8px;
+            /* УБИРАЕМ ФИКСИРОВАННУЮ ВЫСОТУ */
+            height: auto;
+            min-height: auto;
+        }
+
+        .week-lesson {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 6px 8px;
+            border-radius: 4px;
+            margin-bottom: 6px;
+            font-size: 11px;
+        }
+
+        .week-lesson .time {
+            font-weight: bold;
+            font-size: 10px;
+        }
+
+        .week-lesson .subject {
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        .week-lesson .details {
+            font-size: 10px;
+            opacity: 0.9;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .toggle-btn {
+            padding: 6px 12px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 12px;
+        }
+
+        .toggle-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        /* ДОБАВЛЯЕМ МАКСИМАЛЬНУЮ ВЫСОТУ ДЛЯ ПРОКРУТКИ */
+        .day-lessons {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .day-lessons::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .day-lessons::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 2px;
+        }
+
+        .day-lessons::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 2px;
+        }
+
+        /* АДАПТИВНОСТЬ */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .week-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>📅 Мое расписание</h1>
+        <div class="header-actions">
+            <button class="btn btn-secondary" onclick="goBack()">← Назад</button>
+            <button class="btn btn-primary" onclick="logout()">Выйти</button>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="filters">
+            <div class="form-group">
+                <label>Период:</label>
+                <select id="periodSelect" class="form-control" onchange="loadSchedule()">
+                    <option value="day">На день</option>
+                    <option value="week">На неделю</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="dateGroup">
+                <label>Дата:</label>
+                <input type="date" id="scheduleDate" class="form-control" onchange="loadSchedule()">
+            </div>
+
+            <div class="form-group" id="weekGroup" style="display: none;">
+                <label>Неделя с:</label>
+                <input type="date" id="weekStartDate" class="form-control" onchange="loadSchedule()">
+            </div>
+        </div>
+
+        <div class="view-toggle">
+            <button class="toggle-btn active" onclick="switchView('day')">День</button>
+            <button class="toggle-btn" onclick="switchView('week')">Неделя</button>
+        </div>
+
+        <div id="schedule-content">
+            <div class="loading">Загрузка расписания...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const token = localStorage.getItem('token');
+    let currentView = 'day';
+
+    // Проверка авторизации
+    if (!token) {
+        window.location.href = '/login.html';
+    }
+
+    // Загрузка при старте
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('scheduleDate').value = new Date().toISOString().split('T')[0];
+
+        // Устанавливаем начало недели (понедельник)
+        const today = new Date();
+        const monday = new Date(today);
+        monday.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
+        document.getElementById('weekStartDate').value = monday.toISOString().split('T')[0];
+
+        loadSchedule();
+    });
+
+    // Переключение вида
+    function switchView(view) {
+        currentView = view;
+
+        // Обновляем кнопки
+        document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+
+        // Показываем/скрываем элементы управления
+        if (view === 'day') {
+            document.getElementById('dateGroup').style.display = 'block';
+            document.getElementById('weekGroup').style.display = 'none';
+        } else {
+            document.getElementById('dateGroup').style.display = 'none';
+            document.getElementById('weekGroup').style.display = 'block';
+        }
+
+        loadSchedule();
+    }
+
+    // Загрузка расписания
+    async function loadSchedule() {
+        const scheduleContent = document.getElementById('schedule-content');
+        scheduleContent.innerHTML = '<div class="loading">Загрузка расписания...</div>';
+
+        try {
+            let url;
+            if (currentView === 'day') {
+                const date = document.getElementById('scheduleDate').value;
+                url = `/api/teacher/schedule/my/day?date=${date}`;
+            } else {
+                const startDate = document.getElementById('weekStartDate').value;
+                url = `/api/teacher/schedule/my/week?startDate=${startDate}`;
+            }
+
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                const lessons = await response.json();
+                displaySchedule(lessons);
+            } else {
+                scheduleContent.innerHTML = '<div class="no-lessons">Ошибка загрузки расписания</div>';
+            }
+        } catch (error) {
+            scheduleContent.innerHTML = '<div class="no-lessons">Ошибка соединения</div>';
+        }
+    }
+
+    // Отображение расписания
+    function displaySchedule(lessons) {
+        const scheduleContent = document.getElementById('schedule-content');
+
+        if (lessons.length === 0) {
+            scheduleContent.innerHTML = '<div class="no-lessons">Нет уроков на выбранный период</div>';
+            return;
+        }
+
+        if (currentView === 'day') {
+            displayDayView(lessons);
+        } else {
+            displayWeekView(lessons);
+        }
+    }
+
+    // Отображение вида "День"
+    // Отображение вида "День" - ИСПРАВЛЕННАЯ ВЕРСИЯ
+    function displayDayView(lessons) {
+        const scheduleContent = document.getElementById('schedule-content');
+
+        // Сортируем уроки по времени
+        lessons.sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+        // Получаем дату из первого урока (все уроки на одну дату)
+        const lessonDate = lessons.length > 0 ? lessons[0].date : document.getElementById('scheduleDate').value;
+        const dayOfWeek = lessons.length > 0 ? lessons[0].dayOfWeek : '';
+
+        let html = `
+        <div class="day-schedule">
+            <div class="day-header">
+                ${formatDate(lessonDate)} ${dayOfWeek ? `(${getRussianDayOfWeek(dayOfWeek)})` : ''}
+            </div>
+            <div class="lessons-list">
+    `;
+
+        if (lessons.length === 0) {
+            html += '<div class="no-lessons">Нет уроков на этот день</div>';
+        } else {
+            lessons.forEach(lesson => {
+                html += `
+                <div class="lesson-item">
+                    <div class="lesson-time">${lesson.startTime} - ${lesson.endTime}</div>
+                    <div class="lesson-info">
+                        <div class="lesson-subject">${lesson.subjectName}</div>
+                        <div class="lesson-details">
+                            ${lesson.className ? `Класс: ${lesson.className}` : ''}
+                            ${lesson.classroom ? `• Кабинет: ${lesson.classroom}` : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+            });
+        }
+
+        html += `
+            </div>
+        </div>
+    `;
+
+        scheduleContent.innerHTML = html;
+    }
+
+    // Отображение вида "Неделя"
+    // Отображение вида "Неделя" - ИСПРАВЛЕННАЯ ВЕРСИЯ
+    function displayWeekView(lessons) {
+        const scheduleContent = document.getElementById('schedule-content');
+        const startDate = new Date(document.getElementById('weekStartDate').value);
+
+        // Группируем уроки по датам
+        const lessonsByDate = {};
+        lessons.forEach(lesson => {
+            if (!lessonsByDate[lesson.date]) {
+                lessonsByDate[lesson.date] = [];
+            }
+            lessonsByDate[lesson.date].push(lesson);
+        });
+
+        const dayNames = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+
+        let html = `
+        <div class="week-schedule">
+            <div class="week-grid">
+    `;
+
+        // Создаем колонки для каждого дня недели
+        for (let i = 0; i < 7; i++) {
+            const dayDate = new Date(startDate);
+            dayDate.setDate(startDate.getDate() + i);
+            const dateString = dayDate.toISOString().split('T')[0];
+
+            html += `
+            <div class="day-column">
+                <div class="day-title">
+                    ${dayNames[dayDate.getDay()]}<br>
+                    <small>${formatDate(dateString)}</small>
+                </div>
+                <div class="day-lessons">
+        `;
+
+            const dayLessons = lessonsByDate[dateString] || [];
+
+            if (dayLessons.length === 0) {
+                html += '<div class="no-lessons">Нет уроков</div>';
+            } else {
+                // Сортируем уроки по времени
+                dayLessons.sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+                dayLessons.forEach(lesson => {
+                    html += `
+                    <div class="week-lesson">
+                        <div class="time">${lesson.startTime}-${lesson.endTime}</div>
+                        <div class="subject">${lesson.subjectName}</div>
+                        <div class="details">
+                            ${lesson.className || ''} ${lesson.classroom ? `• ${lesson.classroom}` : ''}
+                        </div>
+                    </div>
+                `;
+                });
+            }
+
+            html += `
+                </div>
+            </div>
+        `;
+        }
+
+        html += `
+            </div>
+        </div>
+    `;
+
+        scheduleContent.innerHTML = html;
+    }
+
+    // Функция для получения русского названия дня недели
+    function getRussianDayOfWeek(englishDay) {
+        const days = {
+            'MONDAY': 'Понедельник',
+            'TUESDAY': 'Вторник',
+            'WEDNESDAY': 'Среда',
+            'THURSDAY': 'Четверг',
+            'FRIDAY': 'Пятница',
+            'SATURDAY': 'Суббота',
+            'SUNDAY': 'Воскресенье'
+        };
+        return days[englishDay] || englishDay;
+    }
+
+    // Форматирование даты
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('ru-RU', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+    }
+
+
+
+    // Утилиты
+    function goBack() {
+        window.history.back();
+    }
+
+    function logout() {
+        localStorage.removeItem('token');
+        window.location.href = '/login.html';
+    }
+</script>
+</body>
+</html>
