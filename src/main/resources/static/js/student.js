@@ -13,6 +13,43 @@ async function initializeStudentDashboard() {
     }
 }
 
+async function loadProgressPreview() {
+    try {
+        const response = await fetch('/api/gamification/student/stats', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+            const stats = await response.json();
+
+            document.getElementById('progressPreview').innerHTML = `
+                <div style="text-align: center; padding: 20px;">
+                    <div style="font-size: 32px; font-weight: bold; color: #667eea; margin-bottom: 10px;">
+                        Уровень ${stats.level}
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px;">
+                            <span>${stats.currentLevelXp} XP</span>
+                            <span>${stats.nextLevelXp} XP</span>
+                        </div>
+                        <div style="height: 8px; background: #f0f0f0; border-radius: 4px; overflow: hidden;">
+                            <div style="height: 100%; background: #667eea; width: ${Math.round((stats.currentLevelXp / stats.nextLevelXp) * 100)}%"></div>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 14px;">
+                        <div>${stats.completedAssignments} заданий</div>
+                        <div>${stats.achievementsUnlocked} достижений</div>
+                    </div>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading progress preview:', error);
+    }
+}
+
+loadProgressPreview();
+
 async function loadStudentInfo() {
     try {
         console.log('Loading student info...');

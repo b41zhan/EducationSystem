@@ -20,6 +20,7 @@ public class SubmissionService {
     private final TeacherRepository teacherRepository;
     private final NotificationRepository notificationRepository; // ДОБАВЛЕНО
     private final UserRepository userRepository; // ДОБАВЛЕНО
+    private final GamificationService gamificationService;
 
     private static final Logger logger = LoggerFactory.getLogger(SubmissionService.class); // ДОБАВЛЕНО
 
@@ -29,7 +30,8 @@ public class SubmissionService {
                              StudentRepository studentRepository,
                              TeacherRepository teacherRepository,
                              NotificationRepository notificationRepository,
-                             UserRepository userRepository) {
+                             UserRepository userRepository,
+                             GamificationService gamificationService) {
         this.submissionRepository = submissionRepository;
         this.gradeRepository = gradeRepository;
         this.assignmentRepository = assignmentRepository;
@@ -37,6 +39,7 @@ public class SubmissionService {
         this.teacherRepository = teacherRepository;
         this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
+        this.gamificationService = gamificationService;
     }
 
     public SubmissionDTO convertToDTO(Submission submission) {
@@ -81,6 +84,8 @@ public class SubmissionService {
         return submissionRepository.save(submission);
     }
 
+
+
     public Grade gradeSubmission(GradeDTO gradeDTO, Long teacherId) {
         Submission submission = submissionRepository.findById(gradeDTO.getSubmissionId())
                 .orElseThrow(() -> new RuntimeException("Submission not found"));
@@ -108,6 +113,13 @@ public class SubmissionService {
         Grade savedGrade = gradeRepository.save(grade);
 
         createGradeNotification(submission, gradeDTO.getGradeValue());
+
+        // В метод gradeSubmission добавьте после оценки:
+        gamificationService.updateStudentProgress(
+                submission.getStudent().getId(),
+                submission.getAssignment().getId(),
+                gradeDTO.getGradeValue()
+        );
 
         return savedGrade;
     }

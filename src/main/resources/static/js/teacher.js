@@ -45,6 +45,37 @@ async function loadTeacherAssignments() {
     }
 }
 
+async function loadGamificationPreview() {
+    try {
+        const response = await fetch('/api/gamification/leaderboard?classId=' + currentClassId, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+            const leaderboard = await response.json();
+            const top5 = leaderboard.slice(0, 5);
+
+            document.getElementById('gamificationPreview').innerHTML = `
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    ${top5.map((student, index) => `
+                        <div style="display: flex; align-items: center; gap: 10px; padding: 8px; background: #f8f9fa; border-radius: 6px;">
+                            <span style="font-weight: bold; color: #667eea;">${index + 1}</span>
+                            <span style="flex: 1;">${student.studentName}</span>
+                            <span style="font-weight: bold;">${student.totalXp} XP</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading gamification preview:', error);
+    }
+}
+
+// Вызовите эту функцию при загрузке страницы статистики
+loadGamificationPreview();
+
+
 // Функция поиска заданий
 function searchTeacherAssignments() {
     const searchTerm = document.getElementById('searchAssignments').value.toLowerCase().trim();
