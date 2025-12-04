@@ -4,458 +4,56 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Геймификация - Education System</title>
-    <style>
-        /* Основные стили */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f6fa;
-            color: #333;
-            line-height: 1.6;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        /* Header */
-        .header {
-            background: white;
-            padding: 20px 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-        }
-
-        .nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-            color: #667eea;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 20px;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: #333;
-            padding: 8px 16px;
-            border-radius: 6px;
-            transition: background 0.3s;
-        }
-
-        .nav-links a:hover,
-        .nav-links a.active {
-            background: #667eea;
-            color: white;
-        }
-
-        /* Cards */
-        .card {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 24px;
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .card-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: #333;
-        }
-
-        /* Stats Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .stat-item {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 32px;
-            font-weight: bold;
-            color: #667eea;
-            margin-bottom: 8px;
-        }
-
-        .stat-label {
-            font-size: 14px;
-            color: #666;
-            text-transform: uppercase;
-        }
-
-        /* Progress Bar */
-        .progress-container {
-            margin: 20px 0;
-        }
-
-        .progress-info {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-
-        .progress-bar {
-            height: 8px;
-            background: #f0f0f0;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            transition: width 0.3s ease;
-        }
-
-        /* Level Badge */
-        .level-badge {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        /* Achievements */
-        .achievements-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 16px;
-        }
-
-        .achievement-card {
-            display: flex;
-            background: white;
-            border-radius: 8px;
-            padding: 16px;
-            border: 2px solid #f0f0f0;
-            transition: all 0.3s ease;
-        }
-
-        .achievement-card.unlocked {
-            border-color: #667eea;
-            background: #f8f9ff;
-        }
-
-        .achievement-icon {
-            width: 50px;
-            height: 50px;
-            margin-right: 16px;
-            border-radius: 8px;
-            background: #f0f0f0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-        }
-
-        .achievement-content {
-            flex: 1;
-        }
-
-        .achievement-name {
-            font-weight: bold;
-            margin-bottom: 4px;
-        }
-
-        .achievement-desc {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 8px;
-        }
-
-        .achievement-status {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .status-unlocked {
-            background: #4caf50;
-            color: white;
-        }
-
-        .status-locked {
-            background: #f0f0f0;
-            color: #999;
-        }
-
-        /* Leaderboard */
-        .leaderboard {
-            margin-top: 20px;
-        }
-
-        .leaderboard-item {
-            display: grid;
-            grid-template-columns: 50px 50px 1fr auto auto;
-            align-items: center;
-            padding: 16px;
-            border-bottom: 1px solid #f0f0f0;
-            gap: 16px;
-        }
-
-        .leaderboard-item:last-child {
-            border-bottom: none;
-        }
-
-        .rank {
-            font-weight: bold;
-            color: #667eea;
-            font-size: 18px;
-        }
-
-        .student-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #667eea;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-
-        .student-info {
-            text-align: left;
-        }
-
-        .student-name {
-            font-weight: bold;
-            margin-bottom: 2px;
-        }
-
-        .student-class {
-            font-size: 12px;
-            color: #666;
-        }
-
-        .student-stats {
-            text-align: right;
-        }
-
-        .xp {
-            font-weight: bold;
-            color: #667eea;
-        }
-
-        .level {
-            font-size: 12px;
-            color: #666;
-        }
-
-        .achievements-count {
-            font-size: 14px;
-        }
-
-        /* Tabs */
-        .tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .tab-btn {
-            padding: 12px 24px;
-            background: none;
-            border: none;
-            border-bottom: 2px solid transparent;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .tab-btn.active {
-            border-bottom-color: #667eea;
-            color: #667eea;
-            font-weight: bold;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        /* Filters */
-        .filters {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 20px;
-        }
-
-        .filter-select {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            background: white;
-        }
-
-        /* Buttons */
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.3s;
-        }
-
-        .btn-primary {
-            background: #667eea;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #5a6fd8;
-        }
-
-        .btn-outline {
-            background: white;
-            border: 1px solid #667eea;
-            color: #667eea;
-        }
-
-        .btn-outline:hover {
-            background: #667eea;
-            color: white;
-        }
-
-        /* Podium */
-        .podium {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .podium-item {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            position: relative;
-        }
-
-        .podium-item.place-1 {
-            transform: translateY(-10px);
-            border: 2px solid #ffd700;
-        }
-
-        .podium-item.place-2 {
-            border: 2px solid #c0c0c0;
-        }
-
-        .podium-item.place-3 {
-            border: 2px solid #cd7f32;
-        }
-
-        .podium-rank {
-            position: absolute;
-            top: -15px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #667eea;
-            color: white;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .stats-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-
-            .achievements-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .podium {
-                grid-template-columns: 1fr;
-            }
-
-            .leaderboard-item {
-                grid-template-columns: 40px 40px 1fr;
-                gap: 12px;
-            }
-
-            .student-stats,
-            .achievements-count {
-                display: none;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="/css/teacher-gamification.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-<!-- Header -->
+
+<!-- Хэдер как в других страницах -->
 <header class="header">
     <div class="container">
         <nav class="nav">
-            <div class="logo">EducationSystem</div>
+            <div class="logo">
+                <i class="fas fa-graduation-cap"></i>
+                <span>EducationSystem</span>
+            </div>
             <div class="nav-links">
-                <a href="dashboard.html">Главная</a>
-                <a href="assignments.html">Задания</a>
-                <a href="schedule.html">Расписание</a>
-                <a href="statistics.html">Статистика</a>
-                <a href="gamification.html" class="active">Геймификация</a>
-                <a href="profile.html">Профиль</a>
+                <a href="/student-dashboard.html">
+                    <i class="fas fa-home"></i> Главная
+                </a>
+                <a href="/assignments.html">
+                    <i class="fas fa-tasks"></i> Задания
+                </a>
+                <a href="/schedule.html">
+                    <i class="fas fa-calendar-alt"></i> Расписание
+                </a>
+                <a href="/statistics.html">
+                    <i class="fas fa-chart-bar"></i> Статистика
+                </a>
+                <a href="/gamification.html" class="active">
+                    <i class="fas fa-gamepad"></i> Геймификация
+                </a>
+                <a href="/profile.html">
+                    <i class="fas fa-user"></i> Профиль
+                </a>
             </div>
         </nav>
     </div>
 </header>
 
 <div class="container">
-    <!-- Основная статистика студента -->
+    <!-- Моя статистика -->
     <div class="card">
         <div class="card-header">
-            <h2 class="card-title">Мой прогресс</h2>
-            <div class="level-badge">Уровень <span id="currentLevel">1</span></div>
+            <h2 class="card-title">
+                <i class="fas fa-chart-line"></i> Мой прогресс
+            </h2>
+            <div class="stats-badge level-badge">
+                <i class="fas fa-crown"></i> Уровень <span id="currentLevel">1</span>
+            </div>
         </div>
 
+        <!-- Прогресс бар -->
         <div class="progress-container">
             <div class="progress-info">
                 <span id="currentXP">0</span> XP
@@ -466,7 +64,8 @@
             </div>
         </div>
 
-        <div class="stats-grid">
+        <!-- Статистика -->
+        <div class="teacher-stats-grid">
             <div class="stat-item">
                 <div class="stat-value" id="completedAssignments">0</div>
                 <div class="stat-label">Выполнено заданий</div>
@@ -486,24 +85,32 @@
         </div>
     </div>
 
-    <!-- Табы для переключения между разделами -->
+    <!-- Табы -->
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('achievements')">Достижения</button>
-        <button class="tab-btn" onclick="switchTab('leaderboard')">Таблица лидеров</button>
-        <button class="tab-btn" onclick="switchTab('stats')">Подробная статистика</button>
+        <button class="tab-btn active" onclick="switchTab('achievements')">
+            <i class="fas fa-medal"></i> Достижения
+        </button>
+        <button class="tab-btn" onclick="switchTab('leaderboard')">
+            <i class="fas fa-trophy"></i> Таблица лидеров
+        </button>
+        <button class="tab-btn" onclick="switchTab('stats')">
+            <i class="fas fa-chart-pie"></i> Подробная статистика
+        </button>
     </div>
 
     <!-- Достижения -->
     <div id="achievements-tab" class="tab-content active">
         <div class="card">
             <div class="card-header">
-                <h2 class="card-title">Достижения</h2>
-                <div class="progress-info">
-                    <span id="unlockedCount">0</span> из <span id="totalAchievements">0</span> открыто
+                <h2 class="card-title">
+                    <i class="fas fa-medal"></i> Достижения
+                </h2>
+                <div class="stats-badge" id="achievementsStats">
+                    <span class="badge-count">0</span> из <span class="badge-total">0</span> открыто
                 </div>
             </div>
 
-            <div class="filters">
+            <div class="filter-group">
                 <select class="filter-select" onchange="filterAchievements(this.value)">
                     <option value="all">Все достижения</option>
                     <option value="assignments">Задания</option>
@@ -513,32 +120,24 @@
                 </select>
             </div>
 
-            <div class="achievements-grid" id="achievementsList">
-                <!-- Достижения будут загружены через JavaScript -->
-            </div>
+            <div class="achievements-grid" id="achievementsList"></div>
         </div>
     </div>
 
-    <!-- Таблица лидеров -->
+    <!-- Лидерборд -->
     <div id="leaderboard-tab" class="tab-content">
         <div class="card">
             <div class="card-header">
-                <h2 class="card-title">Таблица лидеров</h2>
+                <h2 class="card-title">
+                    <i class="fas fa-trophy"></i> Таблица лидеров
+                </h2>
                 <select class="filter-select" onchange="loadLeaderboard(this.value)">
                     <option value="">Все классы</option>
-                    <!-- Опции классов будут загружены через JavaScript -->
                 </select>
             </div>
 
-            <!-- Подиум для топ-3 -->
-            <div class="podium" id="podium">
-                <!-- Топ-3 студентов будут загружены через JavaScript -->
-            </div>
-
-            <!-- Остальные участники -->
-            <div class="leaderboard" id="leaderboardList">
-                <!-- Остальные студенты будут загружены через JavaScript -->
-            </div>
+            <div class="podium" id="podium"></div>
+            <div class="leaderboard" id="leaderboardList"></div>
         </div>
     </div>
 
@@ -546,10 +145,12 @@
     <div id="stats-tab" class="tab-content">
         <div class="card">
             <div class="card-header">
-                <h2 class="card-title">Подробная статистика</h2>
+                <h2 class="card-title">
+                    <i class="fas fa-chart-pie"></i> Подробная статистика
+                </h2>
             </div>
 
-            <div class="stats-grid">
+            <div class="teacher-stats-grid">
                 <div class="stat-item">
                     <div class="stat-value" id="totalXP">0</div>
                     <div class="stat-label">Всего XP</div>
@@ -564,330 +165,22 @@
                 </div>
                 <div class="stat-item">
                     <div class="stat-value" id="completionRate">0%</div>
-                    <div class="stat-label">Процент завершения</div>
+                    <div class="stat-label">Завершено</div>
                 </div>
             </div>
 
-            <h3 style="margin: 20px 0 10px 0;">Последние достижения</h3>
-            <div id="recentAchievements">
-                <!-- Последние достижения будут загружены через JavaScript -->
+            <div class="card-header" style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+                <h3 class="card-title" style="font-size: 1rem;">
+                    <i class="fas fa-history"></i> Последние достижения
+                </h3>
             </div>
+            <div id="recentAchievements" class="achievements-grid"></div>
         </div>
     </div>
+
 </div>
 
-<script>
-    // Токен аутентификации
-    const token = localStorage.getItem('token');
+<script src="/js/gamification.js"></script>
 
-    // Основные данные
-    let userStats = null;
-    let achievements = [];
-    let leaderboard = [];
-    let classes = [];
-
-    // Инициализация при загрузке страницы
-    document.addEventListener('DOMContentLoaded', function() {
-        if (!token) {
-            window.location.href = 'login.html';
-            return;
-        }
-
-        loadUserStats();
-        loadAchievements();
-        loadClasses();
-        loadLeaderboard();
-    });
-
-    // Загрузка статистики пользователя
-    async function loadUserStats() {
-        try {
-            const response = await fetch('/api/gamification/student/stats', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (response.ok) {
-                userStats = await response.json();
-                updateUserStats();
-            } else {
-                throw new Error('Failed to load stats');
-            }
-        } catch (error) {
-            console.error('Error loading user stats:', error);
-            showError('Ошибка загрузки статистики');
-        }
-    }
-
-    // Обновление статистики на странице
-    function updateUserStats() {
-        if (!userStats) return;
-
-        // Основная статистика
-        document.getElementById('currentLevel').textContent = userStats.level;
-        document.getElementById('currentXP').textContent = userStats.currentLevelXp;
-        document.getElementById('nextLevelXP').textContent = userStats.nextLevelXp;
-        document.getElementById('completedAssignments').textContent = userStats.completedAssignments;
-        document.getElementById('perfectAssignments').textContent = userStats.perfectAssignments;
-        document.getElementById('currentStreak').textContent = userStats.currentStreak;
-        document.getElementById('achievementsCount').textContent = `${userStats.achievementsUnlocked}/${userStats.totalAchievements}`;
-
-        // Прогресс бар
-        const progressPercentage = Math.round((userStats.currentLevelXp / userStats.nextLevelXp) * 100);
-        document.getElementById('xpProgress').style.width = `${progressPercentage}%`;
-
-        // Подробная статистика
-        document.getElementById('totalXP').textContent = userStats.totalXp;
-        document.getElementById('maxStreak').textContent = userStats.maxStreak;
-        document.getElementById('rankPosition').textContent = userStats.rank;
-        document.getElementById('completionRate').textContent =
-            Math.round((userStats.achievementsUnlocked / userStats.totalAchievements) * 100) + '%';
-
-        // Последние достижения
-        updateRecentAchievements();
-    }
-
-    // Загрузка достижений
-    async function loadAchievements() {
-        try {
-            const response = await fetch('/api/gamification/student/achievements', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (response.ok) {
-                achievements = await response.json();
-                displayAchievements('all');
-                updateAchievementsCount();
-            }
-        } catch (error) {
-            console.error('Error loading achievements:', error);
-        }
-    }
-
-    // Отображение достижений
-    function displayAchievements(filter) {
-        const container = document.getElementById('achievementsList');
-        const filteredAchievements = filter === 'all'
-            ? achievements
-            : achievements.filter(a => a.type === filter);
-
-        container.innerHTML = '';
-
-        filteredAchievements.forEach(achievement => {
-            const achievementEl = document.createElement('div');
-            achievementEl.className = `achievement-card ${achievement.unlocked ? 'unlocked' : ''}`;
-
-            achievementEl.innerHTML = `
-                    <div class="achievement-icon">
-                        ${achievement.unlocked ? '🏆' : '🔒'}
-                    </div>
-                    <div class="achievement-content">
-                        <div class="achievement-name">${achievement.name}</div>
-                        <div class="achievement-desc">${achievement.description}</div>
-                        <div class="progress-container">
-                            <div class="progress-info">
-                                <span>${achievement.progress}/${achievement.requiredValue}</span>
-                                <span>${achievement.progressPercentage}%</span>
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: ${achievement.progressPercentage}%"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="achievement-status ${achievement.unlocked ? 'status-unlocked' : 'status-locked'}">
-                        ${achievement.unlocked ? 'Получено' : 'Заблокировано'}
-                    </div>
-                `;
-
-            container.appendChild(achievementEl);
-        });
-    }
-
-    // Обновление счетчика достижений
-    function updateAchievementsCount() {
-        const unlocked = achievements.filter(a => a.unlocked).length;
-        const total = achievements.length;
-
-        document.getElementById('unlockedCount').textContent = unlocked;
-        document.getElementById('totalAchievements').textContent = total;
-    }
-
-    // Загрузка классов
-    async function loadClasses() {
-        try {
-            const response = await fetch('/api/school-classes', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (response.ok) {
-                classes = await response.json();
-                updateClassFilter();
-            }
-        } catch (error) {
-            console.error('Error loading classes:', error);
-        }
-    }
-
-    // Обновление фильтра классов
-    function updateClassFilter() {
-        const select = document.querySelector('#leaderboard-tab .filter-select');
-        select.innerHTML = '<option value="">Все классы</option>';
-
-        classes.forEach(schoolClass => {
-            const option = document.createElement('option');
-            option.value = schoolClass.id;
-            option.textContent = schoolClass.name;
-            select.appendChild(option);
-        });
-    }
-
-    // Загрузка таблицы лидеров
-    async function loadLeaderboard(classId = '') {
-        try {
-            const url = classId
-                ? `/api/gamification/leaderboard?classId=${classId}`
-                : '/api/gamification/leaderboard';
-
-            const response = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (response.ok) {
-                leaderboard = await response.json();
-                displayLeaderboard();
-            }
-        } catch (error) {
-            console.error('Error loading leaderboard:', error);
-        }
-    }
-
-    // Отображение таблицы лидеров
-    function displayLeaderboard() {
-        const podium = document.getElementById('podium');
-        const leaderboardList = document.getElementById('leaderboardList');
-
-        // Подиум (топ-3)
-        podium.innerHTML = '';
-        const topThree = leaderboard.slice(0, 3);
-
-        topThree.forEach((student, index) => {
-            const podiumItem = document.createElement('div');
-            podiumItem.className = `podium-item place-${index + 1}`;
-
-            podiumItem.innerHTML = `
-                    <div class="podium-rank">${index + 1}</div>
-                    <div class="student-avatar">${getInitials(student.studentName)}</div>
-                    <div class="student-info">
-                        <div class="student-name">${student.studentName}</div>
-                        <div class="student-class">${student.className}</div>
-                    </div>
-                    <div class="student-stats">
-                        <div class="xp">${student.totalXp} XP</div>
-                        <div class="level">Ур. ${student.level}</div>
-                    </div>
-                    <div class="achievements-count">
-                        ${student.achievementsCount} 🏆
-                    </div>
-                `;
-
-            podium.appendChild(podiumItem);
-        });
-
-        // Остальные участники
-        leaderboardList.innerHTML = '';
-        const remainingStudents = leaderboard.slice(3);
-
-        remainingStudents.forEach(student => {
-            const leaderboardItem = document.createElement('div');
-            leaderboardItem.className = 'leaderboard-item';
-
-            leaderboardItem.innerHTML = `
-                    <div class="rank">${student.rank}</div>
-                    <div class="student-avatar">${getInitials(student.studentName)}</div>
-                    <div class="student-info">
-                        <div class="student-name">${student.studentName}</div>
-                        <div class="student-class">${student.className}</div>
-                    </div>
-                    <div class="student-stats">
-                        <div class="xp">${student.totalXp} XP</div>
-                        <div class="level">Ур. ${student.level}</div>
-                    </div>
-                    <div class="achievements-count">
-                        ${student.achievementsCount} 🏆
-                    </div>
-                `;
-
-            leaderboardList.appendChild(leaderboardItem);
-        });
-    }
-
-    // Обновление последних достижений
-    function updateRecentAchievements() {
-        if (!userStats || !userStats.recentAchievements) return;
-
-        const container = document.getElementById('recentAchievements');
-        container.innerHTML = '';
-
-        userStats.recentAchievements.forEach(achievement => {
-            const achievementEl = document.createElement('div');
-            achievementEl.className = 'achievement-card unlocked';
-
-            achievementEl.innerHTML = `
-                    <div class="achievement-icon">🏆</div>
-                    <div class="achievement-content">
-                        <div class="achievement-name">${achievement.name}</div>
-                        <div class="achievement-desc">${achievement.description}</div>
-                    </div>
-                    <div class="achievement-status status-unlocked">Получено</div>
-                `;
-
-            container.appendChild(achievementEl);
-        });
-    }
-
-    // Вспомогательные функции
-    function switchTab(tabName) {
-        // Скрыть все табы
-        document.querySelectorAll('.tab-content').forEach(tab => {
-            tab.classList.remove('active');
-        });
-
-        // Убрать активный класс со всех кнопок
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-
-        // Показать выбранный таб
-        document.getElementById(`${tabName}-tab`).classList.add('active');
-
-        // Добавить активный класс к кнопке
-        event.target.classList.add('active');
-    }
-
-    function filterAchievements(type) {
-        displayAchievements(type);
-    }
-
-    function getInitials(name) {
-        return name.split(' ').map(n => n[0]).join('').toUpperCase();
-    }
-
-    function showError(message) {
-        alert(message);
-    }
-
-    // Автоматическое обновление данных каждые 30 секунд
-    setInterval(() => {
-        loadUserStats();
-        loadLeaderboard();
-    }, 30000);
-</script>
 </body>
 </html>

@@ -7,48 +7,13 @@ async function initializeStudentDashboard() {
     try {
         await loadStudentInfo();
         await loadStudentAssignments();
-        loadStudentGrades();
+        await loadStudentGrades();
+        await loadProgressPreview();
+        setupFileUpload();
     } catch (error) {
         console.error('Error initializing dashboard:', error);
     }
 }
-
-async function loadProgressPreview() {
-    try {
-        const response = await fetch('/api/gamification/student/stats', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (response.ok) {
-            const stats = await response.json();
-
-            document.getElementById('progressPreview').innerHTML = `
-                <div style="text-align: center; padding: 20px;">
-                    <div style="font-size: 32px; font-weight: bold; color: #667eea; margin-bottom: 10px;">
-                        Уровень ${stats.level}
-                    </div>
-                    <div style="margin-bottom: 15px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px;">
-                            <span>${stats.currentLevelXp} XP</span>
-                            <span>${stats.nextLevelXp} XP</span>
-                        </div>
-                        <div style="height: 8px; background: #f0f0f0; border-radius: 4px; overflow: hidden;">
-                            <div style="height: 100%; background: #667eea; width: ${Math.round((stats.currentLevelXp / stats.nextLevelXp) * 100)}%"></div>
-                        </div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 14px;">
-                        <div>${stats.completedAssignments} заданий</div>
-                        <div>${stats.achievementsUnlocked} достижений</div>
-                    </div>
-                </div>
-            `;
-        }
-    } catch (error) {
-        console.error('Error loading progress preview:', error);
-    }
-}
-
-loadProgressPreview();
 
 async function loadStudentInfo() {
     try {
@@ -83,7 +48,12 @@ async function loadStudentAssignments() {
         const assignmentsList = document.getElementById('active-assignments');
         const assignmentSelect = document.getElementById('assignmentSelect');
 
-        assignmentsList.innerHTML = '<p>Загрузка заданий...</p>';
+        assignmentsList.innerHTML = `
+            <div class="loading-state">
+                <i>⏳</i>
+                <p>Загрузка заданий...</p>
+            </div>
+        `;
         assignmentSelect.innerHTML = '<option value="">Загрузка...</option>';
 
         let assignments = [];
@@ -118,8 +88,13 @@ async function loadStudentAssignments() {
 
     } catch (error) {
         console.error('Error loading assignments:', error);
-        document.getElementById('active-assignments').innerHTML =
-            '<p>Ошибка загрузки заданий</p>';
+        document.getElementById('active-assignments').innerHTML = `
+            <div class="no-assignments">
+                <i>❌</i>
+                <h3>Ошибка загрузки</h3>
+                <p>Не удалось загрузить задания</p>
+            </div>
+        `;
         document.getElementById('assignmentSelect').innerHTML =
             '<option value="">Ошибка загрузки</option>';
     }
@@ -131,12 +106,16 @@ function displayAssignments(assignments) {
     if (!assignments || assignments.length === 0) {
         container.innerHTML = `
             <div class="no-assignments">
-                <p>Нет активных заданий</p>
-                <small>Все задания выполнены или ожидайте новых от учителя</small>
+                <i>🎉</i>
+                <h3>Нет активных заданий</h3>
+                <p>Все задания выполнены или ожидайте новых от учителя</p>
             </div>
         `;
         return;
     }
+
+    // Сортируем по дедлайну (сначала ближайшие)
+    assignments.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
 
     container.innerHTML = '';
 
@@ -144,29 +123,57 @@ function displayAssignments(assignments) {
         const deadline = new Date(assignment.deadline);
         const now = new Date();
         const isOverdue = deadline < now;
+        const daysLeft = Math.ceil((deadline - now) / (1000 * 60 * 60 * 24));
+
+        let status = 'active';
+        let statusText = 'АКТИВНО';
+
+        if (isOverdue) {
+            status = 'overdue';
+            statusText = 'ПРОСРОЧЕНО';
+        } else if (daysLeft <= 2) {
+            status = 'warning';
+            statusText = 'СКОРО СРОК';
+        }
 
         const assignmentElement = document.createElement('div');
         assignmentElement.className = 'assignment-item';
         assignmentElement.innerHTML = `
-            <div class="assignment-title">${assignment.title || 'Без названия'}</div>
+            <div class="assignment-header">
+                <div class="assignment-title">${assignment.title || 'Без названия'}</div>
+                <div class="assignment-status status-${status}">${statusText}</div>
+            </div>
             <div class="assignment-meta">
-                ${assignment.subjectName ? `Предмет: ${assignment.subjectName} | ` : ''}
-                Тип: ${getAssignmentType(assignment.type)} |
-                Макс. балл: ${assignment.maxGrade || 'N/A'}
+                <span>
+                    <i>📚</i> ${assignment.subjectName || 'Не указано'}
+                </span>
+                <span>
+                    <i>📝</i> ${getAssignmentType(assignment.type)}
+                </span>
+                <span>
+                    <i>⭐</i> Макс. балл: ${assignment.maxGrade || '100'}
+                </span>
             </div>
             <div class="assignment-description">
                 ${assignment.description || 'Описание отсутствует'}
             </div>
-            <div class="assignment-deadline ${isOverdue ? 'status-overdue' : ''}">
-                📅 Срок: ${deadline.toLocaleDateString('ru-RU')} 
-                ${isOverdue ? ' (ПРОСРОЧЕНО)' : ''}
-            </div>
-            <div class="assignment-status status-${isOverdue ? 'overdue' : 'active'}">
-                ${isOverdue ? 'ПРОСРОЧЕНО' : 'АКТИВНО'}
+            <div class="assignment-footer">
+                <div class="assignment-deadline">
+                    <i>📅</i> Срок: ${deadline.toLocaleDateString('ru-RU')}
+                    <span style="color: ${isOverdue ? 'var(--danger)' : daysLeft <= 2 ? 'var(--warning)' : 'var(--text-light)'}">
+                        (${isOverdue ? 'Просрочено' : `Осталось ${daysLeft} ${getDayWord(daysLeft)}`})
+                    </span>
+                </div>
             </div>
         `;
         container.appendChild(assignmentElement);
     });
+}
+
+function getDayWord(days) {
+    if (days === 1) return 'день';
+    if (days >= 2 && days <= 4) return 'дня';
+    return 'дней';
 }
 
 function updateAssignmentDropdown(assignments) {
@@ -174,10 +181,20 @@ function updateAssignmentDropdown(assignments) {
     select.innerHTML = '<option value="">Выберите задание</option>';
 
     if (assignments && assignments.length > 0) {
-        assignments.forEach(assignment => {
+        // Фильтруем только задания, которые еще не просрочены
+        const now = new Date();
+        const activeAssignments = assignments.filter(a => new Date(a.deadline) > now);
+
+        if (activeAssignments.length === 0) {
+            select.innerHTML = '<option value="">Нет активных заданий</option>';
+            return;
+        }
+
+        activeAssignments.forEach(assignment => {
+            const deadline = new Date(assignment.deadline);
             const option = document.createElement('option');
             option.value = assignment.id;
-            option.textContent = `${assignment.title} (до ${new Date(assignment.deadline).toLocaleDateString('ru-RU')})`;
+            option.textContent = `${assignment.title} (до ${deadline.toLocaleDateString('ru-RU')})`;
             select.appendChild(option);
         });
     } else {
@@ -188,12 +205,15 @@ function updateAssignmentDropdown(assignments) {
 function updateStats(assignments) {
     if (!assignments) assignments = [];
 
+    const now = new Date();
     const total = assignments.length;
-    const overdue = assignments.filter(a => new Date(a.deadline) < new Date()).length;
+    const overdue = assignments.filter(a => new Date(a.deadline) < now).length;
+    const completed = 0; // TODO: Get from API
 
     document.getElementById('total-assignments').textContent = total;
     document.getElementById('overdue-assignments').textContent = overdue;
-    document.getElementById('assignments-count').textContent = `(${total})`;
+    document.getElementById('completed-assignments').textContent = completed;
+    document.getElementById('assignments-count').textContent = total;
 }
 
 function getAssignmentType(type) {
@@ -209,62 +229,187 @@ function getAssignmentType(type) {
     return types[type] || type;
 }
 
-function loadStudentGrades() {
-    const grades = [
-        { assignment: 'Математика - ДЗ', grade: 95, comment: 'Отлично!', date: '2024-12-10' },
-        { assignment: 'Физика - Тест', grade: 87, comment: 'Хорошо', date: '2024-12-05' },
-        { assignment: 'Химия - СОР', grade: 92, comment: 'Отличная работа', date: '2024-11-28' }
-    ];
+async function loadStudentGrades() {
+    try {
+        const gradesList = document.getElementById('grades-list');
 
-    const container = document.getElementById('grades-list');
-    container.innerHTML = '';
+        // TODO: Replace with real API call
+        const grades = await ApiService.get('/students/grades');
 
-    grades.forEach(grade => {
-        const element = document.createElement('div');
-        element.className = 'assignment-item';
-        element.innerHTML = `
-            <div class="assignment-title">${grade.assignment}</div>
-            <div class="assignment-meta">
-                Оценка: <strong>${grade.grade}/100</strong> |
-                Дата: ${new Date(grade.date).toLocaleDateString('ru-RU')}
+        if (!grades || grades.length === 0) {
+            gradesList.innerHTML = `
+                <div class="no-assignments">
+                    <i>📊</i>
+                    <h3>Нет оценок</h3>
+                    <p>Здесь будут отображаться ваши оценки</p>
+                </div>
+            `;
+            return;
+        }
+
+        gradesList.innerHTML = '';
+
+        grades.forEach(grade => {
+            const gradeElement = document.createElement('div');
+            gradeElement.className = 'grade-item';
+            gradeElement.innerHTML = `
+                <div class="grade-header">
+                    <div class="grade-title">${grade.assignmentTitle}</div>
+                    <div class="grade-value">${grade.grade}/100</div>
+                </div>
+                <div class="grade-meta">
+                    <span><i>📅</i> ${new Date(grade.gradedAt).toLocaleDateString('ru-RU')}</span>
+                    <span><i>📚</i> ${grade.subjectName || ''}</span>
+                </div>
+                ${grade.comment ? `
+                <div class="grade-comment">
+                    <strong>Комментарий:</strong> ${grade.comment}
+                </div>
+                ` : ''}
+            `;
+            gradesList.appendChild(gradeElement);
+        });
+
+        // Calculate average grade
+        if (grades.length > 0) {
+            const average = Math.round(grades.reduce((sum, g) => sum + g.grade, 0) / grades.length);
+            document.getElementById('average-grade').textContent = average;
+        }
+
+    } catch (error) {
+        console.error('Error loading grades:', error);
+        document.getElementById('grades-list').innerHTML = `
+            <div class="no-assignments">
+                <i>❌</i>
+                <h3>Ошибка загрузки</h3>
+                <p>Не удалось загрузить оценки</p>
             </div>
-            <div>${grade.comment}</div>
         `;
-        container.appendChild(element);
+    }
+}
+
+async function loadProgressPreview() {
+    try {
+        const response = await fetch('/api/gamification/student/stats', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+
+        if (response.ok) {
+            const stats = await response.json();
+            const progressPercentage = Math.round((stats.currentLevelXp / stats.nextLevelXp) * 100);
+
+            document.getElementById('progressPreview').innerHTML = `
+                <div class="level-display">
+                    <div class="level-number">Уровень ${stats.level}</div>
+                    <div class="level-label">${stats.currentLevelXp} / ${stats.nextLevelXp} XP</div>
+                </div>
+                
+                <div class="xp-progress">
+                    <div class="xp-labels">
+                        <span>${stats.currentLevelXp} XP</span>
+                        <span>${stats.nextLevelXp} XP</span>
+                    </div>
+                    <div class="xp-bar">
+                        <div class="xp-fill" style="width: ${progressPercentage}%"></div>
+                    </div>
+                </div>
+                
+                <div class="stats-grid-small">
+                    <div class="stat-item-small">
+                        <div class="stat-value-small">${stats.completedAssignments}</div>
+                        <div class="stat-label-small">Выполнено</div>
+                    </div>
+                    <div class="stat-item-small">
+                        <div class="stat-value-small">${stats.achievementsUnlocked}</div>
+                        <div class="stat-label-small">Достижений</div>
+                    </div>
+                </div>
+            `;
+        } else {
+            throw new Error('Failed to load progress');
+        }
+    } catch (error) {
+        console.error('Error loading progress preview:', error);
+        document.getElementById('progressPreview').innerHTML = `
+            <div class="no-assignments">
+                <i>❌</i>
+                <h3>Не удалось загрузить прогресс</h3>
+            </div>
+        `;
+    }
+}
+
+function setupFileUpload() {
+    const fileInput = document.getElementById('assignmentFile');
+    const fileInfo = document.getElementById('file-info');
+
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const fileSizeMB = (file.size / 1024 / 1024).toFixed(2);
+
+            if (fileSizeMB > 10) {
+                fileInfo.innerHTML = `
+                    <div style="color: var(--danger);">
+                        <i>❌</i> Файл слишком большой (${fileSizeMB} MB). Максимум: 10MB
+                    </div>
+                `;
+                fileInput.value = '';
+            } else {
+                fileInfo.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <i>📎</i>
+                        <span style="font-weight: 500;">${file.name}</span>
+                        <span style="color: var(--text-light); font-size: 0.875rem;">
+                            (${fileSizeMB} MB)
+                        </span>
+                    </div>
+                `;
+            }
+        } else {
+            fileInfo.innerHTML = '';
+        }
     });
 }
 
-// ОБНОВЛЕННЫЙ ОБРАБОТЧИК ФОРМЫ - ДОБАВЛЕН КОММЕНТАРИЙ
+// Form submission handler
 document.getElementById('submitAssignmentForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
     const assignmentId = document.getElementById('assignmentSelect').value;
     const fileInput = document.getElementById('assignmentFile');
-    const comment = document.getElementById('assignmentComment').value; // ← ПОЛУЧАЕМ КОММЕНТАРИЙ
+    const comment = document.getElementById('assignmentComment').value;
+    const submitBtn = document.getElementById('submit-btn');
+    const submitMessage = document.getElementById('submit-message');
 
     if (!assignmentId) {
-        alert('Выберите задание');
+        submitMessage.innerHTML = `
+            <div class="form-message error">
+                <i>❌</i> Выберите задание
+            </div>
+        `;
+        submitMessage.style.display = 'block';
         return;
     }
 
     if (!fileInput.files[0]) {
-        alert('Выберите файл');
+        submitMessage.innerHTML = `
+            <div class="form-message error">
+                <i>❌</i> Выберите файл
+            </div>
+        `;
+        submitMessage.style.display = 'block';
         return;
     }
 
-    await submitAssignment(assignmentId, fileInput.files[0], comment);
+    await submitAssignment(assignmentId, fileInput.files[0], comment, submitBtn, submitMessage);
 });
 
-// ОБНОВЛЕННАЯ ФУНКЦИЯ submitAssignment - ДОБАВЛЕН ПАРАМЕТР comment
-async function submitAssignment(assignmentId, file, comment = '') {
-    const btn = document.querySelector('#submitAssignmentForm button');
-    btn.disabled = true;
-    btn.textContent = 'Отправка...';
+async function submitAssignment(assignmentId, file, comment = '', submitBtn, submitMessage) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i>⏳</i> Отправка...';
 
     try {
-        console.log('Starting file upload...', file);
-        console.log('Comment:', comment); // ← ЛОГИРУЕМ КОММЕНТАРИЙ
-
         const formData = new FormData();
         formData.append('file', file);
 
@@ -277,14 +422,13 @@ async function submitAssignment(assignmentId, file, comment = '') {
         });
 
         const uploadResult = await uploadResponse.json();
-        console.log('Upload result:', uploadResult);
 
         if (!uploadResponse.ok) {
-            throw new Error(uploadResult.error);
+            throw new Error(uploadResult.error || 'Ошибка загрузки файла');
         }
 
         if (!uploadResult.filePath) {
-            throw new Error('File path not returned from server');
+            throw new Error('Не удалось получить путь к файлу');
         }
 
         const submissionData = {
@@ -292,24 +436,41 @@ async function submitAssignment(assignmentId, file, comment = '') {
             filePath: uploadResult.filePath,
             fileName: uploadResult.fileName,
             fileSize: uploadResult.fileSize,
-            comment: comment // ← ПЕРЕДАЕМ КОММЕНТАРИЙ НА БЭКЕНД
+            comment: comment
         };
-
-        console.log('Submitting data:', submissionData);
 
         await ApiService.post('/submissions', submissionData);
 
-        alert('✅ Задание успешно сдано!');
-        document.getElementById('submitAssignmentForm').reset();
+        submitMessage.innerHTML = `
+            <div class="form-message success">
+                <i>✅</i> Задание успешно сдано!
+            </div>
+        `;
+        submitMessage.style.display = 'block';
 
-        await loadStudentAssignments(); // Обновляем список заданий
+        // Reset form
+        document.getElementById('submitAssignmentForm').reset();
+        document.getElementById('file-info').innerHTML = '';
+
+        // Reload assignments
+        await loadStudentAssignments();
+
+        // Hide message after 5 seconds
+        setTimeout(() => {
+            submitMessage.style.display = 'none';
+        }, 5000);
 
     } catch (error) {
         console.error('Submission error:', error);
-        alert('❌ Ошибка: ' + error.message);
+        submitMessage.innerHTML = `
+            <div class="form-message error">
+                <i>❌</i> Ошибка: ${error.message}
+            </div>
+        `;
+        submitMessage.style.display = 'block';
     } finally {
-        btn.disabled = false;
-        btn.textContent = 'Сдать задание';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i>📤</i> Сдать задание';
     }
 }
 

@@ -113,7 +113,6 @@ function getClassNameById(classId) {
     return classItem ? classItem.name : '';
 }
 
-// Функция отображения страницы с заданиями
 function displayTeacherAssignmentsPage(page) {
     const assignmentsList = document.getElementById('assignments-list');
     const pagination = document.getElementById('pagination');
@@ -144,12 +143,15 @@ function displayTeacherAssignmentsPage(page) {
         }
 
         assignmentsList.innerHTML = `
-            <div class="no-assignments">
-                <p>${message}</p>
-                <small>${!searchTerm && !classFilterValue ? 'Создайте первое задание, используя кнопку "Создать задание"' : 'Попробуйте изменить параметры поиска'}</small>
+            <div class="assignments-list">
+                <div class="no-assignments">
+                    <i>📋</i>
+                    <h3>${message}</h3>
+                    <small>${!searchTerm && !classFilterValue ? 'Создайте первое задание, используя кнопку "Создать задание"' : 'Попробуйте изменить параметры поиска'}</small>
+                </div>
             </div>
         `;
-        resultsInfo.textContent = '';
+        resultsInfo.innerHTML = '';
         pagination.style.display = 'none';
         return;
     }
@@ -159,7 +161,7 @@ function displayTeacherAssignmentsPage(page) {
     const classFilterValue = document.getElementById('classFilter').value;
     const className = classFilterValue ? getClassNameById(classFilterValue) : '';
 
-    let resultsText = `Найдено заданий: ${filteredAssignments.length}`;
+    let resultsText = `🔍 Найдено заданий: ${filteredAssignments.length}`;
     if (searchTerm || classFilterValue) {
         resultsText += ' (';
         if (searchTerm) resultsText += `поиск: "${searchTerm}"`;
@@ -168,7 +170,7 @@ function displayTeacherAssignmentsPage(page) {
         resultsText += ')';
     }
 
-    resultsInfo.textContent = resultsText;
+    resultsInfo.innerHTML = `<i>📊</i> ${resultsText}`;
 
     // Рассчитываем индексы для текущей страницы
     const totalPages = Math.ceil(filteredAssignments.length / assignmentsPerPage);
@@ -176,56 +178,178 @@ function displayTeacherAssignmentsPage(page) {
     const endIndex = Math.min(startIndex + assignmentsPerPage, filteredAssignments.length);
     const currentAssignments = filteredAssignments.slice(startIndex, endIndex);
 
-    // Отображаем задания
-    assignmentsList.innerHTML = '';
+    // Отображаем задания в табличном формате
+    assignmentsList.innerHTML = `
+        <div class="assignments-list">
+            <div class="assignments-header">
+                <div class="header-cell">
+                    <span>Название задания</span>
+                    <i>▼</i>
+                </div>
+                <div class="header-cell">
+                    <span>Класс</span>
+                </div>
+                <div class="header-cell">
+                    <span>Тип</span>
+                </div>
+                <div class="header-cell">
+                    <span>Макс. оценка</span>
+                </div>
+                <div class="header-cell">
+                    <span>Срок сдачи</span>
+                </div>
+                <div class="header-cell">
+                    <span>Действия</span>
+                </div>
+            </div>
+            <div class="assignments-table">
+                ${currentAssignments.map(assignment => {
+        const deadlineDate = assignment.deadline ? new Date(assignment.deadline) : null;
+        const isUrgent = deadlineDate ? isDeadlineUrgent(deadlineDate) : false;
 
-    currentAssignments.forEach(assignment => {
-        const assignmentElement = document.createElement('div');
-        assignmentElement.className = 'assignment-item';
-        assignmentElement.innerHTML = `
-            <div class="assignment-title">${assignment.title || 'Без названия'}</div>
-            <div class="assignment-meta">
-                Класс: ${assignment.className || 'Не указан'} |
-                Тип: ${getAssignmentTypeName(assignment.type)} |
-                Макс. оценка: ${assignment.maxGrade || 'N/A'}
+        return `
+                    <div class="assignment-row">
+                        <div class="assignment-cell">
+                            <div class="assignment-title">${assignment.title || 'Без названия'}</div>
+                            <div class="assignment-description">${assignment.description || 'Описание отсутствует'}</div>
+                        </div>
+                        <div class="assignment-cell">
+                            <div class="assignment-class">${assignment.className || getClassNameById(assignment.classId) || 'Не указан'}</div>
+                        </div>
+                        <div class="assignment-cell">
+                            <div class="assignment-type type-${assignment.type}">
+                                ${getAssignmentTypeName(assignment.type)}
+                            </div>
+                        </div>
+                        <div class="assignment-cell">
+                            <div class="assignment-grade">${assignment.maxGrade || '100'}</div>
+                        </div>
+                        <div class="assignment-cell">
+                            <div class="assignment-deadline">
+                                <span class="deadline-date">
+                                    ${deadlineDate ? deadlineDate.toLocaleDateString('ru-RU') : 'Не указан'}
+                                </span>
+                                ${deadlineDate ? `
+                                <span class="deadline-time">
+                                    ${deadlineDate.toLocaleTimeString('ru-RU', {
+            hour: '2-digit',
+            minute: '2-digit'
+        })}
+                                </span>
+                                ` : ''}
+                                ${isUrgent ? '<span class="deadline-urgent">СРОЧНО!</span>' : ''}
+                            </div>
+                        </div>
+                        <div class="assignment-cell">
+                            <div class="assignment-actions">
+                                <button class="btn-table btn-view" onclick="viewAssignmentSubmissions(${assignment.id})" title="Просмотреть сдачи">
+                                    <i>👁️</i>
+                                </button>
+                                <button class="btn-table btn-edit" onclick="editAssignment(${assignment.id})" title="Редактировать">
+                                    <i>✏️</i>
+                                </button>
+                                <button class="btn-table btn-delete" onclick="deleteAssignment(${assignment.id})" title="Удалить">
+                                    <i>🗑️</i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+    }).join('')}
             </div>
-            <div class="assignment-deadline">
-                Срок: ${assignment.deadline ? new Date(assignment.deadline).toLocaleDateString('ru-RU') : 'Не указан'}
-            </div>
-            <button class="btn-secondary" onclick="viewAssignmentSubmissions(${assignment.id})">
-                Просмотреть сдачи
-            </button>
-        `;
-        assignmentsList.appendChild(assignmentElement);
-    });
+        </div>
+    `;
 
     // Обновляем пагинацию
-    updatePagination(page, totalPages, filteredAssignments.length);
+    updatePagination(page, totalPages, filteredAssignments.length, startIndex, endIndex);
 }
 
-// Функция обновления пагинации
-function updatePagination(currentPage, totalPages, totalAssignments) {
+// Вспомогательная функция для определения срочности дедлайна
+function isDeadlineUrgent(deadlineDate) {
+    const now = new Date();
+    const diffHours = (deadlineDate - now) / (1000 * 60 * 60);
+    return diffHours > 0 && diffHours < 48; // Срочно если меньше 48 часов осталось
+}
+
+// Обновленная функция updatePagination для табличного формата
+function updatePagination(currentPage, totalPages, totalItems, startIndex, endIndex) {
     const pagination = document.getElementById('pagination');
-    const pageInfo = document.getElementById('page-info');
-    const prevButton = document.getElementById('prev-page');
-    const nextButton = document.getElementById('next-page');
 
     if (totalPages <= 1) {
         pagination.style.display = 'none';
-    } else {
-        pagination.style.display = 'flex';
-
-        // Обновляем информацию о странице
-        pageInfo.textContent = `Страница ${currentPage} из ${totalPages}`;
-
-        // Обновляем состояние кнопок
-        prevButton.disabled = currentPage === 1;
-        nextButton.disabled = currentPage === totalPages;
-
-        // Добавляем/убираем стили для disabled кнопок
-        prevButton.style.opacity = currentPage === 1 ? '0.5' : '1';
-        nextButton.style.opacity = currentPage === totalPages ? '0.5' : '1';
+        return;
     }
+
+    pagination.style.display = 'block';
+    pagination.innerHTML = `
+        <div class="table-pagination">
+            <div class="pagination-info">
+                Показано <strong>${startIndex + 1}-${endIndex}</strong> из <strong>${totalItems}</strong> заданий
+            </div>
+            <div class="pagination-controls">
+                <button class="pagination-btn" onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''}>
+                    <i>←</i>
+                </button>
+                
+                <div class="page-numbers">
+                    ${generatePageNumbers(currentPage, totalPages)}
+                </div>
+                
+                <button class="pagination-btn" onclick="changePage(1)" ${currentPage === totalPages ? 'disabled' : ''}>
+                    <i>→</i>
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function generatePageNumbers(currentPage, totalPages) {
+    let pages = [];
+
+    // Всегда показываем первую страницу
+    pages.push(1);
+
+    // Рассчитываем диапазон страниц вокруг текущей
+    let startPage = Math.max(2, currentPage - 1);
+    let endPage = Math.min(totalPages - 1, currentPage + 1);
+
+    // Добавляем ... если нужно
+    if (startPage > 2) {
+        pages.push('...');
+    }
+
+    // Добавляем страницы в диапазоне
+    for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+    }
+
+    // Добавляем ... если нужно
+    if (endPage < totalPages - 1) {
+        pages.push('...');
+    }
+
+    // Всегда показываем последнюю страницу, если есть
+    if (totalPages > 1) {
+        pages.push(totalPages);
+    }
+
+    // Генерируем HTML
+    return pages.map(page => {
+        if (page === '...') {
+            return '<span class="page-dots">...</span>';
+        }
+        return `
+            <button class="page-number ${page === currentPage ? 'active' : ''}" 
+                    onclick="goToPage(${page})">
+                ${page}
+            </button>
+        `;
+    }).join('');
+}
+
+function goToPage(page) {
+    currentPage = page;
+    displayTeacherAssignmentsPage(currentPage);
 }
 
 // Функция смены страницы
@@ -239,7 +363,26 @@ function changePage(direction) {
     }
 }
 
-// ВАЖНО: Остальные функции должны остаться без изменений!
+// Функции для редактирования и удаления (добавьте их в ваш код)
+function editAssignment(assignmentId) {
+    alert(`Редактирование задания ${assignmentId} - функция в разработке`);
+    // Реализуйте логику редактирования задания
+}
+
+function deleteAssignment(assignmentId) {
+    if (confirm('Вы уверены, что хотите удалить это задание?')) {
+        // Реализуйте логику удаления задания
+        ApiService.delete(`/teacher/assignments/${assignmentId}`)
+            .then(() => {
+                alert('Задание успешно удалено');
+                loadTeacherAssignments(); // Перезагружаем список
+            })
+            .catch(error => {
+                console.error('Error deleting assignment:', error);
+                alert('Ошибка при удалении задания');
+            });
+    }
+}
 
 async function loadTeacherData() {
     try {
@@ -338,8 +481,6 @@ function filterTeacherAssignments() {
     displayTeacherAssignmentsPage(currentPage);
 }
 
-
-
 async function loadSubmissionsToGrade() {
     try {
         const submissions = await ApiService.get('/submissions/my');
@@ -356,40 +497,112 @@ function displaySubmissionsToGrade(submissions) {
     const container = document.getElementById('submissions-to-grade');
 
     if (!submissions || submissions.length === 0) {
-        container.innerHTML = '<p>Нет заданий на проверку</p>';
+        container.innerHTML = `
+            <div class="submissions-list">
+                <div class="no-submissions">
+                    <i>📋</i>
+                    <h3>Нет заданий на проверку</h3>
+                    <p>Все задания проверены! 🎉</p>
+                </div>
+            </div>
+        `;
         return;
     }
 
     const submissionsToGrade = submissions.filter(sub => sub.status === 'submitted');
 
     if (submissionsToGrade.length === 0) {
-        container.innerHTML = '<p>Все задания проверены! 🎉</p>';
+        container.innerHTML = `
+            <div class="submissions-list">
+                <div class="no-submissions">
+                    <i>🎉</i>
+                    <h3>Все задания проверены!</h3>
+                    <p>Отличная работа! Ожидайте новых сдач</p>
+                </div>
+            </div>
+        `;
         return;
     }
 
-    container.innerHTML = '';
+    // Сортируем по дате сдачи (новые сверху)
+    submissionsToGrade.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
 
-    submissionsToGrade.forEach(submission => {
-        const submissionElement = document.createElement('div');
-        submissionElement.className = 'assignment-item';
-        submissionElement.innerHTML = `
-            <div class="assignment-title">${submission.assignmentTitle}</div>
-            <div class="assignment-meta">
-                Студент: <strong>${submission.studentName}</strong> |
-                Файл: ${submission.fileName} |
-                Размер: ${(submission.fileSize / 1024 / 1024).toFixed(2)} MB
+    container.innerHTML = `
+        <div class="submissions-list">
+            <div class="submissions-header">
+                <div class="header-cell">
+                    <span>Задание</span>
+                </div>
+                <div class="header-cell">
+                    <span>Студент</span>
+                </div>
+                <div class="header-cell">
+                    <span>Файл</span>
+                </div>
+                <div class="header-cell">
+                    <span>Дата сдачи</span>
+                </div>
+                <div class="header-cell">
+                    <span>Действия</span>
+                </div>
             </div>
-            <div class="assignment-meta">
-                Сдано: ${new Date(submission.submittedAt).toLocaleString('ru-RU')}
+            <div class="submissions-table">
+                ${submissionsToGrade.map(submission => {
+        const submittedDate = new Date(submission.submittedAt);
+        const fileSizeMB = (submission.fileSize / 1024 / 1024).toFixed(2);
+        const isRecent = isSubmissionRecent(submittedDate);
+
+        return `
+                    <div class="submission-row">
+                        <div class="submission-cell">
+                            <div class="submission-title">${submission.assignmentTitle || 'Без названия'}</div>
+                        </div>
+                        <div class="submission-cell">
+                            <div class="submission-student">${submission.studentName}</div>
+                        </div>
+                        <div class="submission-cell">
+                            <div class="submission-file">
+                                <span class="submission-file-icon">📎</span>
+                                <span class="submission-file-name" title="${submission.fileName}">
+                                    ${submission.fileName || 'Без названия'}
+                                </span>
+                                <span class="submission-size">${fileSizeMB} MB</span>
+                            </div>
+                        </div>
+                        <div class="submission-cell">
+                            <div class="submission-date">
+                                ${submittedDate.toLocaleDateString('ru-RU')}
+                                <div class="submission-time">
+                                    ${submittedDate.toLocaleTimeString('ru-RU', {
+            hour: '2-digit',
+            minute: '2-digit'
+        })}
+                                </div>
+                                ${isRecent ? '<span class="submission-urgent">НОВОЕ</span>' : ''}
+                            </div>
+                        </div>
+                        <div class="submission-cell">
+                            <div class="submission-actions">
+                                <button class="btn-submission btn-submission-view" onclick="viewSubmission(${submission.id})">
+                                    Просмотреть и оценить
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+    }).join('')}
             </div>
-            <div class="submission-actions">
-                <button class="btn-primary" onclick="viewSubmission(${submission.id})">
-                    Просмотреть и оценить
-                </button>
-            </div>
-        `;
-        container.appendChild(submissionElement);
-    });
+        </div>
+    `;
+
+    // Обновляем счетчик заданий на проверку
+    document.getElementById('pending-count').textContent = submissionsToGrade.length;
+}
+
+function isSubmissionRecent(submittedDate) {
+    const now = new Date();
+    const diffHours = (now - submittedDate) / (1000 * 60 * 60);
+    return diffHours < 24; // Новое если сдано менее 24 часов назад
 }
 
 async function viewSubmission(submissionId) {
@@ -405,22 +618,72 @@ async function viewSubmission(submissionId) {
         document.getElementById('submissionId').value = submission.id;
 
         const submissionDetails = document.getElementById('submission-details');
+        const fileSizeMB = (submission.fileSize / 1024 / 1024).toFixed(2);
+        const submittedDate = new Date(submission.submittedAt);
+
         submissionDetails.innerHTML = `
-            <div class="submission-info">
-                <h3>${submission.assignmentTitle}</h3>
-                <p><strong>Студент:</strong> ${submission.studentName}</p>
-                <p><strong>Файл:</strong> ${submission.fileName}</p>
-                <p><strong>Размер:</strong> ${(submission.fileSize / 1024 / 1024).toFixed(2)} MB</p>
-                <p><strong>Сдано:</strong> ${new Date(submission.submittedAt).toLocaleString('ru-RU')}</p>
-                ${submission.comment ? `<p><strong>Комментарий студента:</strong> ${submission.comment}</p>` : ''}
-                <div class="file-preview">
-                    <button class="btn-secondary" 
-                            onclick="downloadSubmissionFile('${submission.filePath}', ${submission.id})">
-                        📎 Скачать файл задания
+            <div class="submission-detail-item">
+                <div class="submission-detail-label">Задание:</div>
+                <div class="submission-detail-value">
+                    <strong>${submission.assignmentTitle}</strong>
+                </div>
+            </div>
+            
+            <div class="submission-detail-item">
+                <div class="submission-detail-label">Студент:</div>
+                <div class="submission-detail-value">
+                    <strong>${submission.studentName}</strong>
+                </div>
+            </div>
+            
+            <div class="submission-detail-item">
+                <div class="submission-detail-label">Файл:</div>
+                <div class="submission-detail-value">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="color: var(--primary); font-size: 1.25rem;">📎</span>
+                        <span style="font-weight: 500;">${submission.fileName}</span>
+                        <span style="background: #e2e8f0; padding: 0.125rem 0.5rem; border-radius: 12px; font-size: 0.8125rem;">
+                            ${fileSizeMB} MB
+                        </span>
+                    </div>
+                    <button class="file-download-btn" 
+                            onclick="downloadSubmissionFile('${submission.filePath}', ${submission.id}); return false;">
+                        <i>⬇️</i> Скачать файл
                     </button>
                 </div>
             </div>
+            
+            <div class="submission-detail-item">
+                <div class="submission-detail-label">Дата сдачи:</div>
+                <div class="submission-detail-value">
+                    ${submittedDate.toLocaleDateString('ru-RU')} 
+                    в ${submittedDate.toLocaleTimeString('ru-RU', {
+            hour: '2-digit',
+            minute: '2-digit'
+        })}
+                </div>
+            </div>
+            
+            ${submission.comment ? `
+            <div class="submission-detail-item">
+                <div class="submission-detail-label">Комментарий студента:</div>
+                <div class="submission-detail-value">
+                    <div style="background: white; padding: 0.75rem; border-radius: var(--radius); border: 1px solid var(--border);">
+                        ${submission.comment}
+                    </div>
+                </div>
+            </div>
+            ` : ''}
         `;
+
+        // Устанавливаем максимальную оценку
+        const assignment = allAssignments.find(a => a.id === submission.assignmentId);
+        if (assignment) {
+            const maxGrade = assignment.maxGrade || 100;
+            document.getElementById('max-grade').textContent = maxGrade;
+            document.getElementById('gradeValue').max = maxGrade;
+            document.getElementById('gradeValue').placeholder = `От 0 до ${maxGrade}`;
+        }
 
         document.getElementById('gradeSubmissionModal').style.display = 'block';
 
@@ -438,8 +701,6 @@ function downloadSubmissionFile(filePath, submissionId = null) {
         console.error('Submission ID not provided');
     }
 }
-
-
 async function viewAssignmentSubmissions(assignmentId) {
     try {
         const submissions = await ApiService.get(`/submissions/assignment/${assignmentId}`);

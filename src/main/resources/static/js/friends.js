@@ -4,15 +4,22 @@ class FriendsManager {
         this.init();
     }
 
+    /* ===============================
+       INIT
+    =============================== */
     init() {
         console.log('FriendsManager initialized for user:', this.currentUserId);
+
         this.loadFriendsStats();
         this.setupEventListeners();
 
-        // Автоматически загружаем друзей при инициализации
+        // Автоматическая загрузка друзей
         this.loadFriendsList();
     }
 
+    /* ===============================
+       ЗАГРУЗКА СТАТИСТИКИ
+    =============================== */
     async loadFriendsStats() {
         try {
             const stats = await ApiService.get('/friends/stats');
@@ -31,10 +38,17 @@ class FriendsManager {
         if (pendingCount) pendingCount.textContent = stats.pendingRequestsCount || 0;
     }
 
+    /* ===============================
+       ПОИСК ПОЛЬЗОВАТЕЛЕЙ
+    =============================== */
     setupEventListeners() {
-        const searchInput = document.getElementById('friend-search');
-        if (searchInput) {
-            searchInput.addEventListener('input', this.debounce(this.searchUsers.bind(this), 300));
+        const input = document.getElementById('friend-search');
+
+        if (input) {
+            input.addEventListener(
+                'input',
+                this.debounce((e) => this.searchUsers(e), 300)
+            );
         }
     }
 
@@ -67,17 +81,20 @@ class FriendsManager {
         }
 
         let html = '';
+
         users.forEach(user => {
             const fullName = `${user.firstName} ${user.lastName}`;
             const avatarUrl = user.profilePhotoPath ? `/uploads/${user.profilePhotoPath}` : '';
-            const initials = (user.firstName?.[0] || '') + (user.lastName?.[0] || '');
+            const initials = this.getInitials(fullName);
 
             html += `
                 <div class="user-result-item" data-user-id="${user.id}">
                     <div class="user-avatar">
                         ${avatarUrl ?
-                `<img src="${avatarUrl}" alt="${fullName}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"> 
-                             <div class="avatar-placeholder-small" style="display: none;">${initials}</div>` :
+                `<img src="${avatarUrl}" alt="${fullName}" 
+                                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"> 
+                            <div class="avatar-placeholder-small" style="display:none">${initials}</div>`
+                :
                 `<div class="avatar-placeholder-small">${initials}</div>`
             }
                     </div>
@@ -94,81 +111,82 @@ class FriendsManager {
 
         resultsContainer.innerHTML = html;
         resultsContainer.style.display = 'block';
-
-        // Добавляем обработчики для кнопок
-        this.attachSearchResultHandlers();
     }
 
+    /* ===============================
+       КНОПКИ ДЛЯ ДРУЖБЫ
+    =============================== */
     getFriendshipButton(user) {
         const status = user.friendshipStatus || 'NONE';
 
         switch(status) {
             case 'NONE':
-                return `<button class="btn-primary btn-small" onclick="friendsManager.sendFriendRequest(${user.id})">Добавить в друзья</button>`;
+            case 'REJECTED':
+                return `<button class="btn-primary btn-small" onclick="friendsManager.sendFriendRequest(${user.id})">Добавить</button>`;
             case 'PENDING':
-                return `<span class="status-pending">Запрос отправлен</span>`;
+                return `<span class="status-pending">Ожидание</span>`;
             case 'ACCEPTED':
                 return `<span class="status-accepted">Друг</span>`;
-            case 'REJECTED':
-                return `<button class="btn-primary btn-small" onclick="friendsManager.sendFriendRequest(${user.id})">Добавить в друзья</button>`;
             case 'SELF':
                 return `<span class="status-self">Это вы</span>`;
             default:
-                return `<button class="btn-primary btn-small" onclick="friendsManager.sendFriendRequest(${user.id})">Добавить в друзья</button>`;
+                return `<button class="btn-primary btn-small" onclick="friendsManager.sendFriendRequest(${user.id})">Добавить</button>`;
         }
     }
 
-    attachSearchResultHandlers() {
-        // Обработчики уже добавлены через onclick в HTML
-    }
-
+    /* ===============================
+       ОТПРАВКА ЗАПРОСА В ДРУЗЬЯ
+    =============================== */
     async sendFriendRequest(userId) {
         const button = event?.target;
         if (button) {
             button.disabled = true;
-            button.textContent = 'Отправка...';
+            button.textContent = '...';
         }
 
         try {
             await ApiService.post(`/friends/request/${userId}`);
 
             if (button) {
-                button.textContent = 'Запрос отправлен';
+                button.textContent = 'Отправлено';
                 button.className = 'btn-secondary btn-small';
                 button.disabled = true;
             }
 
-            this.showMessage('Запрос на дружбу отправлен!', 'success');
+            this.showMessage('Запрос отправлен', 'success');
             this.loadFriendsStats();
 
-            // Обновляем результаты поиска
-            const searchInput = document.getElementById('friend-search');
-            if (searchInput && searchInput.value.trim().length >= 2) {
-                this.searchUsers({ target: searchInput });
+            // обновляем результаты поиска
+            const input = document.getElementById('friend-search');
+            if (input && input.value.trim().length >= 2) {
+                this.searchUsers({ target: input });
             }
 
         } catch (error) {
-            console.error('Error sending friend request:', error);
+            console.error('Error sending request:', error);
             if (button) {
                 button.disabled = false;
-                button.textContent = 'Добавить в друзья';
+                button.textContent = 'Добавить';
+                button.className = 'btn-primary btn-small';
             }
-            this.showMessage('Ошибка отправки запроса: ' + error.message, 'error');
+            this.showMessage('Ошибка: ' + error.message, 'error');
         }
     }
 
+    /* ===============================
+       СПИСОК ДРУЗЕЙ
+    =============================== */
     async loadFriendsList() {
         try {
             const friends = await ApiService.get('/friends/my');
             this.displayFriendsList(friends);
 
-            // Показываем список друзей и скрываем запросы
             document.getElementById('friends-list').style.display = 'block';
             document.getElementById('pending-requests').style.display = 'none';
 
         } catch (error) {
-            console.error('Error loading friends list:', error);
-            this.showMessage('Ошибка загрузки списка друзей: ' + error.message, 'error');
+            console.error('Error loading friends:', error);
+            this.showMessage('Ошибка загрузки друзей: ' + error.message, 'error');
         }
     }
 
@@ -181,24 +199,29 @@ class FriendsManager {
         }
 
         let html = '';
+
         friends.forEach(friend => {
             const fullName = `${friend.firstName} ${friend.lastName}`;
             const avatarUrl = friend.profilePhotoPath ? `/uploads/${friend.profilePhotoPath}` : '';
-            const initials = (friend.firstName?.[0] || '') + (friend.lastName?.[0] || '');
+            const initials = this.getInitials(fullName);
 
             html += `
                 <div class="friend-item">
                     <div class="friend-avatar">
                         ${avatarUrl ?
-                `<img src="${avatarUrl}" alt="${fullName}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"> 
-                             <div class="avatar-placeholder-small" style="display: none;">${initials}</div>` :
+                `<img src="${avatarUrl}" alt="${fullName}" 
+                                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="avatar-placeholder-small" style="display:none">${initials}</div>`
+                :
                 `<div class="avatar-placeholder-small">${initials}</div>`
             }
                     </div>
+
                     <div class="friend-info">
                         <div class="friend-name">${this.escapeHtml(fullName)}</div>
                         <div class="friend-email">${this.escapeHtml(friend.email)}</div>
                     </div>
+
                     <button class="btn-secondary btn-small" onclick="friendsManager.removeFriend(${friend.id})">
                         Удалить
                     </button>
@@ -209,17 +232,19 @@ class FriendsManager {
         container.innerHTML = html;
     }
 
+    /* ===============================
+       ВХОДЯЩИЕ ЗАПРОСЫ
+    =============================== */
     async loadPendingRequests() {
         try {
             const requests = await ApiService.get('/friends/pending');
             this.displayPendingRequests(requests);
 
-            // Показываем запросы и скрываем список друзей
             document.getElementById('pending-requests').style.display = 'block';
             document.getElementById('friends-list').style.display = 'none';
 
         } catch (error) {
-            console.error('Error loading pending requests:', error);
+            console.error('Error loading pending:', error);
             this.showMessage('Ошибка загрузки запросов: ' + error.message, 'error');
         }
     }
@@ -228,32 +253,32 @@ class FriendsManager {
         const container = document.getElementById('pending-requests');
 
         if (!requests || requests.length === 0) {
-            container.innerHTML = '<div class="no-results">Нет входящих запросов в друзья</div>';
+            container.innerHTML = '<div class="no-results">Нет входящих запросов</div>';
             return;
         }
 
         let html = '';
-        requests.forEach(request => {
-            const fullName = `${request.requesterName}`;
-            const email = request.requesterEmail;
-            const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase();
+
+        requests.forEach(req => {
+            const fullName = req.requesterName;
+            const email = req.requesterEmail;
+            const initials = this.getInitials(fullName);
 
             html += `
                 <div class="pending-item">
+
                     <div class="pending-avatar">
                         <div class="avatar-placeholder-small">${initials}</div>
                     </div>
+
                     <div class="pending-info">
                         <div class="pending-name">${this.escapeHtml(fullName)}</div>
                         <div class="pending-email">${this.escapeHtml(email)}</div>
                     </div>
+
                     <div class="pending-actions">
-                        <button class="btn-primary btn-tiny" onclick="friendsManager.acceptFriendRequest(${request.id})">
-                            Принять
-                        </button>
-                        <button class="btn-secondary btn-tiny" onclick="friendsManager.rejectFriendRequest(${request.id})">
-                            Отклонить
-                        </button>
+                        <button class="btn-primary btn-tiny" onclick="friendsManager.acceptFriendRequest(${req.id})">Принять</button>
+                        <button class="btn-secondary btn-tiny" onclick="friendsManager.rejectFriendRequest(${req.id})">Отклонить</button>
                     </div>
                 </div>
             `;
@@ -262,67 +287,74 @@ class FriendsManager {
         container.innerHTML = html;
     }
 
-    async acceptFriendRequest(friendshipId) {
+    async acceptFriendRequest(id) {
         try {
-            await ApiService.post(`/friends/accept/${friendshipId}`);
-            this.showMessage('Запрос на дружбу принят!', 'success');
+            await ApiService.post(`/friends/accept/${id}`);
+            this.showMessage('Добавлен в друзья', 'success');
             this.loadPendingRequests();
             this.loadFriendsStats();
         } catch (error) {
-            console.error('Error accepting friend request:', error);
-            this.showMessage('Ошибка принятия запроса: ' + error.message, 'error');
+            this.showMessage('Ошибка: ' + error.message, 'error');
         }
     }
 
-    async rejectFriendRequest(friendshipId) {
+    async rejectFriendRequest(id) {
         try {
-            await ApiService.post(`/friends/reject/${friendshipId}`);
-            this.showMessage('Запрос на дружбу отклонен', 'info');
+            await ApiService.post(`/friends/reject/${id}`);
+            this.showMessage('Запрос отклонён', 'info');
             this.loadPendingRequests();
             this.loadFriendsStats();
         } catch (error) {
-            console.error('Error rejecting friend request:', error);
-            this.showMessage('Ошибка отклонения запроса: ' + error.message, 'error');
+            this.showMessage('Ошибка: ' + error.message, 'error');
         }
     }
 
+    /* ===============================
+       УДАЛЕНИЕ ДРУГА
+    =============================== */
     async removeFriend(friendId) {
-        if (!confirm('Удалить пользователя из друзей?')) {
-            return;
-        }
+        if (!confirm('Удалить из друзей?')) return;
 
         try {
             await ApiService.delete(`/friends/remove/${friendId}`);
-            this.showMessage('Пользователь удален из друзей', 'success');
+            this.showMessage('Пользователь удалён', 'success');
             this.loadFriendsList();
             this.loadFriendsStats();
         } catch (error) {
-            console.error('Error removing friend:', error);
-            this.showMessage('Ошибка удаления друга: ' + error.message, 'error');
+            this.showMessage('Ошибка: ' + error.message, 'error');
         }
     }
 
+    /* ===============================
+       HELPERS
+    =============================== */
     showMessage(message, type) {
-        // Используем существующую систему сообщений или создаем простую
-        const messageDiv = document.createElement('div');
-        messageDiv.className = type === 'error' ? 'error-message' : 'success-message';
-        messageDiv.textContent = message;
-        messageDiv.style.marginTop = '10px';
-        messageDiv.style.marginBottom = '10px';
+        const container = document.getElementById('message-container');
+        const div = document.createElement('div');
 
-        const container = document.getElementById('message-container') || document.body;
-        container.appendChild(messageDiv);
+        div.className = type === 'error'
+            ? 'error-message'
+            : 'success-message';
 
-        setTimeout(() => {
-            if (messageDiv.parentElement) {
-                messageDiv.remove();
-            }
-        }, 5000);
+        div.textContent = message;
+        div.style.marginTop = '10px';
+
+        container.appendChild(div);
+
+        setTimeout(() => div.remove(), 5000);
     }
 
-    escapeHtml(unsafe) {
-        if (!unsafe) return '';
-        return unsafe
+    getInitials(fullName) {
+        return fullName
+            .split(' ')
+            .map(n => n[0])
+            .join('')
+            .toUpperCase();
+    }
+
+    escapeHtml(str) {
+        if (!str) return '';
+        return str
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
@@ -332,26 +364,22 @@ class FriendsManager {
 
     debounce(func, wait) {
         let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
+        return (...args) => {
             clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
+            timeout = setTimeout(() => func(...args), wait);
         };
     }
 }
 
-// Автоматическая инициализация при загрузке страницы
-document.addEventListener('DOMContentLoaded', function() {
-    // Ждем немного чтобы все скрипты загрузились
+/* ===============================
+   AUTO INIT
+=============================== */
+document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         if (typeof ApiService !== 'undefined') {
             window.friendsManager = new FriendsManager();
-            console.log('FriendsManager successfully initialized');
         } else {
-            console.error('ApiService not found - FriendsManager cannot initialize');
+            console.error('ApiService not found — FriendsManager cannot start');
         }
     }, 100);
 });

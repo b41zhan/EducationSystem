@@ -4,104 +4,160 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Education System - Администратор</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 <div class="dashboard">
-    <div class="header">
-        <div class="user-info">
-            <div>
-                <h1>Панель администратора</h1>
-                <p id="welcome-message">Добро пожаловать!</p>
-            </div>
-            <div>
-                <button class="btn-logout" onclick="logout()">Выйти</button>
-            </div>
+    <!-- Верхняя панель -->
+    <header class="top-bar">
+        <div class="brand">
+            <h1><i class="fas fa-user-shield"></i> Панель администратора</h1>
+            <p class="welcome-message" id="welcome-message">Добро пожаловать!</p>
         </div>
-    </div>
+        <button class="btn-logout" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i> Выйти
+        </button>
+    </header>
 
-    <div class="content">
-        <!-- Левая колонка -->
-        <div class="left-column">
+    <div class="container">
+        <!-- Левая колонка - Основные действия -->
+        <aside class="sidebar">
             <div class="card">
-                <h2>Управление пользователями</h2>
-                <button class="btn-primary" onclick="showRegisterTeacherModal()">
-                    Зарегистрировать учителя
-                </button>
-                <button class="btn-secondary" onclick="showRegisterStudentModal()">
-                    Зарегистрировать студента
-                </button>
-                <button class="btn-secondary" onclick="showRegisterParentModal()">
-                    Зарегистрировать родителя
-                </button>
-            </div>
-
-            <div class="card" onclick="location.href='/admin-schedule.html'">
-                <div class="card-icon">📅</div>
-                <div class="card-title">Управление расписанием</div>
-                <div class="card-description">Создание и редактирование расписания учителей и классов</div>
-            </div>
-
-            <div class="card">
-                <h2>Статистика системы</h2>
-                <div id="system-stats">
-                    <p>Всего пользователей: <span id="total-users">0</span></p>
-                    <p>Учителей: <span id="total-teachers">0</span></p>
-                    <p>Студентов: <span id="total-students">0</span></p>
-                    <p>Родителей: <span id="total-parents">0</span></p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Правая колонка -->
-        <div class="right-column">
-            <div class="card">
-                <h2>Список пользователей</h2>
-                <div id="users-list">
-                    <p>Загрузка пользователей...</p>
+                <h2 class="card-header">
+                    <i class="fas fa-users-cog"></i> Управление пользователями
+                </h2>
+                <div class="action-buttons">
+                    <button class="btn-action btn-primary" onclick="showRegisterTeacherModal()">
+                        <i class="fas fa-chalkboard-teacher"></i> Новый учитель
+                    </button>
+                    <button class="btn-action btn-primary" onclick="showRegisterStudentModal()">
+                        <i class="fas fa-user-graduate"></i> Новый студент
+                    </button>
+                    <button class="btn-action btn-primary" onclick="showRegisterParentModal()">
+                        <i class="fas fa-user-friends"></i> Новый родитель
+                    </button>
                 </div>
             </div>
 
-            <div class="card">
-                <h2>Быстрый поиск</h2>
-                <div class="form-group">
-                    <input type="text" id="search-users" placeholder="Поиск по email или имени...">
-                    <button class="btn-secondary" onclick="searchUsers()">Найти</button>
+            <div class="card clickable" onclick="location.href='/admin-schedule.html'">
+                <div class="card-icon"><i class="fas fa-calendar-alt"></i></div>
+                <div class="card-content">
+                    <h3>Управление расписанием</h3>
+                    <p>Создание и редактирование расписания</p>
+                </div>
+                <i class="fas fa-chevron-right card-arrow"></i>
+            </div>
+
+            <div class="card stats-card">
+                <h2 class="card-header">
+                    <i class="fas fa-chart-bar"></i> Статистика системы
+                </h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">Всего пользователей</div>
+                        <div class="stat-value" id="total-users">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Учителей</div>
+                        <div class="stat-value" id="total-teachers">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Студентов</div>
+                        <div class="stat-value" id="total-students">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Родителей</div>
+                        <div class="stat-value" id="total-parents">0</div>
+                    </div>
                 </div>
             </div>
-        </div>
+        </aside>
+
+        <!-- Основной контент -->
+        <main class="main-content">
+            <div class="content-header">
+                <h2><i class="fas fa-list"></i> Список пользователей</h2>
+                <div class="search-box">
+                    <div class="search-input">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="search-users" placeholder="Поиск по email или имени..." onkeypress="if(event.key === 'Enter') searchUsers()">
+                    </div>
+                    <button class="btn-search" onclick="searchUsers()">Найти</button>
+                </div>
+            </div>
+
+            <div class="card users-card">
+                <div class="table-header">
+                    <div class="header-cell">Пользователь</div>
+                    <div class="header-cell">Email</div>
+                    <div class="header-cell">Роль</div>
+                    <div class="header-cell">Дата регистрации</div>
+                    <div class="header-cell">Действия</div>
+                </div>
+                <div class="users-list" id="users-list">
+                    <div class="loading-state">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Загрузка пользователей...</p>
+                    </div>
+                </div>
+                <div class="table-footer">
+                    <div class="pagination">
+                        <button class="pagination-btn" disabled>
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <span class="page-info">Страница 1 из 1</span>
+                        <button class="pagination-btn" disabled>
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="users-count">
+                        Всего: <span id="users-total-count">0</span> пользователей
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 </div>
-
-
 
 <!-- Модальное окно регистрации учителя -->
 <div id="registerTeacherModal" class="modal" style="display: none;">
     <div class="modal-content">
         <span class="close" onclick="closeRegisterTeacherModal()">&times;</span>
-        <h2>Регистрация учителя</h2>
+        <h2><i class="fas fa-chalkboard-teacher"></i> Регистрация учителя</h2>
         <form id="registerTeacherForm">
             <div class="form-group">
                 <label for="teacherEmail">Email:</label>
-                <input type="email" id="teacherEmail" required>
+                <input type="email" id="teacherEmail" required placeholder="teacher@school.edu">
             </div>
             <div class="form-group">
                 <label for="teacherPassword">Пароль:</label>
-                <input type="password" id="teacherPassword" required>
+                <input type="password" id="teacherPassword" required placeholder="Минимум 8 символов">
+                <div class="form-hint">Минимум 8 символов</div>
             </div>
-            <div class="form-group">
-                <label for="teacherFirstName">Имя:</label>
-                <input type="text" id="teacherFirstName" required>
-            </div>
-            <div class="form-group">
-                <label for="teacherLastName">Фамилия:</label>
-                <input type="text" id="teacherLastName" required>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="teacherLastName">Фамилия:</label>
+                    <input type="text" id="teacherLastName" required placeholder="Ерболовна">
+                </div>
+                <div class="form-group">
+                    <label for="teacherFirstName">Имя:</label>
+                    <input type="text" id="teacherFirstName" required placeholder="Айгуль">
+                </div>
             </div>
             <div class="form-group">
                 <label for="teacherPatronymic">Отчество:</label>
-                <input type="text" id="teacherPatronymic">
+                <input type="text" id="teacherPatronymic" placeholder="Ерланкызы">
             </div>
-            <button type="submit" class="btn-primary">Зарегистрировать</button>
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-user-plus"></i> Зарегистрировать
+                </button>
+                <button type="button" class="btn-secondary" onclick="closeRegisterTeacherModal()">
+                    Отмена
+                </button>
+            </div>
         </form>
     </div>
 </div>
@@ -110,37 +166,106 @@
 <div id="registerStudentModal" class="modal" style="display: none;">
     <div class="modal-content">
         <span class="close" onclick="closeRegisterStudentModal()">&times;</span>
-        <h2>Регистрация студента</h2>
+        <h2><i class="fas fa-user-graduate"></i> Регистрация студента</h2>
         <form id="registerStudentForm">
             <div class="form-group">
                 <label for="studentEmail">Email:</label>
-                <input type="email" id="studentEmail" required>
+                <input type="email" id="studentEmail" required placeholder="student@school.edu">
             </div>
             <div class="form-group">
                 <label for="studentPassword">Пароль:</label>
-                <input type="password" id="studentPassword" required>
+                <input type="password" id="studentPassword" required placeholder="Минимум 8 символов">
+                <div class="form-hint">Минимум 8 символов</div>
             </div>
-            <div class="form-group">
-                <label for="studentFirstName">Имя:</label>
-                <input type="text" id="studentFirstName" required>
-            </div>
-            <div class="form-group">
-                <label for="studentLastName">Фамилия:</label>
-                <input type="text" id="studentLastName" required>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="studentLastName">Фамилия:</label>
+                    <input type="text" id="studentLastName" required placeholder="Сатпаев">
+                </div>
+                <div class="form-group">
+                    <label for="studentFirstName">Имя:</label>
+                    <input type="text" id="studentFirstName" required placeholder="Дастан">
+                </div>
             </div>
             <div class="form-group">
                 <label for="studentPatronymic">Отчество:</label>
-                <input type="text" id="studentPatronymic">
+                <input type="text" id="studentPatronymic" placeholder="Сатпаевич">
             </div>
             <div class="form-group">
                 <label for="studentClass">Класс:</label>
                 <select id="studentClass" required>
-                    <option value="1">7А</option>
-                    <option value="2">8Б</option>
-                    <option value="3">9В</option>
+                    <option value="">Выберите класс</option>
+                    <option value="8А">8А</option>
+                    <option value="8Б">8Б</option>
+                    <option value="8В">8В</option>
+                    <option value="9А">9А</option>
+                    <option value="9Б">9Б</option>
+                    <option value="9В">9В</option>
+                    <option value="10А">10А</option>
+                    <option value="10Б">10Б</option>
+                    <option value="10В">10В</option>
+                    <option value="11А">11А</option>
+                    <option value="11Б">11Б</option>
+                    <option value="11В">11В</option>
                 </select>
             </div>
-            <button type="submit" class="btn-primary">Зарегистрировать</button>
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-user-plus"></i> Зарегистрировать
+                </button>
+                <button type="button" class="btn-secondary" onclick="closeRegisterStudentModal()">
+                    Отмена
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Модальное окно регистрации родителя -->
+<div id="registerParentModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeRegisterParentModal()">&times;</span>
+        <h2><i class="fas fa-user-friends"></i> Регистрация родителя</h2>
+        <form id="registerParentForm">
+            <div class="form-group">
+                <label for="parentEmail">Email:</label>
+                <input type="email" id="parentEmail" required placeholder="parent@email.com">
+            </div>
+            <div class="form-group">
+                <label for="parentPassword">Пароль:</label>
+                <input type="password" id="parentPassword" required placeholder="Минимум 8 символов">
+                <div class="form-hint">Минимум 8 символов</div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="parentLastName">Фамилия:</label>
+                    <input type="text" id="parentLastName" required placeholder="Сидорова">
+                </div>
+                <div class="form-group">
+                    <label for="parentFirstName">Имя:</label>
+                    <input type="text" id="parentFirstName" required placeholder="Мария">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="parentPatronymic">Отчество:</label>
+                <input type="text" id="parentPatronymic" placeholder="Ивановна">
+            </div>
+            <div class="form-group">
+                <label for="parentStudent">Привязать к студенту:</label>
+                <select id="parentStudent">
+                    <option value="">Не привязывать</option>
+                    <!-- Будет заполняться динамически -->
+                </select>
+                <div class="form-hint">Опционально, можно добавить позже</div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-user-plus"></i> Зарегистрировать
+                </button>
+                <button type="button" class="btn-secondary" onclick="closeRegisterParentModal()">
+                    Отмена
+                </button>
+            </div>
         </form>
     </div>
 </div>
@@ -149,7 +274,7 @@
 <div id="editUserModal" class="modal" style="display: none;">
     <div class="modal-content">
         <span class="close" onclick="closeEditUserModal()">&times;</span>
-        <h2>Редактирование пользователя</h2>
+        <h2><i class="fas fa-edit"></i> Редактирование пользователя</h2>
         <form id="editUserForm">
             <input type="hidden" id="editUserId">
 
@@ -158,14 +283,15 @@
                 <input type="email" id="editEmail" required>
             </div>
 
-            <div class="form-group">
-                <label for="editFirstName">Имя:</label>
-                <input type="text" id="editFirstName" required>
-            </div>
-
-            <div class="form-group">
-                <label for="editLastName">Фамилия:</label>
-                <input type="text" id="editLastName" required>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="editLastName">Фамилия:</label>
+                    <input type="text" id="editLastName" required>
+                </div>
+                <div class="form-group">
+                    <label for="editFirstName">Имя:</label>
+                    <input type="text" id="editFirstName" required>
+                </div>
             </div>
 
             <div class="form-group">
@@ -176,7 +302,7 @@
             <div class="form-group">
                 <label for="editPassword">Новый пароль:</label>
                 <input type="password" id="editPassword" placeholder="Оставьте пустым, чтобы не менять">
-                <small>Только если нужно изменить пароль</small>
+                <div class="form-hint">Только если нужно изменить пароль</div>
             </div>
 
             <div class="form-group">
@@ -188,12 +314,29 @@
                 </select>
             </div>
 
-            <div id="editUserHistory" style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+            <div class="activity-section">
+                <h3><i class="fas fa-history"></i> Активность пользователя</h3>
+                <div id="editUserHistory" class="edit-user-history">
+                    <div class="activity-item">
+                        <div class="activity-icon"><i class="fas fa-sign-in-alt"></i></div>
+                        <div class="activity-content">
+                            <div class="activity-title">Последний вход</div>
+                            <div class="activity-time">12.01.2024 14:30</div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="form-actions">
-                <button type="submit" class="btn-primary">Сохранить изменения</button>
-                <button type="button" class="btn-secondary" onclick="closeEditUserModal()">Отмена</button>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-save"></i> Сохранить
+                </button>
+                <button type="button" class="btn-secondary" onclick="closeEditUserModal()">
+                    Отмена
+                </button>
+                <button type="button" class="btn-danger" id="deleteUserBtn" onclick="deleteUser()" style="display: none;">
+                    <i class="fas fa-trash"></i> Удалить пользователя
+                </button>
             </div>
         </form>
     </div>

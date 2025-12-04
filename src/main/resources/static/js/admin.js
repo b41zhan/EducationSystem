@@ -29,38 +29,55 @@ function displayUsers(users) {
     const usersList = document.getElementById('users-list');
 
     if (!users || users.length === 0) {
-        usersList.innerHTML = '<p>Пользователи не найдены</p>';
+        usersList.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-user-slash"></i>
+                <h3>Пользователи не найдены</h3>
+                <p>Попробуйте изменить запрос поиска</p>
+            </div>
+        `;
         return;
     }
 
     usersList.innerHTML = '';
 
     users.forEach(user => {
-        const userElement = document.createElement('div');
-        userElement.className = 'assignment-item';
-        userElement.style.cursor = 'pointer'; // Делаем кликабельным
-        userElement.onclick = () => showEditUserModal(user); // Добавляем обработчик
+        const row = document.createElement('div');
+        row.className = 'user-item';
 
         const roles = user.roles ? user.roles.join(', ') : 'нет роли';
-        const lastModified = user.lastModifiedAt ?
-            new Date(user.lastModifiedAt).toLocaleString('ru-RU') :
-            new Date(user.createdAt).toLocaleString('ru-RU');
+        const formattedDate = new Date(user.createdAt).toLocaleDateString('ru-RU');
 
-        userElement.innerHTML = `
-            <div class="assignment-title">${user.firstName} ${user.lastName}</div>
-            <div class="assignment-meta">
-                Email: ${user.email} |
-                Роли: ${roles} |
-                Школа: ${user.schoolName || 'Не указана'}
+        row.innerHTML = `
+            <div class="user-info">
+                <div class="user-avatar">${user.firstName[0]}${user.lastName[0]}</div>
+                <div class="user-details">
+                    <h4>${user.lastName} ${user.firstName}</h4>
+                    ${user.className ? `<span class="user-class">${user.className}</span>` : ''}
+                </div>
             </div>
-            <div>Зарегистрирован: ${new Date(user.createdAt).toLocaleDateString('ru-RU')}</div>
-            <div style="font-size: 12px; color: #666; margin-top: 5px;">
-                Последнее изменение: ${lastModified}
+
+            <div class="user-email">${user.email}</div>
+
+            <div class="user-role ${user.roles[0]}">${user.roles[0]}</div>
+
+            <div class="user-date">${formattedDate}</div>
+
+            <div class="user-actions">
+                <button class="btn-icon edit" onclick="showEditUserModal(${JSON.stringify(user).replace(/"/g, '&quot;')})">
+                    <i class="fas fa-pencil-alt"></i>
+                </button>
+
+                <button class="btn-icon delete" onclick="deleteUserById('${user.id}')">
+                    <i class="fas fa-trash"></i>
+                </button>
             </div>
         `;
-        usersList.appendChild(userElement);
+
+        usersList.appendChild(row);
     });
 }
+
 
 let currentEditingUser = null;
 
@@ -212,6 +229,7 @@ document.getElementById('registerStudentForm').addEventListener('submit', async 
         alert('Ошибка при регистрации студента: ' + error.message);
     }
 });
+
 
 function searchUsers() {
     const searchTerm = document.getElementById('search-users').value.toLowerCase();

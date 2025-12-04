@@ -1,0 +1,615 @@
+:root {
+    --primary: #1d4ed8;
+    --primary-light: #3b82f6;
+    --primary-dark: #1e40af;
+    --secondary: #64748b;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --background: #f8fafc;
+    --surface: #ffffff;
+    --text: #1e293b;
+    --text-light: #64748b;
+    --border: #e2e8f0;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+    --radius: 8px;
+    --radius-lg: 12px;
+    --transition: all 0.2s ease;
+}
+
+/* ===== BASE RESET ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--background);
+    color: var(--text);
+    line-height: 1.5;
+    min-height: 100vh;
+}
+
+/* ===== LAYOUT ===== */
+.container {
+    max-width: 1200px;
+    margin: 1.5rem auto;
+    padding: 0 1.5rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Верхняя панель как top-bar */
+.header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--shadow-sm);
+    border-radius: var(--radius);
+}
+
+.header h1 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+/* Основной контент: сайдбар + правая часть */
+.content {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 1.5rem;
+    min-height: 520px;
+}
+
+/* Сайдбар как карточка */
+.sidebar {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+/* Правая часть */
+.main-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+/* Общий стиль "карточки" для блоков расписания */
+#no-selection,
+#teacher-schedule,
+#class-schedule {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Заголовки в контенте */
+#teacher-schedule h2,
+#class-schedule h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+/* ===== FORMS ===== */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--text);
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 0.9375rem;
+    background: var(--surface);
+    color: var(--text);
+    transition: var(--transition);
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.15);
+}
+
+/* ===== BUTTONS ===== */
+.btn {
+    padding: 0.75rem 1.25rem;
+    border-radius: var(--radius);
+    border: none;
+    font-weight: 500;
+    font-size: 0.9375rem;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Основная кнопка */
+.btn-primary {
+    background: var(--primary);
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+/* Вторичная (нейтральная) */
+.btn-secondary {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    box-shadow: none;
+}
+
+.btn-secondary:hover {
+    background: #f8fafc;
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+/* Успешное действие */
+.btn-success {
+    background: var(--success);
+    color: #ffffff;
+}
+
+.btn-success:hover {
+    background: #059669;
+    transform: translateY(-2px);
+}
+
+/* Опасное действие */
+.btn-danger {
+    background: var(--danger);
+    color: #ffffff;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+    transform: translateY(-2px);
+}
+
+/* ===== TABS (Учителя / Классы) ===== */
+.tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1rem;
+    gap: 0.25rem;
+}
+
+.tab {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    color: var(--text-light);
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.tab:hover {
+    color: var(--text);
+    background: #f8fafc;
+    border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.tab.active {
+    border-bottom-color: var(--primary);
+    color: var(--primary);
+    background: #eff6ff;
+    border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* ===== TEACHER LIST ===== */
+.teacher-list {
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+}
+
+.teacher-item {
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 0.75rem;
+    cursor: pointer;
+    transition: var(--transition);
+    background: var(--surface);
+}
+
+.teacher-item:last-child {
+    margin-bottom: 0;
+}
+
+.teacher-item:hover {
+    background: #f8fafc;
+    box-shadow: var(--shadow-sm);
+}
+
+.teacher-item.active {
+    background: #eff6ff;
+    border-color: var(--primary);
+    box-shadow: var(--shadow);
+}
+
+.teacher-name {
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+    font-size: 0.9375rem;
+}
+
+.teacher-subject {
+    color: var(--text-light);
+    font-size: 0.8125rem;
+}
+
+/* ===== SCHEDULE GRID ===== */
+.schedule-grid {
+    display: grid;
+    grid-template-columns: 120px repeat(6, 1fr);
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--border);
+}
+
+.schedule-header {
+    background: #f8fafc;
+    color: var(--text);
+    padding: 0.75rem;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.schedule-cell {
+    background: var(--surface);
+    padding: 0.75rem;
+    min-height: 80px;
+    border-right: 1px solid var(--border);
+    border-top: 1px solid var(--border);
+    font-size: 0.875rem;
+}
+
+.schedule-cell:last-child {
+    border-right: none;
+}
+
+.time-cell {
+    background: #f8fafc;
+    font-weight: 600;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-light);
+}
+
+/* Карточка урока */
+.lesson-card {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: var(--primary);
+    padding: 0.5rem 0.6rem;
+    border-radius: var(--radius);
+    margin-bottom: 0.5rem;
+    font-size: 0.8125rem;
+}
+
+.lesson-card:last-child {
+    margin-bottom: 0;
+}
+
+.lesson-card .subject {
+    font-weight: 600;
+    display: block;
+    margin-bottom: 0.15rem;
+}
+
+.lesson-card .classroom {
+    font-size: 0.75rem;
+    color: var(--text-light);
+}
+
+/* ===== ALERTS ===== */
+.alert {
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius);
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    border: 1px solid transparent;
+}
+
+.alert-success {
+    background: #dcfce7;
+    color: #166534;
+    border-color: #bbf7d0;
+}
+
+.alert-error {
+    background: #fee2e2;
+    color: #b91c1c;
+    border-color: #fecaca;
+}
+
+/* ===== LOADING / EMPTY STATES ===== */
+.loading {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    color: var(--text-light);
+    font-size: 0.9375rem;
+}
+
+.day-schedule {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-top: 1rem;
+    box-shadow: var(--shadow-sm);
+    background: var(--surface);
+}
+
+.day-header {
+    padding: 1rem 1.5rem;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--border);
+}
+
+.day-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+/* карточка-таблица с уроками */
+.lessons-card {
+    padding: 0;
+}
+
+/* шапка таблицы */
+.lessons-header {
+    display: grid;
+    grid-template-columns: 1.4fr 2fr 1.3fr 1.1fr 0.8fr;
+    padding: 0.75rem 1.5rem;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.lessons-header .header-cell {
+    display: flex;
+    align-items: center;
+}
+
+.header-actions-cell {
+    justify-content: flex-end;
+}
+
+/* строки с уроками */
+.lessons-list {
+    background: var(--surface);
+}
+
+.lesson-row {
+    display: grid;
+    grid-template-columns: 1.4fr 2fr 1.3fr 1.1fr 0.8fr;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    background: var(--surface);
+    transition: var(--transition);
+}
+
+.lesson-row:last-child {
+    border-bottom: none;
+}
+
+.lesson-row:hover {
+    background: #f8fafc;
+    transform: scale(1.002);
+}
+
+/* ячейки */
+.lesson-time {
+    font-size: 0.875rem;
+    color: var(--text);
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+}
+
+.lesson-subject {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.lesson-class,
+.lesson-room {
+    font-size: 0.875rem;
+    color: var(--text-light);
+}
+
+.lesson-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* кнопка-иконка, как в списке пользователей */
+.btn-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 0.9375rem;
+}
+
+.btn-icon:hover {
+    background: #f8fafc;
+    color: var(--primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-icon.delete:hover {
+    border-color: var(--danger);
+    background: #fef2f2;
+    color: var(--danger);
+}
+
+/* ===== MODAL ===== */
+.modal-overlay {
+    display: none; /* по JS включаешь display: flex */
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(5px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.modal-window {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    max-width: 520px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border);
+}
+
+.modal-window h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 1.25rem;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.modal-buttons .btn {
+    flex: 1;
+}
+
+/* ===== HEADER ACTIONS ВНУТРИ КАРТОЧКИ ===== */
+#teacher-schedule .header-actions {
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+    .container {
+        padding: 0 1rem 1.5rem;
+    }
+
+    .content {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+        order: 1;
+    }
+
+    .main-content {
+        order: 2;
+    }
+}
+
+@media (max-width: 640px) {
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .header-actions {
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .schedule-grid {
+        grid-template-columns: 100px repeat(4, 1fr);
+    }
+
+    .modal-window {
+        padding: 1.5rem;
+    }
+
+    .modal-buttons {
+        flex-direction: column;
+    }
+}

@@ -4,119 +4,194 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Education System - Студент</title>
-    <link rel="stylesheet" href="/css/style.css">
-    <link rel="stylesheet" href="/css/schedule.css">
+    <link rel="stylesheet" href="/css/student-dashboard.css">
 </head>
 <body>
 <div class="dashboard">
-    <div class="header">
-        <!-- Wikipedia Search Widget -->
-        <div class="wikipedia-widget">
-            <div class="search-container">
-                <input type="text"
-                       id="wikipediaSearch"
-                       placeholder="Найти материал в Wikipedia..."
-                       class="wikipedia-search-input">
-                <div id="wikipediaResults" class="wikipedia-results"></div>
+    <!-- Top Bar (Header) -->
+    <div class="top-bar">
+        <div class="brand-section">
+            <div class="brand">
+                <h1>🎓 Панель студента</h1>
+                <p class="welcome-message" id="welcome-message">Добро пожаловать!</p>
+                <p class="student-class" id="student-class">Класс: Загрузка...</p>
+            </div>
+
+            <!-- Wikipedia Search Widget -->
+            <div class="wikipedia-widget">
+                <div class="search-container">
+                    <input type="text"
+                           id="wikipediaSearch"
+                           placeholder="Найти материал в Wikipedia..."
+                           class="wikipedia-search-input">
+                    <div id="wikipediaResults" class="wikipedia-results"></div>
+                </div>
             </div>
         </div>
-        <div class="user-info">
-            <div>
-                <h1>Панель студента</h1>
-                <p id="welcome-message">Добро пожаловать!</p>
-                <p id="student-class">Класс: Загрузка...</p>
-            </div>
-            <div>
-                <span id="notification-badge" style="display: none; background: #dc3545; color: white; border-radius: 50%; width: 20px; height: 20px; text-align: center; line-height: 20px; font-size: 12px; margin-right: 10px;"></span>
-                <a href="/profile.html" class="btn-primary">👤 Мой профиль</a>
-                <a href="/chat.html" class="btn-primary">💬 Чат
-                    <span id="chat-badge" class="nav-badge" style="display: none;"></span>
-                </a>
-                <button class="btn-logout" onclick="logout()">Выйти</button>
-            </div>
+
+        <!-- Top Actions -->
+        <div class="top-actions">
+            <!-- Profile Button -->
+            <a href="/profile.html" class="btn-action btn-nav">
+                👤 Мой профиль
+            </a>
+
+            <!-- Chat Button -->
+            <a href="/chat.html" class="btn-action btn-nav">
+                💬 Чат
+                <span id="chat-badge" class="nav-badge" style="display: none;"></span>
+            </a>
+
+            <!-- Progress Button -->
+            <a href="gamification.html" class="btn-action btn-nav">
+                🏆 Мой прогресс
+            </a>
+
+            <!-- Notification Badge -->
+            <span id="notification-badge" style="display: none;"></span>
+
+            <!-- Logout Button -->
+            <button class="btn-logout" onclick="logout()">
+                <span class="logout-icon">🚪</span>
+                Выйти
+            </button>
         </div>
     </div>
 
+    <!-- Main Content -->
     <div class="content">
-        <!-- Левая колонка - РАСПИСАНИЕ -->
+        <!-- Left Column -->
         <div class="left-column">
-            <!-- Блок расписания -->
-            <div class="card">
+            <!-- Schedule Card -->
+            <div class="card schedule-card">
+                <div class="card-header">
+                    <h2>📅 Мое расписание</h2>
+                </div>
                 <div class="schedule-section">
                     <div class="view-switcher">
                         <button id="day-view-btn" class="view-btn active">День</button>
                         <button id="week-view-btn" class="view-btn">Неделя</button>
                     </div>
 
-                    <div id="schedule-container">
-                        <div class="loading">Загрузка расписания...</div>
+                    <div class="schedule-navigation">
+                        <button onclick="scheduleManager.previous()" class="schedule-nav-btn">
+                            <i>←</i>
+                        </button>
+                        <span id="schedule-period" class="schedule-period">Сегодня</span>
+                        <button onclick="scheduleManager.next()" class="schedule-nav-btn">
+                            <i>→</i>
+                        </button>
                     </div>
-                </div>
-            </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <h3>Мой прогресс</h3>
-                    <a href="gamification.html" class="btn btn-outline">Подробнее</a>
-                </div>
-                <div id="progressPreview">
-                    <!-- Preview прогресса будет загружено через JavaScript -->
-                </div>
-            </div>
-
-            <div class="card">
-                <h2>Активные задания <small id="assignments-count">(0)</small></h2>
-                <div id="active-assignments">
-                    <div class="loading-state">
-                        <p>Загрузка заданий...</p>
+                    <div id="schedule-container">
+                        <div class="loading-state">
+                            <i>⏳</i>
+                            <p>Загрузка расписания...</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Правая колонка -->
+        <!-- Right Column -->
         <div class="right-column">
+            <!-- Active Assignments Card -->
             <div class="card">
-                <h2>Сдать задание</h2>
-                <form id="submitAssignmentForm">
+                <div class="card-header">
+                    <h2>📚 Активные задания <span class="badge" id="assignments-count">0</span></h2>
+                </div>
+
+                <div class="assignments-list" id="active-assignments">
+                    <div class="loading-state">
+                        <i>📋</i>
+                        <p>Загрузка заданий...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Assignment Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>📤 Сдать задание</h2>
+                </div>
+
+                <form id="submitAssignmentForm" class="modal-form">
                     <div class="form-group">
-                        <label for="assignmentSelect">Выберите задание:</label>
+                        <label for="assignmentSelect" class="required">Выберите задание</label>
                         <select id="assignmentSelect" required>
                             <option value="">Выберите задание</option>
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label for="assignmentFile">Файл задания:</label>
-                        <input type="file" id="assignmentFile" accept=".pdf,.doc,.docx,.jpg,.png" required>
-                        <small>Поддерживаемые форматы: PDF, DOC, JPG, PNG (макс. 5MB)</small>
-                        <div id="file-info" style="margin-top: 5px;"></div>
+                        <label for="assignmentFile" class="required">Файл задания</label>
+                        <div class="file-upload">
+                            <input type="file"
+                                   id="assignmentFile"
+                                   accept=".pdf,.doc,.docx,.jpg,.png,.txt"
+                                   required>
+                            <label for="assignmentFile" class="file-upload-label">
+                                <i>📎</i> Выберите файл
+                            </label>
+                            <div id="file-info" class="file-info"></div>
+                        </div>
+                        <div class="form-hint">
+                            Поддерживаемые форматы: PDF, DOC, DOCX, JPG, PNG, TXT (макс. 10MB)
+                        </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="assignmentComment">Комментарий к заданию (необязательно):</label>
-                        <textarea id="assignmentComment" rows="3" placeholder="Добавьте комментарий к вашему заданию..."></textarea>
+                        <label for="assignmentComment">Комментарий (необязательно)</label>
+                        <textarea id="assignmentComment"
+                                  rows="3"
+                                  placeholder="Добавьте комментарий к вашему заданию..."></textarea>
                     </div>
 
-                    <button type="submit" class="btn-primary" id="submit-btn">Сдать задание</button>
-                    <div id="submit-message" style="display: none;"></div>
+                    <button type="submit" class="btn-action btn-primary" id="submit-btn">
+                        📤 Сдать задание
+                    </button>
+                    <div id="submit-message" class="form-message" style="display: none;"></div>
                 </form>
             </div>
+        </div>
+    </div>
 
-            <div class="card">
-                <h2>Мои оценки</h2>
-                <div id="grades-list">
-                    <p>Загрузка оценок...</p>
+    <!-- Bottom Statistics Section -->
+    <div class="statistics-section">
+        <!-- Statistics Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2>📈 Статистика</h2>
+            </div>
+            <div id="student-stats" class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-label">Всего заданий</div>
+                    <div class="stat-value" id="total-assignments">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Выполнено</div>
+                    <div class="stat-value success" id="completed-assignments">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Просрочено</div>
+                    <div class="stat-value warning" id="overdue-assignments">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Средний балл</div>
+                    <div class="stat-value" id="average-grade">0</div>
                 </div>
             </div>
+        </div>
 
-            <div class="card">
-                <h2>Статистика</h2>
-                <div id="student-stats">
-                    <p>Всего заданий: <span id="total-assignments">0</span></p>
-                    <p>Выполнено: <span id="completed-assignments">0</span></p>
-                    <p>Просрочено: <span id="overdue-assignments">0</span></p>
-                    <p>Средний балл: <span id="average-grade">0</span></p>
+        <!-- Grades Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2>🏆 Мои оценки</h2>
+            </div>
+            <div class="grades-list" id="grades-list">
+                <div class="loading-state">
+                    <i>📊</i>
+                    <p>Загрузка оценок...</p>
                 </div>
             </div>
         </div>
@@ -129,9 +204,5 @@
 <script src="/js/wikipedia.js"></script>
 <script src="/js/notification.js"></script>
 <script src="/js/schedule.js"></script>
-<script>
-    // Загружаем имя пользователя
-    document.getElementById('user-name').textContent = localStorage.getItem('userName') || 'Ученик';
-</script>
 </body>
 </html>

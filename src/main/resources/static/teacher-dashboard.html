@@ -4,437 +4,200 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Education System - Учитель</title>
-    <link rel="stylesheet" href="/css/style.css">
-    <style>
-        /* Стили для статистики студентов */
-        .statistics-section {
-            margin-top: 30px;
-        }
-
-        .statistics-controls {
-            display: flex;
-            gap: 15px;
-            align-items: flex-end;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .statistics-controls .form-group {
-            flex: 1;
-            min-width: 250px;
-        }
-
-        .class-summary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 25px;
-            border-radius: 12px;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-
-        .class-summary h3 {
-            margin-top: 0;
-            margin-bottom: 20px;
-            font-size: 24px;
-            text-align: center;
-        }
-
-        .summary-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 20px;
-        }
-
-        .summary-stat {
-            text-align: center;
-            padding: 20px 15px;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 10px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .stat-value {
-            font-size: 32px;
-            font-weight: bold;
-            margin-bottom: 8px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .stat-label {
-            font-size: 14px;
-            opacity: 0.9;
-            font-weight: 500;
-        }
-
-        .students-statistics {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .students-statistics h3 {
-            margin-top: 0;
-            margin-bottom: 20px;
-            color: #333;
-            font-size: 20px;
-            border-bottom: 2px solid #667eea;
-            padding-bottom: 10px;
-        }
-
-        .students-table-container {
-            overflow-x: auto;
-            border-radius: 8px;
-            border: 1px solid #e1e5e9;
-        }
-
-        .students-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            min-width: 800px;
-        }
-
-        .students-table th {
-            background: #f8f9fa;
-            color: #333;
-            padding: 15px 12px;
-            text-align: left;
-            font-weight: 600;
-            border-bottom: 2px solid #667eea;
-            position: sticky;
-            top: 0;
-            white-space: nowrap;
-        }
-
-        .students-table td {
-            padding: 12px 10px;
-            border-bottom: 1px solid #e9ecef;
-            transition: background-color 0.2s;
-        }
-
-        .students-table tr:hover {
-            background: #f8f9fa;
-        }
-
-        .students-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .student-name {
-            font-weight: 600;
-            min-width: 160px;
-            color: #333;
-        }
-
-        .grade-cell {
-            text-align: center;
-            min-width: 60px;
-            font-weight: 500;
-            padding: 8px 5px;
-        }
-
-        .grade-excellent {
-            background: #d4edda;
-            color: #155724;
-            font-weight: bold;
-            border-radius: 4px;
-        }
-        .grade-good {
-            background: #d1ecf1;
-            color: #0c5460;
-            border-radius: 4px;
-        }
-        .grade-average {
-            background: #fff3cd;
-            color: #856404;
-            border-radius: 4px;
-        }
-        .grade-poor {
-            background: #ffeaa7;
-            color: #e17055;
-            border-radius: 4px;
-        }
-        .grade-fail {
-            background: #f8d7da;
-            color: #721c24;
-            font-weight: bold;
-            border-radius: 4px;
-        }
-        .grade-missing {
-            color: #6c757d;
-            font-style: italic;
-            background: #f8f9fa;
-            border-radius: 4px;
-        }
-
-        .average-grade {
-            font-weight: bold;
-            text-align: center;
-            padding: 10px;
-            background: #e9ecef;
-            border-radius: 6px;
-            font-size: 16px;
-        }
-
-        .completion-cell {
-            text-align: center;
-            min-width: 100px;
-        }
-
-        .completion-rate {
-            font-size: 12px;
-            color: #6c757d;
-            margin-top: 4px;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 6px;
-            background: #e9ecef;
-            border-radius: 3px;
-            overflow: hidden;
-            margin-top: 5px;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: #28a745;
-            border-radius: 3px;
-            transition: width 0.3s ease;
-        }
-
-        .no-statistics {
-            text-align: center;
-            padding: 60px 20px;
-            color: #666;
-            font-style: italic;
-            background: #f8f9fa;
-            border-radius: 12px;
-            border: 2px dashed #dee2e6;
-        }
-
-        .no-statistics p {
-            font-size: 18px;
-            margin: 0;
-        }
-
-        .statistics-actions {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .btn-statistics {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-
-        .btn-statistics-primary {
-            background: #667eea;
-            color: white;
-        }
-
-        .btn-statistics-primary:hover {
-            background: #5a6fd8;
-            transform: translateY(-2px);
-        }
-
-        .btn-statistics-secondary {
-            background: #6c757d;
-            color: white;
-        }
-
-        .btn-statistics-secondary:hover {
-            background: #5a6268;
-            transform: translateY(-2px);
-        }
-
-        /* Адаптивность */
-        @media (max-width: 768px) {
-            .statistics-controls {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .statistics-controls .form-group {
-                min-width: auto;
-            }
-
-            .summary-stats {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .stat-value {
-                font-size: 24px;
-            }
-
-            .students-table-container {
-                margin: 0 -10px;
-                border-radius: 0;
-                border-left: none;
-                border-right: none;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .summary-stats {
-                grid-template-columns: 1fr;
-            }
-
-            .class-summary {
-                padding: 20px 15px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="/css/teacher-dashboard.css">
 </head>
 <body>
 <div class="dashboard">
-    <div class="header">
-        <!-- Wikipedia Search Widget -->
-        <div class="wikipedia-widget">
-            <div class="search-container">
-                <input type="text"
-                       id="wikipediaSearch"
-                       placeholder="Найти материал в Wikipedia..."
-                       class="wikipedia-search-input">
-                <div id="wikipediaResults" class="wikipedia-results"></div>
+    <!-- Top Bar (Header) -->
+    <div class="top-bar">
+        <div class="brand-section">
+            <div class="brand">
+                <h1>🎓 Панель учителя</h1>
+                <p class="welcome-message" id="welcome-message">Добро пожаловать!</p>
+            </div>
+
+            <!-- Wikipedia Search Widget -->
+            <div class="wikipedia-widget">
+                <div class="search-container">
+                    <input type="text"
+                           id="wikipediaSearch"
+                           placeholder="Найти материал в Wikipedia..."
+                           class="wikipedia-search-input">
+                    <div id="wikipediaResults" class="wikipedia-results"></div>
+                </div>
             </div>
         </div>
-        <div class="user-info">
-            <div>
-                <h1>Панель учителя</h1>
-                <p id="welcome-message">Добро пожаловать!</p>
-            </div>
-            <div>
-                <span id="notification-badge" style="display: none; background: #dc3545; color: white; border-radius: 50%; width: 20px; height: 20px; text-align: center; line-height: 20px; font-size: 12px; margin-right: 10px;"></span>
-                <a href="/profile.html" class="btn-primary" style="margin-right: 10px;">👤 Мой профиль</a>
-                <a href="/chat.html" class="btn-primary">💬 Чат
-                    <span id="chat-badge" class="nav-badge" style="display: none;"></span>
-                </a>
-                <button class="btn-logout" onclick="logout()">Выйти</button>
-            </div>
+
+        <!-- Top Actions -->
+        <div class="top-actions">
+            <!-- Gamification Button -->
+            <a href="teacher-gamification.html" class="btn-action btn-nav">
+                🎮 Геймификация
+            </a>
+            <span id="notification-badge" style="display: none;"></span>
+            <a href="/profile.html" class="btn-action btn-nav">
+                👤 Мой профиль
+            </a>
+            <a href="/chat.html" class="btn-action btn-nav">
+                💬 Чат
+                <span id="chat-badge" class="nav-badge" style="display: none;"></span>
+            </a>
+
+            <!-- Logout Button -->
+            <button class="btn-logout" onclick="logout()">
+                <span class="logout-icon">🚪</span>
+                Выйти
+            </button>
         </div>
     </div>
 
+    <!-- Main Content -->
     <div class="content">
-
-        <div class="card" onclick="location.href='/teacher-schedule.html'">
-            <div class="card-icon">📅</div>
-            <div class="card-title">Мое расписание</div>
-            <div class="card-description">Просмотр моего расписания уроков</div>
-        </div>
-        <!-- Левая колонка -->
+        <!-- Left Column -->
         <div class="left-column">
-            <div class="card">
-                <h2>Быстрые действия</h2>
-                <button class="btn-primary" onclick="showCreateAssignmentModal()">
-                    Создать задание
+            <!-- Quick Actions Card -->
+            <div class="card quick-actions">
+                <div class="card-header">
+                    <h2>⚡ Быстрые действия</h2>
+                </div>
+                <button class="btn-action btn-primary" onclick="showCreateAssignmentModal()">
+                    📝 Создать задание
                 </button>
-                <button class="btn-secondary" onclick="loadSubmissionsToGrade()">
+                <button class="btn-action btn-secondary" onclick="loadSubmissionsToGrade()">
                     🔄 Обновить список на проверку
                 </button>
-                <div style="margin-top: 10px; font-size: 14px; color: #666;">
+                <div class="pending-count">
                     <span id="pending-count">0</span> заданий ждут проверки
                 </div>
             </div>
 
+            <!-- My Schedule Card -->
+            <div class="card clickable" onclick="location.href='/teacher-schedule.html'">
+                <div class="card-icon">📅</div>
+                <div class="card-content">
+                    <h3>Мое расписание</h3>
+                    <p>Просмотр моего расписания уроков</p>
+                </div>
+                <div class="card-arrow">→</div>
+            </div>
+
+            <!-- My Classes Card -->
             <div class="card">
-                <h2>Мои классы</h2>
-                <div id="classes-list">
+                <div class="card-header">
+                    <h2>🏫 Мои классы</h2>
+                </div>
+                <div class="classes-list-container" id="classes-list">
+                    <!-- Classes will be loaded here -->
                     <p>Загрузка классов...</p>
                 </div>
             </div>
         </div>
 
-        <!-- Правая колонка -->
+        <!-- Right Column -->
         <div class="right-column">
-            <!-- Блок с заданиями с поиском и пагинацией -->
+            <!-- My Assignments Card -->
             <div class="card">
-                <h2>Мои задания</h2>
+                <div class="card-header">
+                    <h2>📚 Мои задания</h2>
+                </div>
 
-                <!-- Поиск и фильтры -->
+                <!-- Search and Filters -->
                 <div class="search-filters">
                     <div class="form-group">
-                        <input type="text" id="searchAssignments" placeholder="Поиск по названию задания..."
+                        <input class="search-input"
+                               type="text"
+                               id="searchAssignments"
+                               placeholder="Поиск по названию задания..."
                                onkeyup="searchTeacherAssignments()">
                     </div>
                     <div class="filter-row">
                         <div class="form-group">
                             <label for="classFilter">Фильтр по классу:</label>
-                            <select id="classFilter" onchange="filterTeacherAssignments()">
+                            <select class="filter-case-option" id="classFilter" onchange="filterTeacherAssignments()">
                                 <option value="">Все классы</option>
-                                <!-- Классы будут добавлены динамически -->
                             </select>
                         </div>
-                        <button class="btn-secondary" onclick="clearFilters()" style="margin-top: 25px;">
-                            Очистить фильтры
+                        <button class="btn-action btn-secondary" onclick="clearFilters()">
+                            🗑️ Очистить фильтры
                         </button>
                     </div>
                 </div>
 
-                <!-- Список заданий -->
+                <!-- Assignments List -->
                 <div id="assignments-list">
-                    <p>Загрузка заданий...</p>
+                    <div class="assignments-list">
+                        <div class="no-assignments">
+                            <i>📋</i>
+                            <h3>Загрузка заданий...</h3>
+                            <small>Пожалуйста, подождите</small>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Пагинация -->
+                <!-- Pagination -->
                 <div id="pagination" class="pagination" style="display: none;">
-                    <button id="prev-page" class="btn-secondary" onclick="changePage(-1)">← Назад</button>
-                    <span id="page-info">Страница 1 из 1</span>
-                    <button id="next-page" class="btn-secondary" onclick="changePage(1)">Вперед →</button>
+                    <button id="prev-page" class="btn-action btn-secondary" onclick="changePage(-1)">
+                        ← Назад
+                    </button>
+                    <span id="page-info" class="page-info">Страница 1 из 1</span>
+                    <button id="next-page" class="btn-action btn-secondary" onclick="changePage(1)">
+                        Вперед →
+                    </button>
                 </div>
             </div>
 
-            <!-- Блок с заданиями на проверку -->
-            <div class="card">
-                <h2>Задания на проверку</h2>
-                <div id="submissions-to-grade">
-                    <p>Загрузка заданий на проверку...</p>
-                </div>
-            </div>
-
+            <!-- Submissions to Grade Card -->
             <div class="card">
                 <div class="card-header">
-                    <h3>Геймификация студентов</h3>
+                    <h2>📝 Задания на проверку</h2>
                 </div>
-                <div class="gamification-preview" id="gamificationPreview">
-                    <!-- Преview будет загружено через JavaScript -->
-                </div>
-                <div style="text-align: center; margin-top: 15px;">
-                    <a href="teacher-gamification.html" class="btn btn-primary">Подробная статистика</a>
+                <div id="submissions-to-grade">
+                    <div class="submissions-list">
+                        <div class="no-submissions">
+                            <i>⏳</i>
+                            <h3>Загрузка заданий...</h3>
+                            <p>Пожалуйста, подождите</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Блок со статистикой -->
+            <!-- Statistics Card -->
             <div class="card">
-                <h2>Статистика</h2>
+                <div class="card-header">
+                    <h2>📊 Статистика</h2>
+                </div>
                 <div id="teacher-stats">
-                    <p>Всего заданий: <span id="total-assignments">0</span></p>
-                    <p>На проверке: <span id="pending-submissions">0</span></p>
-                    <p>Проверено: <span id="graded-submissions">0</span></p>
+                    <div class="stats-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+                        <div class="stat-item">
+                            <div class="stat-label">Всего заданий</div>
+                            <div class="stat-value" id="total-assignments">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">На проверке</div>
+                            <div class="stat-value" id="pending-submissions">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Проверено</div>
+                            <div class="stat-value" id="graded-submissions">0</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Секция статистики студентов - ПЕРЕМЕЩЕНА ВНИЗ -->
+    <!-- Statistics Section (at the bottom) -->
     <div class="statistics-section">
         <div class="card">
-            <h2>📊 Статистика успеваемости студентов</h2>
+            <div class="card-header">
+                <h2>📈 Статистика успеваемости студентов</h2>
+            </div>
 
             <div class="statistics-controls">
-                <div class="form-group">
+                <div class="form-group" style="flex: 1;">
                     <label for="class-select">Выберите класс для просмотра статистики:</label>
-                    <select id="class-select" onchange="statisticsManager.loadClassStatistics(this.value)">
+                    <select id="class-select" class="form-select" onchange="statisticsManager.loadClassStatistics(this.value)">
                         <option value="">-- Выберите класс --</option>
                     </select>
                 </div>
@@ -451,14 +214,14 @@
 
             <div id="class-statistics" style="display: none;">
                 <div class="class-summary" id="class-summary">
-                    <!-- Статистика класса будет здесь -->
+                    <!-- Class statistics will be here -->
                 </div>
 
                 <div class="students-statistics">
-                    <h3>📈 Детальная статистика студентов</h3>
+                    <h3 style="margin-bottom: 1rem;">📊 Детальная статистика студентов</h3>
                     <div class="students-table-container">
                         <div id="students-stats-table">
-                            <!-- Таблица студентов будет здесь -->
+                            <!-- Students table will be here -->
                         </div>
                     </div>
                 </div>
@@ -471,57 +234,110 @@
     </div>
 </div>
 
-<!-- Модальное окно создания задания -->
+<!-- Modal Windows -->
 <div id="createAssignmentModal" class="modal" style="display: none;">
     <div class="modal-content">
         <span class="close" onclick="closeCreateAssignmentModal()">&times;</span>
-        <h2>Создать новое задание</h2>
-        <form id="createAssignmentForm">
-            <div class="form-group">
-                <label for="assignmentTitle">Название:</label>
-                <input type="text" id="assignmentTitle" required>
-            </div>
-            <div class="form-group">
-                <label for="assignmentDescription">Описание:</label>
-                <textarea id="assignmentDescription" rows="4"></textarea>
-            </div>
-            <div class="form-group">
-                <label for="assignmentType">Тип:</label>
-                <select id="assignmentType" required>
-                    <option value="homework">Домашнее задание</option>
-                    <option value="test">Тест</option>
-                    <option value="quiz">Викторина</option>
-                    <option value="sor">СОР</option>
-                    <option value="soch">СОЧ</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="assignmentMaxGrade">Макс. оценка:</label>
-                <input type="number" id="assignmentMaxGrade" value="100" min="1" max="100">
-            </div>
-            <div class="form-group">
-                <label for="assignmentDeadline">Срок сдачи:</label>
-                <input type="datetime-local" id="assignmentDeadline" required>
-            </div>
-            <div class="form-group">
-                <label for="assignmentClass">Класс:</label>
-                <select id="assignmentClass" required>
-                    <option value="">Выберите класс</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="assignmentSubject">Предмет:</label>
-                <select id="assignmentSubject" required>
-                    <option value="">Выберите предмет</option>
-                    <option value="1">Математика</option>
-                    <option value="2">Физика</option>
-                    <option value="3">Химия</option>
-                    <option value="4">История</option>
-                    <option value="5">Литература</option>
-                </select>
-            </div>
-            <button type="submit" class="btn-primary">Создать задание</button>
-        </form>
+
+        <div class="modal-header">
+            <h2><i>📝</i> Создать новое задание</h2>
+        </div>
+
+        <div class="modal-body">
+            <form id="createAssignmentForm" class="modal-form">
+                <div class="form-group">
+                    <label for="assignmentTitle" class="required">Название задания</label>
+                    <input type="text"
+                           id="assignmentTitle"
+                           placeholder="Введите название задания"
+                           required>
+                    <div class="form-hint">Будет отображаться у студентов</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="assignmentDescription">Описание задания</label>
+                    <textarea id="assignmentDescription"
+                              rows="4"
+                              placeholder="Подробное описание задания, требования, инструкции..."></textarea>
+                    <div class="form-hint">Необязательно, но рекомендуется для лучшего понимания</div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="assignmentType" class="required">Тип задания</label>
+                        <select id="assignmentType" required>
+                            <option value="">Выберите тип</option>
+                            <option value="homework">Домашнее задание</option>
+                            <option value="test">Тест</option>
+                            <option value="quiz">Викторина</option>
+                            <option value="sor">СОР</option>
+                            <option value="soch">СОЧ</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="assignmentMaxGrade" class="required">Максимальная оценка</label>
+                        <div class="grade-input-container">
+                            <input type="number"
+                                   id="assignmentMaxGrade"
+                                   value="100"
+                                   min="1"
+                                   max="1000"
+                                   required>
+                            <span class="grade-input-suffix">баллов</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="assignmentDeadline" class="required">Срок сдачи</label>
+                    <input type="datetime-local" id="assignmentDeadline" required>
+                    <div class="form-hint">Студенты не смогут сдать задание после установленного срока</div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="assignmentClass" class="required">Класс</label>
+                        <select id="assignmentClass" required>
+                            <option value="">Выберите класс</option>
+                            <!-- Классы будут добавлены динамически -->
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="assignmentSubject" class="required">Предмет</label>
+                        <select id="assignmentSubject" required>
+                            <option value="">Выберите предмет</option>
+                            <option value="1">Математика</option>
+                            <option value="2">Физика</option>
+                            <option value="3">Химия</option>
+                            <option value="4">История</option>
+                            <option value="5">Литература</option>
+                            <option value="6">Биология</option>
+                            <option value="7">География</option>
+                            <option value="8">Иностранный язык</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-info">
+                    <p><strong>💡 Подсказка:</strong> После создания задания студенты получат уведомление о новом задании.</p>
+                </div>
+            </form>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button"
+                    class="btn-action btn-secondary"
+                    onclick="closeCreateAssignmentModal()">
+                Отмена
+            </button>
+            <button type="submit"
+                    form="createAssignmentForm"
+                    class="btn-action btn-primary">
+                <i>✓</i> Создать задание
+            </button>
+        </div>
     </div>
 </div>
 
@@ -529,26 +345,59 @@
 <div id="gradeSubmissionModal" class="modal" style="display: none;">
     <div class="modal-content">
         <span class="close" onclick="closeGradeSubmissionModal()">&times;</span>
-        <h2>Оценка задания</h2>
-        <div id="submission-details">
-            <!-- Детали задания будут здесь -->
+
+        <div class="modal-header">
+            <h2><i>📊</i> Оценка задания</h2>
         </div>
-        <form id="gradeSubmissionForm">
-            <input type="hidden" id="submissionId">
-            <div class="form-group">
-                <label for="gradeValue">Оценка:</label>
-                <input type="number" id="gradeValue" min="0" max="100" required>
-                <small>Максимальная оценка: <span id="max-grade">100</span></small>
+
+        <div class="modal-body">
+            <div id="submission-details" class="submission-details-modal">
+                <!-- Детали задания будут здесь -->
             </div>
-            <div class="form-group">
-                <label for="teacherComment">Комментарий:</label>
-                <textarea id="teacherComment" rows="4" placeholder="Обратная связь для студента..."></textarea>
-            </div>
-            <div class="form-actions">
-                <button type="submit" class="btn-primary">Поставить оценку</button>
-                <button type="button" class="btn-secondary" onclick="closeGradeSubmissionModal()">Отмена</button>
-            </div>
-        </form>
+
+            <form id="gradeSubmissionForm" class="modal-form">
+                <input type="hidden" id="submissionId">
+
+                <div class="form-group">
+                    <label for="gradeValue" class="required">Оценка</label>
+                    <div class="grade-input-container">
+                        <input type="number"
+                               id="gradeValue"
+                               min="0"
+                               max="100"
+                               placeholder="Введите оценку"
+                               required>
+                        <span class="grade-input-suffix">/ <span id="max-grade">100</span></span>
+                    </div>
+                    <div class="form-hint">Оценка от 0 до максимального значения</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="teacherComment">Комментарий для студента</label>
+                    <textarea id="teacherComment"
+                              rows="4"
+                              placeholder="Обратная связь, замечания, похвала..."></textarea>
+                    <div class="form-hint">Будет отображено студенту после проверки</div>
+                </div>
+
+                <div class="form-warning">
+                    <p><strong>⚠️ Внимание:</strong> После выставления оценки изменить её будет невозможно.</p>
+                </div>
+            </form>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button"
+                    class="btn-action btn-secondary"
+                    onclick="closeGradeSubmissionModal()">
+                Отмена
+            </button>
+            <button type="submit"
+                    form="gradeSubmissionForm"
+                    class="btn-action btn-primary">
+                <i>✓</i> Поставить оценку
+            </button>
+        </div>
     </div>
 </div>
 
@@ -560,7 +409,7 @@
 <script src="/js/statistics.js"></script>
 
 <script>
-    // Дополнительные функции для StatisticsManager
+    // Additional JavaScript for StatisticsManager
     if (typeof StatisticsManager !== 'undefined') {
         StatisticsManager.prototype.exportStatistics = function() {
             alert('Функция экспорта в Excel будет реализована в ближайшее время!');

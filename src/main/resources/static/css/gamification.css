@@ -1,0 +1,745 @@
+:root {
+    --primary: #1d4ed8;
+    --primary-light: #3b82f6;
+    --primary-dark: #1e40af;
+    --secondary: #64748b;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --background: #f8fafc;
+    --surface: #ffffff;
+    --text: #1e293b;
+    --text-light: #64748b;
+    --border: #e2e8f0;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+    --radius: 8px;
+    --radius-lg: 12px;
+    --transition: all 0.2s ease;
+    --gradient-primary: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--background);
+    color: var(--text);
+    line-height: 1.5;
+    min-height: 100vh;
+}
+
+/* ===== ОСНОВНЫЕ СТИЛИ ===== */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.5rem;
+}
+
+/* ===== ХЭДЕР И НАВИГАЦИЯ ===== */
+.header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+}
+
+.nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.logo {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.nav-links {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: var(--text);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: var(--transition);
+}
+
+.nav-links a:hover {
+    background: var(--background);
+    color: var(--primary);
+}
+
+.nav-links a.active {
+    background: var(--primary);
+    color: white;
+    box-shadow: var(--shadow-sm);
+}
+
+/* ===== КАРТОЧКИ И КОНТЕЙНЕРЫ ===== */
+.card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.card-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* ===== ФОРМЫ И КНОПКИ ===== */
+.filter-group {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.filter-select,
+.search-input {
+    padding: 0.625rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    background: var(--surface);
+    color: var(--text);
+    transition: var(--transition);
+}
+
+.filter-select:focus,
+.search-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.15);
+}
+
+.filter-select {
+    padding-right: 2.5rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px;
+}
+
+.search-box {
+    position: relative;
+    width: 280px;
+}
+
+.search-input {
+    width: 100%;
+    padding-left: 2.5rem;
+}
+
+.search-box i {
+    position: absolute;
+    left: 0.875rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-light);
+    font-size: 0.875rem;
+}
+
+/* ===== СЕТКИ И СТАТИСТИКА ===== */
+.teacher-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-item {
+    background: #f8fafc;
+    padding: 1.5rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    text-align: center;
+    transition: var(--transition);
+}
+
+.stat-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ===== ТАБЫ ===== */
+.tabs {
+    display: flex;
+    gap: 0.25rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.tab-btn {
+    padding: 0.75rem 1.5rem;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-light);
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.tab-btn:hover {
+    color: var(--primary);
+    background: #f8fafc;
+    border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.tab-btn.active {
+    border-bottom-color: var(--primary);
+    color: var(--primary);
+    background: #eff6ff;
+    border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* ===== РЕЙТИНГИ И ЛИДЕРБОРДЫ ===== */
+.podium {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.podium-item {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+    position: relative;
+}
+
+.podium-item:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow);
+}
+
+.podium-item.place-1 {
+    border-color: #ffd700;
+    background: linear-gradient(135deg, #fff8e1 0%, #fff 100%);
+    transform: translateY(-10px);
+}
+
+.podium-item.place-2 {
+    border-color: #c0c0c0;
+    background: linear-gradient(135deg, #f5f5f5 0%, #fff 100%);
+}
+
+.podium-item.place-3 {
+    border-color: #cd7f32;
+    background: linear-gradient(135deg, #fff3e0 0%, #fff 100%);
+}
+
+.podium-rank {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--primary);
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+    box-shadow: var(--shadow);
+}
+
+.leaderboard {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+}
+
+.leaderboard-item {
+    display: grid;
+    grid-template-columns: 60px 50px 1fr 120px 100px;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    gap: 1rem;
+    transition: var(--transition);
+}
+
+.leaderboard-item:last-child {
+    border-bottom: none;
+}
+
+.leaderboard-item:hover {
+    background: #f8fafc;
+}
+
+.rank {
+    font-weight: 600;
+    color: var(--primary);
+    font-size: 1rem;
+}
+
+.student-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--gradient-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.student-info {
+    text-align: left;
+}
+
+.student-name {
+    font-weight: 600;
+    margin-bottom: 0.125rem;
+}
+
+.student-class {
+    font-size: 0.75rem;
+    color: var(--text-light);
+}
+
+.student-stats {
+    text-align: right;
+}
+
+.xp {
+    font-weight: 600;
+    color: var(--primary);
+    font-size: 0.875rem;
+}
+
+.level {
+    font-size: 0.75rem;
+    color: var(--text-light);
+}
+
+.achievements-count {
+    font-weight: 600;
+    color: var(--warning);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* ===== СПИСКИ И КАРТОЧКИ ===== */
+.student-list,
+.achievements-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.student-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    transition: var(--transition);
+    gap: 1rem;
+}
+
+.student-item:hover {
+    transform: translateX(4px);
+    box-shadow: var(--shadow-sm);
+}
+
+.student-rank {
+    font-weight: 600;
+    color: var(--primary);
+    min-width: 30px;
+    font-size: 0.875rem;
+}
+
+.student-main-info {
+    flex: 1;
+}
+
+.student-details {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.75rem;
+    color: var(--text-light);
+    margin-top: 0.25rem;
+    flex-wrap: wrap;
+}
+
+.student-details span {
+    padding: 0.125rem 0.5rem;
+    background: #f8fafc;
+    border-radius: 12px;
+}
+
+.achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.achievement-card {
+    display: flex;
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 1rem;
+    border: 1px solid var(--border);
+    transition: var(--transition);
+}
+
+.achievement-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+.achievement-card.unlocked {
+    border-color: var(--success);
+    background: linear-gradient(135deg, #f0fff4 0%, #fff 100%);
+}
+
+.achievement-icon {
+    width: 48px;
+    height: 48px;
+    margin-right: 1rem;
+    border-radius: var(--radius);
+    background: var(--gradient-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.achievement-card.unlocked .achievement-icon {
+    background: var(--success);
+}
+
+.achievement-content {
+    flex: 1;
+}
+
+.achievement-name {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: var(--text);
+}
+
+.achievement-desc {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    margin-bottom: 0.5rem;
+}
+
+.achievement-status {
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    display: inline-block;
+}
+
+.status-unlocked {
+    background: var(--success);
+    color: white;
+}
+
+.status-locked {
+    background: var(--border);
+    color: var(--text-light);
+}
+
+/* ===== ЭЛЕМЕНТЫ ИНТЕРФЕЙСА ===== */
+.stats-badge,
+.level-badge {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.level-badge {
+    background: var(--gradient-primary);
+    color: white;
+    font-weight: 600;
+}
+
+.badge-count {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.stats-badge .badge-total {
+    color: var(--text-light);
+    font-weight: normal;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    border: none;
+    font-weight: 500;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-secondary {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+    background: #f8fafc;
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.view-details-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.view-details-btn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+/* ===== ПРОГРЕСС БАР ===== */
+.progress-container {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text);
+}
+
+.progress-bar {
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--gradient-primary);
+    transition: width 0.3s ease;
+    border-radius: 4px;
+}
+
+.achievement-card .progress-container {
+    padding: 0;
+    background: transparent;
+    border: none;
+    margin: 0.5rem 0 0 0;
+}
+
+.achievement-card .progress-bar {
+    height: 4px;
+}
+
+.achievement-card .progress-info {
+    margin-bottom: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--text-light);
+}
+
+/* ===== СОСТОЯНИЯ ===== */
+.empty-state,
+.loading,
+.no-lessons {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-light);
+    font-size: 0.875rem;
+}
+
+.empty-state i,
+.loading i {
+    font-size: 3rem;
+    opacity: 0.3;
+    margin-bottom: 1rem;
+}
+
+.stat-item.loading-stat {
+    background: transparent;
+    border: 2px dashed var(--border);
+    color: var(--text-light);
+    font-size: 0.875rem;
+}
+
+/* ===== АДАПТИВНОСТЬ ===== */
+@media (max-width: 1024px) {
+    .container {
+        padding: 1rem;
+    }
+
+    .teacher-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .achievements-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .card-header,
+    .filter-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-select,
+    .search-box {
+        width: 100%;
+    }
+
+    .podium {
+        grid-template-columns: 1fr;
+    }
+
+    .podium-item.place-1 {
+        transform: none;
+    }
+
+    .leaderboard-item {
+        grid-template-columns: 40px 40px 1fr;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+    }
+
+    .student-stats,
+    .achievements-count {
+        display: none;
+    }
+
+    .student-item {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+        gap: 0.75rem;
+    }
+
+    .student-details {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .tab-btn {
+        flex: 1;
+        min-width: 100px;
+        justify-content: center;
+    }
+
+    .search-box {
+        width: 100%;
+    }
+}

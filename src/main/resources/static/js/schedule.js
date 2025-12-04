@@ -1,4 +1,3 @@
-// schedule.js
 class ScheduleManager {
     constructor() {
         this.currentDate = new Date();
@@ -9,8 +8,9 @@ class ScheduleManager {
 
     async init() {
         await this.loadStudentInfo();
-        await this.loadScheduleForToday();
+        await this.loadSchedule();
         this.setupEventListeners();
+        this.updatePeriodText();
     }
 
     async loadStudentInfo() {
@@ -18,82 +18,97 @@ class ScheduleManager {
             const studentInfo = await ApiService.get('/students/me');
             if (studentInfo.schoolClass) {
                 this.currentStudentClass = studentInfo.schoolClass;
-                document.getElementById('student-class').textContent = `Класс: ${studentInfo.schoolClass.name}`;
             }
         } catch (error) {
             console.error('Error loading student info:', error);
         }
     }
 
-    async loadScheduleForToday() {
+    async loadSchedule() {
         try {
-            const today = this.formatDate(this.currentDate);
-            const lessons = await ApiService.get(`/schedule/student/my?date=${today}`);
-            this.displayDaySchedule(lessons);
+            const container = document.getElementById('schedule-container');
+            container.innerHTML = `
+                <div class="loading-state">
+                    <i>⏳</i>
+                    <p>Загрузка расписания...</p>
+                </div>
+            `;
+
+            if (this.currentView === 'day') {
+                await this.loadDaySchedule();
+            } else {
+                await this.loadWeekSchedule();
+            }
+
+            this.updatePeriodText();
+
         } catch (error) {
             console.error('Error loading schedule:', error);
             this.showError('Ошибка загрузки расписания');
         }
     }
 
-    async loadWeekSchedule(startDate) {
-        try {
-            const formattedDate = this.formatDate(startDate);
-            const weekData = await ApiService.get(`/schedule/student/week?startDate=${formattedDate}`);
-            this.displayWeekSchedule(weekData);
-        } catch (error) {
-            console.error('Error loading week schedule:', error);
-            this.showError('Ошибка загрузки расписания на неделю');
-        }
+    async loadDaySchedule() {
+        const today = this.formatDate(this.currentDate);
+        const lessons = await ApiService.get(`/schedule/student/my?date=${today}`);
+        this.displayDaySchedule(lessons);
+    }
+
+    async loadWeekSchedule() {
+        const startDate = this.getWeekStart(this.currentDate);
+        const formattedDate = this.formatDate(startDate);
+        const weekData = await ApiService.get(`/schedule/student/week?startDate=${formattedDate}`);
+        this.displayWeekSchedule(weekData);
     }
 
     displayDaySchedule(lessons) {
         const container = document.getElementById('schedule-container');
+        const dateStr = this.formatDisplayDate(this.currentDate);
 
-        // ВСЕГДА показываем навигацию, даже если нет уроков
         let html = `
-        <div class="schedule-header">
-            <h3>Расписание на ${this.formatDisplayDate(this.currentDate)}</h3>
-            <div class="schedule-actions">
-                <button onclick="scheduleManager.previousDay()" class="btn-secondary">← Назад</button>
-                <button onclick="scheduleManager.today()" class="btn-secondary">Сегодня</button>
-                <button onclick="scheduleManager.nextDay()" class="btn-secondary">Вперед →</button>
+            <div class="schedule-header">
+                <h3>${dateStr}</h3>
             </div>
-        </div>
-    `;
+        `;
 
         if (!lessons || lessons.length === 0) {
             html += `
-            <div class="no-schedule">
-                <div class="no-schedule-icon">📅</div>
-                <div class="no-schedule-text">На ${this.formatDisplayDate(this.currentDate)} уроков нет</div>
-                <div class="no-schedule-hint">Отдыхайте! 😊</div>
-            </div>
-        `;
+                <div class="no-schedule">
+                    <div class="no-schedule-icon">📅</div>
+                    <div class="no-schedule-text">На этот день уроков нет</div>
+                    <div class="no-schedule-hint">Отдыхайте! 😊</div>
+                </div>
+            `;
         } else {
             html += `<div class="lessons-list">`;
 
-            // СОРТИРУЕМ уроки по номеру
+            // Сортируем уроки по номеру
             lessons.sort((a, b) => a.lessonNumber - b.lessonNumber);
 
             lessons.forEach(lesson => {
                 const isCurrent = this.isCurrentLesson(lesson);
                 html += `
-                <div class="lesson-item ${isCurrent ? 'current-lesson' : ''}">
-                    <div class="lesson-time">
-                        <div class="lesson-number">${lesson.lessonNumber} урок</div>
-                        <div class="time-range">${this.formatTime(lesson.startTime)} - ${this.formatTime(lesson.endTime)}</div>
-                    </div>
-                    <div class="lesson-info">
-                        <div class="subject-name">${lesson.subjectName}</div>
-                        <div class="lesson-details">
-                            <span class="classroom">${lesson.classroom}</span>
-                            ${lesson.teacherName ? `<span class="teacher">${lesson.teacherName}</span>` : ''}
+                    <div class="lesson-item ${isCurrent ? 'current-lesson' : ''}">
+                        <div class="lesson-time">
+                            <div class="lesson-number">${lesson.lessonNumber} урок</div>
+                            <div class="time-range">${this.formatTime(lesson.startTime)} - ${this.formatTime(lesson.endTime)}</div>
                         </div>
+                        <div class="lesson-info">
+                            <div class="subject-name">${lesson.subjectName}</div>
+                            <div class="lesson-details">
+                                <span class="classroom">
+                                    <i>🏫</i> ${lesson.classroom}
+                                </span>
+                                ${lesson.teacherName ? `
+                                <span class="teacher">
+                                    <i>👤</i> ${lesson.teacherName}
+                                </span>
+                                ` : ''}
+                            </div>
+                        </div>
+                        ${isCurrent ? '<div class="current-badge">Сейчас</div>' : ''}
                     </div>
-                    ${isCurrent ? '<div class="current-badge">Сейчас</div>' : ''}
-                </div>
-            `;
+                `;
             });
 
             html += `</div>`;
@@ -104,27 +119,24 @@ class ScheduleManager {
 
     displayWeekSchedule(weekData) {
         const container = document.getElementById('schedule-container');
+        const weekStart = this.getWeekStart(this.currentDate);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6);
 
-        // ВСЕГДА показываем навигацию, даже если нет данных
         let html = `
-        <div class="schedule-header">
-            <h3>Расписание на неделю</h3>
-            <div class="schedule-actions">
-                <button onclick="scheduleManager.previousWeek()" class="btn-secondary">← Предыдущая</button>
-                <button onclick="scheduleManager.today()" class="btn-secondary">Сегодня</button>
-                <button onclick="scheduleManager.nextWeek()" class="btn-secondary">Следующая →</button>
+            <div class="schedule-header">
+                <h3>${weekStart.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} - ${weekEnd.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })}</h3>
             </div>
-        </div>
-    `;
+        `;
 
         if (!weekData || weekData.length === 0) {
             html += `
-            <div class="no-schedule">
-                <div class="no-schedule-icon">📅</div>
-                <div class="no-schedule-text">Нет расписания на эту неделю</div>
-                <div class="no-schedule-hint">Попробуйте другую дату</div>
-            </div>
-        `;
+                <div class="no-schedule">
+                    <div class="no-schedule-icon">📅</div>
+                    <div class="no-schedule-text">Нет расписания на эту неделю</div>
+                    <div class="no-schedule-hint">Попробуйте другую дату</div>
+                </div>
+            `;
         } else {
             html += `<div class="week-schedule">`;
 
@@ -143,26 +155,25 @@ class ScheduleManager {
                 const dayData = weekData.find(day => day.dayOfWeek === dayName);
 
                 html += `
-                <div class="week-day ${dayData && dayData.isHoliday ? 'holiday' : ''}">
-                    <div class="day-header">
-                        <div class="day-name">${dayNames[dayName]}</div>
-                        <div class="day-date">${dayData ? this.formatDisplayDate(new Date(dayData.date)) : ''}</div>
-                        ${dayData && dayData.isHoliday ? '<div class="holiday-badge">Выходной</div>' : ''}
-                    </div>
-            `;
+                    <div class="week-day ${dayData && dayData.isHoliday ? 'holiday' : ''}">
+                        <div class="day-header">
+                            <div class="day-name">${dayNames[dayName]}</div>
+                            <div class="day-date">${dayData ? new Date(dayData.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) : ''}</div>
+                            ${dayData && dayData.isHoliday ? '<div class="holiday-badge">Выходной</div>' : ''}
+                        </div>
+                `;
 
                 if (dayData && !dayData.isHoliday && dayData.lessons && dayData.lessons.length > 0) {
-                    // СОРТИРУЕМ уроки по номеру для недельного вида тоже
                     const sortedLessons = dayData.lessons.sort((a, b) => a.lessonNumber - b.lessonNumber);
 
                     sortedLessons.forEach(lesson => {
                         html += `
-                        <div class="week-lesson">
-                            <div class="lesson-time">${lesson.lessonNumber}.</div>
-                            <div class="lesson-subject">${lesson.subjectName}</div>
-                            <div class="lesson-classroom">${lesson.classroom}</div>
-                        </div>
-                    `;
+                            <div class="week-lesson">
+                                <div class="lesson-time">${lesson.lessonNumber}.</div>
+                                <div class="lesson-subject">${lesson.subjectName}</div>
+                                <div class="lesson-classroom">${lesson.classroom}</div>
+                            </div>
+                        `;
                     });
                 } else if (dayData && dayData.isHoliday) {
                     html += `<div class="no-lessons">Выходной день</div>`;
@@ -179,48 +190,68 @@ class ScheduleManager {
         container.innerHTML = html;
     }
 
-    // Навигация по дням
-    previousDay() {
-        this.currentDate.setDate(this.currentDate.getDate() - 1);
-        this.loadScheduleForToday();
+    // Навигация
+    previous() {
+        if (this.currentView === 'day') {
+            this.currentDate.setDate(this.currentDate.getDate() - 1);
+            this.loadDaySchedule();
+        } else {
+            this.currentDate.setDate(this.currentDate.getDate() - 7);
+            this.loadWeekSchedule();
+        }
     }
 
-    nextDay() {
-        this.currentDate.setDate(this.currentDate.getDate() + 1);
-        this.loadScheduleForToday();
+    next() {
+        if (this.currentView === 'day') {
+            this.currentDate.setDate(this.currentDate.getDate() + 1);
+            this.loadDaySchedule();
+        } else {
+            this.currentDate.setDate(this.currentDate.getDate() + 7);
+            this.loadWeekSchedule();
+        }
     }
 
-    today() {
+    goToday() {
         this.currentDate = new Date();
-        this.loadScheduleForToday();
+        this.loadSchedule();
     }
 
-    // Навигация по неделям
-    previousWeek() {
-        this.currentDate.setDate(this.currentDate.getDate() - 7);
-        this.loadWeekSchedule(this.getWeekStart(this.currentDate));
-    }
-
-    nextWeek() {
-        this.currentDate.setDate(this.currentDate.getDate() + 7);
-        this.loadWeekSchedule(this.getWeekStart(this.currentDate));
-    }
-
+    // Переключение видов
     switchToDayView() {
         this.currentView = 'day';
         document.getElementById('day-view-btn').classList.add('active');
         document.getElementById('week-view-btn').classList.remove('active');
-        this.loadScheduleForToday();
+        this.loadDaySchedule();
     }
 
     switchToWeekView() {
         this.currentView = 'week';
         document.getElementById('day-view-btn').classList.remove('active');
         document.getElementById('week-view-btn').classList.add('active');
-        this.loadWeekSchedule(this.getWeekStart(this.currentDate));
+        this.loadWeekSchedule();
     }
 
     // Вспомогательные методы
+    updatePeriodText() {
+        const periodElement = document.getElementById('schedule-period');
+
+        if (this.currentView === 'day') {
+            const today = new Date();
+            const isToday = this.currentDate.toDateString() === today.toDateString();
+            periodElement.textContent = isToday ? 'Сегодня' : this.currentDate.toLocaleDateString('ru-RU', {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short'
+            });
+        } else {
+            const weekStart = this.getWeekStart(this.currentDate);
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekEnd.getDate() + 6);
+
+            periodElement.textContent = `${weekStart.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} - ${weekEnd.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}`;
+        }
+    }
+
     formatDate(date) {
         return date.toISOString().split('T')[0];
     }
@@ -235,13 +266,14 @@ class ScheduleManager {
     }
 
     formatTime(timeString) {
-        return timeString.substring(0, 5); // "08:00"
+        return timeString ? timeString.substring(0, 5) : '';
     }
 
     isCurrentLesson(lesson) {
+        if (!lesson.startTime || !lesson.endTime) return false;
+
         const now = new Date();
         const currentTime = now.getHours() * 60 + now.getMinutes();
-
         const startTime = this.timeToMinutes(lesson.startTime);
         const endTime = this.timeToMinutes(lesson.endTime);
 
@@ -249,6 +281,7 @@ class ScheduleManager {
     }
 
     timeToMinutes(timeString) {
+        if (!timeString) return 0;
         const [hours, minutes] = timeString.split(':');
         return parseInt(hours) * 60 + parseInt(minutes);
     }
@@ -262,18 +295,30 @@ class ScheduleManager {
     setupEventListeners() {
         document.getElementById('day-view-btn').addEventListener('click', () => this.switchToDayView());
         document.getElementById('week-view-btn').addEventListener('click', () => this.switchToWeekView());
+
+        // Добавляем кнопку "Сегодня" в навигацию
+        const scheduleNavigation = document.querySelector('.schedule-navigation');
+        if (scheduleNavigation) {
+            const todayBtn = document.createElement('button');
+            todayBtn.className = 'today-btn';
+            todayBtn.innerHTML = '<i>⏰</i> Сегодня';
+            todayBtn.onclick = () => this.goToday();
+            scheduleNavigation.querySelector('.schedule-period').after(todayBtn);
+        }
     }
 
     showError(message) {
         const container = document.getElementById('schedule-container');
         container.innerHTML = `
             <div class="error-message">
-                <div>❌ ${message}</div>
-                <button onclick="scheduleManager.loadScheduleForToday()" class="btn-secondary">Попробовать снова</button>
+                <i>❌</i>
+                <p>${message}</p>
+                <button onclick="scheduleManager.loadSchedule()" class="btn-action btn-secondary">
+                    Попробовать снова
+                </button>
             </div>
         `;
     }
 }
 
-// Глобальный экземпляр
 const scheduleManager = new ScheduleManager();
