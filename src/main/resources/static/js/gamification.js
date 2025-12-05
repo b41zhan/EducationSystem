@@ -1,13 +1,15 @@
 const token = localStorage.getItem('token');
 
-// Основные данные
 let userStats = null;
 let achievements = [];
 let leaderboard = [];
 let classes = [];
 
-// Инициализация при загрузке страницы
-document.addEventListener('DOMContentLoaded', function() {
+// ГРАФИКИ
+let xpChart = null;
+let achievementChart = null;
+
+document.addEventListener('DOMContentLoaded', function () {
     if (!token) {
         window.location.href = 'login.html';
         return;
@@ -19,18 +21,20 @@ document.addEventListener('DOMContentLoaded', function() {
     loadLeaderboard();
 });
 
-// Загрузка статистики пользователя
+// ============================
+//        СТУДЕНТ СТАТИСТИКА
+// ============================
+
 async function loadUserStats() {
     try {
         const response = await fetch('/api/gamification/student/stats', {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            headers: { 'Authorization': `Bearer ${token}` }
         });
 
         if (response.ok) {
             userStats = await response.json();
             updateUserStats();
+            drawCharts();
         } else {
             throw new Error('Failed to load stats');
         }
@@ -40,43 +44,43 @@ async function loadUserStats() {
     }
 }
 
-// Обновление статистики на странице
 function updateUserStats() {
     if (!userStats) return;
 
-    // Основная статистика
     document.getElementById('currentLevel').textContent = userStats.level;
     document.getElementById('currentXP').textContent = userStats.currentLevelXp;
     document.getElementById('nextLevelXP').textContent = userStats.nextLevelXp;
     document.getElementById('completedAssignments').textContent = userStats.completedAssignments;
     document.getElementById('perfectAssignments').textContent = userStats.perfectAssignments;
     document.getElementById('currentStreak').textContent = userStats.currentStreak;
-    document.getElementById('achievementsCount').textContent = `${userStats.achievementsUnlocked}/${userStats.totalAchievements}`;
+    document.getElementById('achievementsCount').textContent =
+        `${userStats.achievementsUnlocked}/${userStats.totalAchievements}`;
 
-    // Прогресс бар
     const progressPercentage = Math.round((userStats.currentLevelXp / userStats.nextLevelXp) * 100);
     document.getElementById('xpProgress').style.width = `${progressPercentage}%`;
 
-    // Подробная статистика
     document.getElementById('totalXP').textContent = userStats.totalXp;
     document.getElementById('maxStreak').textContent = userStats.maxStreak;
     document.getElementById('rankPosition').textContent = userStats.rank || '-';
-    document.getElementById('completionRate').textContent =
+
+    const completionRate =
         userStats.totalAchievements > 0
             ? Math.round((userStats.achievementsUnlocked / userStats.totalAchievements) * 100) + '%'
             : '0%';
 
-    // Последние достижения
+    document.getElementById('completionRate').textContent = completionRate;
+
     updateRecentAchievements();
 }
 
-// Загрузка достижений
+// ============================
+//           ДОСТИЖЕНИЯ
+// ============================
+
 async function loadAchievements() {
     try {
         const response = await fetch('/api/gamification/student/achievements', {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            headers: { 'Authorization': `Bearer ${token}` }
         });
 
         if (response.ok) {
@@ -95,14 +99,11 @@ async function loadAchievements() {
     }
 }
 
-// Отображение достижений
 function displayAchievements(filter) {
     const container = document.getElementById('achievementsList');
-    const filteredAchievements = filter === 'all'
-        ? achievements
-        : achievements.filter(a => a.type === filter);
+    const filtered = filter === 'all' ? achievements : achievements.filter(a => a.type === filter);
 
-    if (filteredAchievements.length === 0) {
+    if (filtered.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-medal"></i>
@@ -114,11 +115,13 @@ function displayAchievements(filter) {
 
     container.innerHTML = '';
 
-    filteredAchievements.forEach(achievement => {
-        const achievementEl = document.createElement('div');
-        achievementEl.className = `achievement-card ${achievement.unlocked ? 'unlocked' : ''}`;
+    filtered.forEach(achievement => {
+        const el = document.createElement('div');
+        el.className = `achievement-card ${achievement.unlocked ? 'unlocked' : ''}`;
+        el.style.cursor = "pointer";
+        el.onclick = () => openAchievementModal?.(achievement);
 
-        achievementEl.innerHTML = `
+        el.innerHTML = `
             <div class="achievement-icon">
                 <i class="fas ${achievement.unlocked ? 'fa-trophy' : 'fa-lock'}"></i>
             </div>
@@ -127,11 +130,11 @@ function displayAchievements(filter) {
                 <div class="achievement-desc">${achievement.description}</div>
                 <div class="progress-container">
                     <div class="progress-info">
-                        <span>${achievement.progress || 0}/${achievement.requiredValue || 1}</span>
-                        <span>${achievement.progressPercentage || 0}%</span>
+                        <span>${achievement.progress || 0}/${achievement.requiredValue}</span>
+                        <span>${achievement.progressPercentage}%</span>
                     </div>
                     <div class="progress-bar">
-                        <div class="progress-fill" style="width: ${achievement.progressPercentage || 0}%"></div>
+                        <div class="progress-fill" style="width:${achievement.progressPercentage}%"></div>
                     </div>
                 </div>
             </div>
@@ -140,33 +143,123 @@ function displayAchievements(filter) {
             </div>
         `;
 
-        container.appendChild(achievementEl);
+        container.appendChild(el);
     });
 }
 
-// Обновление счетчика достижений
 function updateAchievementsCount() {
     const unlocked = achievements.filter(a => a.unlocked).length;
     const total = achievements.length;
 
-    document.getElementById('unlockedCount').textContent = unlocked;
-    document.getElementById('totalAchievements').textContent = total;
+    // Исправленные строки 153-154:
+    const unlockedCountEl = document.getElementById('unlockedCount');
+    const totalAchievementsEl = document.getElementById('totalAchievements');
+
+    if (unlockedCountEl) unlockedCountEl.textContent = unlocked;
+    if (totalAchievementsEl) totalAchievementsEl.textContent = total;
 
     const statsBadge = document.getElementById('achievementsStats');
     if (statsBadge) {
-        statsBadge.innerHTML = `
-            <span class="badge-count">${unlocked}</span> из <span class="badge-total">${total}</span> открыто
-        `;
+        statsBadge.innerHTML =
+            `<span class="badge-count">${unlocked}</span> из <span class="badge-total">${total}</span> открыто`;
+    }
+}
+// ============================
+//      МОДАЛКА ДОСТИЖЕНИЯ
+// ============================
+
+function mapAchievementType(type) {
+    switch (type) {
+        case 'assignments': return 'Задания';
+        case 'perfect_assignments': return 'Отличные работы';
+        case 'streak': return 'Серия дней';
+        case 'level': return 'Уровень';
+        default: return 'Достижение';
     }
 }
 
-// Загрузка классов
+function openAchievementModal(a) {
+    const modal = document.getElementById('achievementModal');
+    if (!modal || !a) return;
+
+    // Элементы модалки
+    const nameEl = document.getElementById('achievementModalName');
+    const typeEl = document.getElementById('achievementModalType');
+    const descEl = document.getElementById('achievementModalDesc');
+    const xpEl = document.getElementById('achievementModalXP');
+    const statusEl = document.getElementById('achievementModalStatus');
+    const progressFill = document.getElementById('achievementModalProgressFill');
+    const progressText = document.getElementById('achievementModalProgressText');
+
+    // Вычисление прогресса
+    const progress = a.progress || 0;
+    const required = a.requiredValue || 1;
+    const percent = a.progressPercentage != null
+        ? a.progressPercentage
+        : Math.min(100, Math.round(progress / required * 100));
+
+    // Заполнение значений
+    if (nameEl) nameEl.textContent = a.name || "Достижение";
+    if (typeEl) typeEl.textContent = mapAchievementType(a.type);
+    if (descEl) descEl.textContent = a.description || "";
+    if (xpEl) xpEl.textContent = `+${a.xpReward || 0} XP`;
+
+    if (progressFill) {
+        progressFill.style.width = `${percent}%`;
+    }
+    if (progressText) {
+        progressText.textContent = `${progress} / ${required} (${percent}%)`;
+    }
+
+    // Статус
+    if (statusEl) {
+        statusEl.textContent = a.unlocked ? "Получено" : "Еще не получено";
+        statusEl.classList.toggle("unlocked", !!a.unlocked);
+        statusEl.classList.toggle("locked", !a.unlocked);
+    }
+
+    // Показать модалку
+    modal.classList.remove('hidden');
+    modal.classList.add('visible');
+}
+
+
+function closeAchievementModal() {
+    const modal = document.getElementById('achievementModal');
+    if (!modal) return;
+
+    modal.classList.remove('visible');
+    modal.classList.add('hidden');
+}
+
+
+
+// Обработчики закрытия модалки
+document.addEventListener('click', function (e) {
+    const modal = document.getElementById('achievementModal');
+    if (!modal || modal.classList.contains('hidden')) return;
+
+    if (e.target.classList.contains('achievement-modal-backdrop') ||
+        e.target.classList.contains('achievement-modal-close')) {
+        closeAchievementModal();
+    }
+});
+
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+        closeAchievementModal();
+    }
+});
+
+
+// ============================
+//         ЛИДЕРБОРД
+// ============================
+
 async function loadClasses() {
     try {
         const response = await fetch('/api/school-classes', {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            headers: { 'Authorization': `Bearer ${token}` }
         });
 
         if (response.ok) {
@@ -178,20 +271,18 @@ async function loadClasses() {
     }
 }
 
-// Обновление фильтра классов
 function updateClassFilter() {
     const select = document.querySelector('#leaderboard-tab .filter-select');
     select.innerHTML = '<option value="">Все классы</option>';
 
-    classes.forEach(schoolClass => {
+    classes.forEach(cls => {
         const option = document.createElement('option');
-        option.value = schoolClass.id;
-        option.textContent = schoolClass.name;
+        option.value = cls.id;
+        option.textContent = cls.name;
         select.appendChild(option);
     });
 }
 
-// Загрузка таблицы лидеров
 async function loadLeaderboard(classId = '') {
     try {
         const url = classId
@@ -199,9 +290,7 @@ async function loadLeaderboard(classId = '') {
             : '/api/gamification/leaderboard';
 
         const response = await fetch(url, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            headers: { 'Authorization': `Bearer ${token}` }
         });
 
         if (response.ok) {
@@ -210,44 +299,32 @@ async function loadLeaderboard(classId = '') {
         }
     } catch (error) {
         console.error('Error loading leaderboard:', error);
-        const podium = document.getElementById('podium');
-        const leaderboardList = document.getElementById('leaderboardList');
-
-        podium.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-exclamation-circle"></i>
-                <div>Не удалось загрузить рейтинг</div>
-            </div>
-        `;
-        leaderboardList.innerHTML = '';
     }
 }
 
-// Отображение таблицы лидеров
 function displayLeaderboard() {
     const podium = document.getElementById('podium');
-    const leaderboardList = document.getElementById('leaderboardList');
+    const list = document.getElementById('leaderboardList');
 
-    // Подиум (топ-3)
     podium.innerHTML = '';
+    list.innerHTML = '';
+
     const topThree = leaderboard.slice(0, 3);
 
     if (topThree.length === 0) {
         podium.innerHTML = `
-            <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: var(--text-light);">
-                <i class="fas fa-trophy" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1rem;"></i>
+            <div class="empty-state">
+                <i class="fas fa-trophy"></i>
                 <div>Нет данных для отображения</div>
-            </div>
-        `;
-        leaderboardList.innerHTML = '';
+            </div>`;
         return;
     }
 
     topThree.forEach((student, index) => {
-        const podiumItem = document.createElement('div');
-        podiumItem.className = `podium-item place-${index + 1}`;
+        const item = document.createElement('div');
+        item.className = `podium-item place-${index + 1}`;
 
-        podiumItem.innerHTML = `
+        item.innerHTML = `
             <div class="podium-rank">${index + 1}</div>
             <div class="student-avatar">${getInitials(student.studentName)}</div>
             <div class="student-info">
@@ -258,33 +335,17 @@ function displayLeaderboard() {
                 <div class="xp">${student.totalXp} XP</div>
                 <div class="level">Ур. ${student.level}</div>
             </div>
-            <div class="achievements-count">
-                <i class="fas fa-medal"></i> ${student.achievementsCount || 0}
-            </div>
+            <div class="achievements-count"><i class="fas fa-medal"></i> ${student.achievementsCount}</div>
         `;
 
-        podium.appendChild(podiumItem);
+        podium.appendChild(item);
     });
 
-    // Остальные участники
-    leaderboardList.innerHTML = '';
-    const remainingStudents = leaderboard.slice(3);
+    leaderboard.slice(3).forEach((student, index) => {
+        const item = document.createElement('div');
+        item.className = 'leaderboard-item';
 
-    if (remainingStudents.length === 0) {
-        leaderboardList.innerHTML = `
-            <div style="text-align: center; padding: 2rem; color: var(--text-light);">
-                <i class="fas fa-user-friends" style="font-size: 2rem; opacity: 0.3; margin-bottom: 0.5rem;"></i>
-                <div>Другие участники отсутствуют</div>
-            </div>
-        `;
-        return;
-    }
-
-    remainingStudents.forEach((student, index) => {
-        const leaderboardItem = document.createElement('div');
-        leaderboardItem.className = 'leaderboard-item';
-
-        leaderboardItem.innerHTML = `
+        item.innerHTML = `
             <div class="rank">${index + 4}</div>
             <div class="student-avatar">${getInitials(student.studentName)}</div>
             <div class="student-info">
@@ -295,84 +356,125 @@ function displayLeaderboard() {
                 <div class="xp">${student.totalXp} XP</div>
                 <div class="level">Ур. ${student.level}</div>
             </div>
-            <div class="achievements-count">
-                <i class="fas fa-medal"></i> ${student.achievementsCount || 0}
-            </div>
+            <div class="achievements-count"><i class="fas fa-medal"></i> ${student.achievementsCount}</div>
         `;
 
-        leaderboardList.appendChild(leaderboardItem);
+        list.appendChild(item);
     });
 }
 
-// Обновление последних достижений
+// ============================
+//       ПОСЛЕДНИЕ ДОСТИЖЕНИЯ
+// ============================
+
 function updateRecentAchievements() {
-    if (!userStats || !userStats.recentAchievements || userStats.recentAchievements.length === 0) {
-        const container = document.getElementById('recentAchievements');
+    const container = document.getElementById('recentAchievements');
+
+    if (!userStats.recentAchievements || userStats.recentAchievements.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-medal"></i>
                 <div>Нет последних достижений</div>
-            </div>
-        `;
+            </div>`;
         return;
     }
 
-    const container = document.getElementById('recentAchievements');
     container.innerHTML = '';
 
-    userStats.recentAchievements.forEach(achievement => {
-        const achievementEl = document.createElement('div');
-        achievementEl.className = 'achievement-card unlocked';
+    userStats.recentAchievements.forEach(a => {
+        const el = document.createElement('div');
+        el.className = 'achievement-card unlocked';
 
-        achievementEl.innerHTML = `
-            <div class="achievement-icon">
-                <i class="fas fa-trophy"></i>
-            </div>
+        el.innerHTML = `
+            <div class="achievement-icon"><i class="fas fa-trophy"></i></div>
             <div class="achievement-content">
-                <div class="achievement-name">${achievement.name}</div>
-                <div class="achievement-desc">${achievement.description}</div>
+                <div class="achievement-name">${a.name}</div>
+                <div class="achievement-desc">${a.description}</div>
             </div>
             <div class="achievement-status status-unlocked">Получено</div>
         `;
 
-        container.appendChild(achievementEl);
+        container.appendChild(el);
     });
 }
 
-// Вспомогательные функции
-function switchTab(tabName) {
-    // Скрыть все табы
-    document.querySelectorAll('.tab-content').forEach(tab => {
-        tab.classList.remove('active');
+// ============================
+//           ГРАФИКИ
+// ============================
+
+function drawCharts() {
+    drawXpHistoryChart();
+    drawAchievementsChart();
+}
+
+function drawXpHistoryChart() {
+    const ctx = document.getElementById('xpHistoryChart');
+
+    if (!ctx) return;
+
+    const xp = userStats.totalXp;
+    const next = userStats.nextLevelXp;
+
+    if (xpChart) xpChart.destroy();
+
+    xpChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Начало', 'Сейчас', 'Следующий уровень'],
+            datasets: [{
+                label: 'XP',
+                data: [0, xp, next],
+                borderWidth: 3,
+                borderColor: '#4b7bec',
+                fill: false,
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true } }
+        }
     });
+}
 
-    // Убрать активный класс со всех кнопок
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('active');
+function drawAchievementsChart() {
+    const ctx = document.getElementById('achievementsChart');
+    if (!ctx) return;
+
+    const unlocked = achievements.filter(a => a.unlocked).length;
+    const locked = achievements.length - unlocked;
+
+    if (achievementChart) achievementChart.destroy();
+
+    achievementChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: ['Открыто', 'Закрыто'],
+            datasets: [{
+                data: [unlocked, locked],
+                backgroundColor: ['#20bf6b', '#eb3b5a']
+            }]
+        },
+        options: { responsive: true }
     });
+}
 
-    // Показать выбранный таб
-    document.getElementById(`${tabName}-tab`).classList.add('active');
+// ============================
+//          ВСПОМОГАТЕЛЬНОЕ
+// ============================
 
-    // Добавить активный класс к кнопке
+function switchTab(name) {
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    document.getElementById(name + '-tab').classList.add('active');
+
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
 }
 
-function filterAchievements(type) {
-    displayAchievements(type);
-}
-
 function getInitials(name) {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
 }
 
 function showError(message) {
-    // Можно заменить на более красивый toast
     console.error(message);
 }
-
-// Автоматическое обновление данных каждые 30 секунд
-setInterval(() => {
-    loadUserStats();
-    loadLeaderboard();
-}, 30000);

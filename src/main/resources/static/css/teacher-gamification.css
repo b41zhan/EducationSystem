@@ -702,3 +702,154 @@ body {
         width: 100%;
     }
 }
+
+/* === MODAL (идеальная, без конфликтов) === */
+
+#achievementModal {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+
+    display: none;
+    align-items: center;
+    justify-content: center;
+
+    z-index: 10000;
+}
+
+#achievementModal.visible {
+    display: flex !important;
+}
+
+#achievementModal.hidden {
+    display: none !important;
+}
+
+/* backdrop */
+.achievement-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(3px);
+}
+
+/* dialog window */
+.achievement-modal-dialog {
+    position: relative;
+    z-index: 10001;
+
+    width: 420px;
+    padding: 24px;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+
+    animation: modalPop 0.25s ease-out;
+}
+
+@keyframes modalPop {
+    from { opacity: 0; transform: translateY(10px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* close button */
+.achievement-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+
+    background: none;
+    border: none;
+
+    font-size: 26px;
+    cursor: pointer;
+}
+
+/* header */
+.achievement-modal-header {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 18px;
+}
+
+/* icon */
+.achievement-modal-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f59e0b, #facc15);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: white;
+    font-size: 24px;
+}
+
+.achievement-modal-name {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.achievement-modal-type {
+    color: #6b7280;
+    font-size: 14px;
+}
+
+/* body */
+.achievement-modal-desc {
+    color: #555;
+    margin-bottom: 16px;
+    line-height: 1.45;
+}
+
+.achievement-modal-section-title {
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #374151;
+}
+
+/* progress bar */
+.achievement-modal-progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 6px;
+    margin-bottom: 6px;
+    overflow: hidden;
+}
+
+.achievement-modal-progress-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+}
+
+/* XP reward */
+.achievement-modal-xp {
+    font-size: 18px;
+    color: #d97706;
+    font-weight: 700;
+}
+
+/* status */
+.achievement-modal-status {
+    margin-top: 10px;
+    padding: 8px;
+    text-align: center;
+
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.achievement-modal-status.unlocked {
+    background: rgba(34,197,94,0.25);
+    color: #166534;
+}
+
+.achievement-modal-status.locked {
+    background: rgba(148,163,184,0.25);
+    color: #374151;
+}

@@ -743,3 +743,66 @@ body {
         width: 100%;
     }
 }
+/* ====== FIXED MODAL OVERLAY ====== */
+.achievement-modal {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+
+    display: none; /* скрыта по умолчанию */
+    align-items: center;
+    justify-content: center;
+
+    z-index: 9999;
+}
+
+/* показать */
+.achievement-modal.visible {
+    display: flex !important;
+}
+
+/* скрыть */
+.achievement-modal.hidden {
+    display: none !important;
+}
+
+/* фон */
+.achievement-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(3px);
+}
+
+/* окно */
+.achievement-modal-dialog {
+    position: relative;
+    z-index: 10000;
+
+    width: 420px;
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+
+    animation: modalFade 0.25s ease-out;
+}
+
+@keyframes modalFade {
+    from { opacity: 0; transform: translateY(15px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* кнопка закрытия */
+.achievement-modal-close {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+
+    font-size: 28px;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
