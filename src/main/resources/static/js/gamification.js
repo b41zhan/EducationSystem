@@ -56,8 +56,17 @@ function updateUserStats() {
     document.getElementById('achievementsCount').textContent =
         `${userStats.achievementsUnlocked}/${userStats.totalAchievements}`;
 
-    const progressPercentage = Math.round((userStats.currentLevelXp / userStats.nextLevelXp) * 100);
-    document.getElementById('xpProgress').style.width = `${progressPercentage}%`;
+    let progressPercentage = 0;
+    if (userStats.nextLevelXp > 0) {
+        progressPercentage = Math.round((userStats.currentLevelXp / userStats.nextLevelXp) * 100);
+        progressPercentage = Math.max(0, Math.min(100, progressPercentage)); // от 0 до 100
+    }
+
+    const xpBar = document.getElementById('xpProgress');
+    if (xpBar) {
+        xpBar.style.width = `${progressPercentage}%`;
+    }
+
 
     document.getElementById('totalXP').textContent = userStats.totalXp;
     document.getElementById('maxStreak').textContent = userStats.maxStreak;

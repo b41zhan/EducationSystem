@@ -81,6 +81,21 @@
                 <div class="card-arrow">→</div>
             </div>
 
+            <div class="card surveys-card">
+                <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                    <h2>🗳 Опросы</h2>
+                    <span id="surveys-counter" class="badge-pill">—</span>
+                </div>
+
+                <div id="surveys-message" class="surveys-message">
+                    Проверяем доступные опросы...
+                </div>
+
+                <button id="open-survey-btn" class="btn-primary" style="margin-top:0.5rem; display:none;">
+                    Пройти опрос
+                </button>
+            </div>
+
             <!-- My Classes Card -->
             <div class="card">
                 <div class="card-header">
@@ -401,6 +416,29 @@
     </div>
 </div>
 
+<div id="fillSurveyModal" class="modal" style="display:none;">
+    <div class="modal-content survey-modal">
+        <span class="close" onclick="closeFillSurveyModal()">&times;</span>
+
+        <div class="modal-header">
+            <h2 id="fillSurveyTitle">Опрос</h2>
+        </div>
+
+        <div class="modal-body">
+            <form id="fillSurveyForm" class="modal-form">
+                <p id="fillSurveyDescription" style="opacity:0.8;"></p>
+
+                <div id="fillSurveyQuestions"></div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn-primary">Отправить ответы</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="/js/surveys-client.js"></script>
 <script src="/js/api.js"></script>
 <script src="/js/auth.js"></script>
 <script src="/js/teacher.js"></script>

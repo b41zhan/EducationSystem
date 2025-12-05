@@ -50,6 +50,16 @@
                 <i class="fas fa-chevron-right card-arrow"></i>
             </div>
 
+            <div class="card clickable" onclick="openSurveyModal()">
+                <div class="card-icon"><i class="fas fa-poll"></i></div>
+                <div class="card-content">
+                    <h3>Добавить опрос</h3>
+                    <p>Создать опрос для студентов и учителей</p>
+                </div>
+                <i class="fas fa-chevron-right card-arrow"></i>
+            </div>
+
+
             <div class="card stats-card">
                 <h2 class="card-header">
                     <i class="fas fa-chart-bar"></i> Статистика системы
@@ -342,6 +352,73 @@
     </div>
 </div>
 
+<!-- Survey Modal -->
+<div id="surveyModal" class="modal" style="display:none;">
+    <div class="modal-content survey-modal">
+        <span class="close" onclick="closeSurveyModal()">&times;</span>
+
+        <div class="modal-header">
+            <h2>🗳 Создать опрос</h2>
+        </div>
+
+        <div class="modal-body">
+            <form id="surveyForm" class="modal-form">
+                <div class="form-group">
+                    <label class="required">Название опроса</label>
+                    <input type="text" id="surveyTitle" required placeholder="Например: Оценка качества уроков">
+                </div>
+
+                <div class="form-group">
+                    <label>Описание</label>
+                    <textarea id="surveyDescription" rows="2"
+                              placeholder="Кратко расскажите, о чем этот опрос"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Кому отправить</label>
+                    <div class="survey-targets">
+                        <label><input type="checkbox" id="surveyForStudents" checked> Студенты</label>
+                        <label><input type="checkbox" id="surveyForTeachers"> Учителя</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="required">Вопросы</label>
+                    <div id="surveyQuestionsContainer"></div>
+                    <button type="button" class="btn-secondary" onclick="addSurveyQuestion()">
+                        ➕ Добавить вопрос
+                    </button>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn-primary">Сохранить опрос</button>
+                </div>
+            </form>
+
+            <hr style="margin: 1.5rem 0;">
+
+            <div class="survey-results-panel">
+                <h3>📊 Результаты опросов</h3>
+
+                <div class="form-group">
+                    <label for="surveyResultsSelect">Выберите опрос</label>
+                    <select id="surveyResultsSelect"></select>
+                </div>
+
+                <button type="button" class="btn-secondary" onclick="loadSurveyResults()">
+                    Показать результаты
+                </button>
+
+                <div id="surveyResultsContainer" style="margin-top: 1rem;"></div>
+
+                <canvas id="surveyChart" style="margin-top: 1rem; max-height: 260px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/js/admin-surveys.js"></script>
 <script src="/js/api.js"></script>
 <script src="/js/auth.js"></script>
 <script src="/js/admin.js"></script>

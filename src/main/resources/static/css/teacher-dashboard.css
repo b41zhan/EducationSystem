@@ -1720,3 +1720,14 @@ body {
         justify-content: center;
     }
 }
+
+.surveys-card .badge-pill {
+    background: #eef1ff;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+}
+.surveys-message {
+    margin-top: 0.25rem;
+    font-size: 0.9rem;
+}

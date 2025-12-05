@@ -98,6 +98,11 @@ public class UserService {
         return convertToDTO(savedUser);
     }
 
+    public User getUserEntityById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+    }
+
     public UserDTO registerTeacher(User user) {
         Role teacherRole = roleRepository.findByName("teacher")
                 .orElseThrow(() -> new RuntimeException("Role 'teacher' not found"));

@@ -91,7 +91,23 @@
                     </div>
                 </div>
             </div>
+            <div class="dashboard-card">
+                <div class="dashboard-card__header">
+                    <h3 class="dashboard-card__title">📋 Опросы</h3>
+                    <span class="badge badge-info">Надо пройти 1 опрос(ов)</span>
+                </div>
+                <p class="dashboard-card__text">
+                    Надо пройти 1 опрос(ов). Нажмите, чтобы ответить.
+                </p>
+                <button type="button"
+                        id="open-survey-btn"
+                        class="btn btn-primary btn-sm">
+                    Пройти опрос
+                </button>
+            </div>
         </div>
+
+
 
         <!-- Right Column -->
         <div class="right-column">
@@ -207,6 +223,20 @@
     </div>
 </div>
 
+<div id="survey-modal" class="survey-modal">
+    <div class="survey-modal__content">
+        <button type="button"
+                class="survey-modal__close"
+                id="survey-modal-close">&times;</button>
+
+        <div id="survey-modal-body">
+            <!-- сюда JS подставит форму опроса -->
+        </div>
+    </div>
+</div>
+
+<script src="/js/survey.js"></script>
+<script src="/js/surveys-client.js"></script>
 <script src="/js/api.js"></script>
 <script src="/js/auth.js"></script>
 <script src="/js/student.js"></script>

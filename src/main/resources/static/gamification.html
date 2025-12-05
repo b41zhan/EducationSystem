@@ -61,13 +61,15 @@
             </div>
         </div>
 
-        <div class="progress-container">
-            <div class="progress-info">
-                <span id="currentXP">0</span> XP
-                <span id="nextLevelXP">100</span> XP
-            </div>
-            <div class="progress-bar">
-                <div class="progress-fill" id="xpProgress" style="width: 0%"></div>
+        <div class="main-progress">
+            <div class="progress-container">
+                <div class="progress-info">
+                    <span id="currentXP">0</span> XP
+                    <span id="nextLevelXP">100</span> XP
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="xpProgress" style="width: 0%"></div>
+                </div>
             </div>
         </div>
 
@@ -98,7 +100,6 @@
         <button class="tab-btn" onclick="switchTab('stats')"><i class="fas fa-chart-pie"></i> Подробная статистика</button>
         <button class="tab-btn" onclick="switchTab('charts')"><i class="fas fa-chart-line"></i> Графики</button>
     </div>
-
     <!-- Достижения -->
     <div id="achievements-tab" class="tab-content active">
         <div class="card">
@@ -188,7 +189,6 @@
                 <div class="achievement-modal-type" id="achievementModalType">Категория</div>
             </div>
         </div>
-
         <div class="achievement-modal-body">
             <p class="achievement-modal-desc" id="achievementModalDesc">
                 Подробное описание достижения.
