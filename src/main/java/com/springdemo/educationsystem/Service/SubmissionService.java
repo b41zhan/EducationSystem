@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,11 +19,11 @@ public class SubmissionService {
     private final AssignmentRepository assignmentRepository;
     private final StudentRepository studentRepository;
     private final TeacherRepository teacherRepository;
-    private final NotificationRepository notificationRepository; // ДОБАВЛЕНО
-    private final UserRepository userRepository; // ДОБАВЛЕНО
+    private final NotificationRepository notificationRepository;
+    private final UserRepository userRepository;
     private final GamificationService gamificationService;
 
-    private static final Logger logger = LoggerFactory.getLogger(SubmissionService.class); // ДОБАВЛЕНО
+    private static final Logger logger = LoggerFactory.getLogger(SubmissionService.class);
 
     public SubmissionService(SubmissionRepository submissionRepository,
                              GradeRepository gradeRepository,
@@ -65,26 +66,42 @@ public class SubmissionService {
         return dto;
     }
 
+    /**
+     * Создание/обновление сдачи.
+     * Теперь для пары (assignmentId, studentId) существует только ОДНА запись Submission.
+     * Если студент пересдаёт работу — обновляем существующую запись.
+     */
     public Submission createSubmission(Long assignmentId, Long studentId, String filePath,
                                        String fileName, Long fileSize, String comment) {
+
         Assignment assignment = assignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new RuntimeException("Assignment not found"));
 
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new RuntimeException("Student not found"));
 
-        Submission submission = new Submission();
-        submission.setAssignment(assignment);
-        submission.setStudent(student);
+        // ИЩЕМ существующую сдачу этого студента по этому заданию
+        Submission submission = submissionRepository
+                .findByAssignmentIdAndStudentId(assignmentId, studentId)
+                .orElse(null);
+
+        if (submission == null) {
+            // Первая сдача этого задания данным студентом
+            submission = new Submission();
+            submission.setAssignment(assignment);
+            submission.setStudent(student);
+        }
+
+        // В любом случае (первая сдача или пересдача) обновляем данные
         submission.setFilePath(filePath);
         submission.setFileName(fileName);
         submission.setFileSize(fileSize);
         submission.setComment(comment);
+        submission.setSubmittedAt(LocalDateTime.now());
+        submission.setStatus("submitted");
 
         return submissionRepository.save(submission);
     }
-
-
 
     public Grade gradeSubmission(GradeDTO gradeDTO, Long teacherId) {
         Submission submission = submissionRepository.findById(gradeDTO.getSubmissionId())
@@ -114,7 +131,7 @@ public class SubmissionService {
 
         createGradeNotification(submission, gradeDTO.getGradeValue());
 
-        // В метод gradeSubmission добавьте после оценки:
+        // Обновление геймификации
         gamificationService.updateStudentProgress(
                 submission.getStudent().getId(),
                 submission.getAssignment().getId(),

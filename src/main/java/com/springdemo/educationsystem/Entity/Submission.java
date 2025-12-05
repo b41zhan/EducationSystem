@@ -16,6 +16,7 @@ public class Submission {
     @JsonIgnore
     private Assignment assignment;
 
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id", nullable = false)
     @JsonIgnore

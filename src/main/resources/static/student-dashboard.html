@@ -101,6 +101,15 @@
                     <h2>📚 Активные задания <span class="badge" id="assignments-count">0</span></h2>
                 </div>
 
+                <div class="tasks-filter">
+                    <label for="activeTasksFilter" class="filter-label">Фильтр:</label>
+                    <select id="activeTasksFilter" class="filter-select">
+                        <option value="active">Активные</option>
+                        <option value="overdue">Просроченные</option>
+                    </select>
+                </div>
+
+
                 <div class="assignments-list" id="active-assignments">
                     <div class="loading-state">
                         <i>📋</i>

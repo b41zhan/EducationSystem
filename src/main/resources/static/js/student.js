@@ -3,6 +3,24 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeStudentDashboard();
 });
 
+// =====================================================
+//  ГЛОБАЛЬНЫЕ МАССИВЫ ДЛЯ ФИЛЬТРА
+// =====================================================
+
+let ACTIVE_LIST = [];
+let OVERDUE_LIST = [];
+
+const studentStats = {
+    totalAssignments: 0,
+    completedAssignments: 0,
+    overdueAssignments: 0,
+    averageGrade: 0
+};
+
+// =====================================================
+//  ИНИЦИАЛИЗАЦИЯ ДАШБОРДА
+// =====================================================
+
 async function initializeStudentDashboard() {
     try {
         await loadStudentInfo();
@@ -10,180 +28,194 @@ async function initializeStudentDashboard() {
         await loadStudentGrades();
         await loadProgressPreview();
         setupFileUpload();
+        setupActiveTasksFilter(); // ← ДОБАВИЛИ!
     } catch (error) {
         console.error('Error initializing dashboard:', error);
     }
 }
 
+// =====================================================
+//  ГРУЗИМ ИНФУ О СТУДЕНТЕ
+// =====================================================
+
 async function loadStudentInfo() {
     try {
-        console.log('Loading student info...');
-
         const userData = await ApiService.get('/auth/me');
         document.getElementById('welcome-message').textContent =
             `Добро пожаловать, ${userData.firstName} ${userData.lastName}!`;
 
         const studentData = await ApiService.get('/students/me');
-        console.log('Student data:', studentData);
 
         if (studentData && studentData.schoolClass) {
             document.getElementById('student-class').textContent =
                 `Класс: ${studentData.schoolClass.name}`;
             window.studentClassId = studentData.schoolClass.id;
-            console.log('Class ID:', window.studentClassId);
         } else {
             document.getElementById('student-class').textContent = 'Класс: Не назначен';
         }
 
     } catch (error) {
         console.error('Error loading student info:', error);
-        document.getElementById('student-class').textContent = 'Класс: Ошибка загрузки';
     }
 }
+
+// =====================================================
+//   ГРУЗИМ ВСЕ ЗАДАНИЯ И РАЗБИРАЕМ ПО КАТЕГОРИЯМ
+// =====================================================
 
 async function loadStudentAssignments() {
     try {
-        console.log('Loading student assignments...');
-
         const assignmentsList = document.getElementById('active-assignments');
+        assignmentsList.innerHTML = `<p>Загрузка...</p>`;
+
         const assignmentSelect = document.getElementById('assignmentSelect');
+        assignmentSelect.innerHTML = '<option>Загрузка...</option>';
 
-        assignmentsList.innerHTML = `
-            <div class="loading-state">
-                <i>⏳</i>
-                <p>Загрузка заданий...</p>
-            </div>
-        `;
-        assignmentSelect.innerHTML = '<option value="">Загрузка...</option>';
+        const [assignments, submissions] = await Promise.all([
+            ApiService.get('/students/assignments/my-class'),
+            ApiService.get('/submissions/my')
+        ]);
 
-        let assignments = [];
+        const allAssignments = assignments || [];
+        const allSubmissions = submissions || [];
 
-        try {
-            assignments = await ApiService.get('/students/assignments/my-class');
-            console.log('Assignments loaded:', assignments);
-        } catch (error) {
-            console.log('Primary endpoint failed, trying alternatives...');
+        const submissionsByAssignment = {};
+        allSubmissions.forEach(s => {
+            submissionsByAssignment[s.assignmentId] = s;
+        });
 
-            if (window.studentClassId) {
-                try {
-                    assignments = await ApiService.get(`/assignments/class/${window.studentClassId}`);
-                } catch (e) {
-                    console.log('Class endpoint failed');
-                }
+        const now = new Date();
+        const toSubmit = [];
+        const active = [];
+        const completed = [];
+        const overdue = [];
+
+        allAssignments.forEach(a => {
+            const deadline = a.deadline ? new Date(a.deadline) : null;
+            const sub = submissionsByAssignment[a.id];
+
+            // Проверено
+            if (sub && (sub.grade != null || sub.status === 'graded')) {
+                completed.push({ assignment: a, submission: sub });
+                return;
             }
 
-            if (assignments.length === 0) {
-                try {
-                    const allAssignments = await ApiService.get('/assignments');
-                    assignments = allAssignments || [];
-                } catch (e) {
-                    console.log('All assignments endpoint failed');
-                }
+            // Просрочено
+            if (!sub && deadline && deadline < now) {
+                overdue.push({ assignment: a, submission: null });
+                return;
             }
-        }
 
-        displayAssignments(assignments);
-        updateAssignmentDropdown(assignments);
-        updateStats(assignments);
+            // Всё остальное – активные
+            active.push({ assignment: a, submission: sub });
+
+            // только несданные — в "Сдать задание"
+            if (!sub) toSubmit.push({ assignment: a, submission: null });
+        });
+
+        // Запоминаем для фильтра
+        ACTIVE_LIST = active;
+        OVERDUE_LIST = overdue;
+
+        updateAssignmentDropdown(toSubmit.map(t => t.assignment));
+
+        // Показываем активные по умолчанию
+        displayAssignments(ACTIVE_LIST);
+
+        // Статистика
+        studentStats.totalAssignments = allAssignments.length;
+        studentStats.overdueAssignments = overdue.length;
+        updateStats();
 
     } catch (error) {
         console.error('Error loading assignments:', error);
-        document.getElementById('active-assignments').innerHTML = `
-            <div class="no-assignments">
-                <i>❌</i>
-                <h3>Ошибка загрузки</h3>
-                <p>Не удалось загрузить задания</p>
-            </div>
-        `;
-        document.getElementById('assignmentSelect').innerHTML =
-            '<option value="">Ошибка загрузки</option>';
     }
 }
 
-function displayAssignments(assignments) {
-    const container = document.getElementById('active-assignments');
+// =====================================================
+//    ФИЛЬТР "АКТИВНЫЕ / ПРОСРОЧЕННЫЕ"
+// =====================================================
 
-    if (!assignments || assignments.length === 0) {
-        container.innerHTML = `
-            <div class="no-assignments">
-                <i>🎉</i>
-                <h3>Нет активных заданий</h3>
-                <p>Все задания выполнены или ожидайте новых от учителя</p>
-            </div>
-        `;
-        return;
-    }
+function setupActiveTasksFilter() {
+    const filter = document.getElementById('activeTasksFilter');
+    if (!filter) return;
 
-    // Сортируем по дедлайну (сначала ближайшие)
-    assignments.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
-
-    container.innerHTML = '';
-
-    assignments.forEach(assignment => {
-        const deadline = new Date(assignment.deadline);
-        const now = new Date();
-        const isOverdue = deadline < now;
-        const daysLeft = Math.ceil((deadline - now) / (1000 * 60 * 60 * 24));
-
-        let status = 'active';
-        let statusText = 'АКТИВНО';
-
-        if (isOverdue) {
-            status = 'overdue';
-            statusText = 'ПРОСРОЧЕНО';
-        } else if (daysLeft <= 2) {
-            status = 'warning';
-            statusText = 'СКОРО СРОК';
+    filter.addEventListener('change', (e) => {
+        if (e.target.value === 'active') {
+            displayAssignments(ACTIVE_LIST);
+        } else if (e.target.value === 'overdue') {
+            displayAssignments(OVERDUE_LIST);
         }
-
-        const assignmentElement = document.createElement('div');
-        assignmentElement.className = 'assignment-item';
-        assignmentElement.innerHTML = `
-            <div class="assignment-header">
-                <div class="assignment-title">${assignment.title || 'Без названия'}</div>
-                <div class="assignment-status status-${status}">${statusText}</div>
-            </div>
-            <div class="assignment-meta">
-                <span>
-                    <i>📚</i> ${assignment.subjectName || 'Не указано'}
-                </span>
-                <span>
-                    <i>📝</i> ${getAssignmentType(assignment.type)}
-                </span>
-                <span>
-                    <i>⭐</i> Макс. балл: ${assignment.maxGrade || '100'}
-                </span>
-            </div>
-            <div class="assignment-description">
-                ${assignment.description || 'Описание отсутствует'}
-            </div>
-            <div class="assignment-footer">
-                <div class="assignment-deadline">
-                    <i>📅</i> Срок: ${deadline.toLocaleDateString('ru-RU')}
-                    <span style="color: ${isOverdue ? 'var(--danger)' : daysLeft <= 2 ? 'var(--warning)' : 'var(--text-light)'}">
-                        (${isOverdue ? 'Просрочено' : `Осталось ${daysLeft} ${getDayWord(daysLeft)}`})
-                    </span>
-                </div>
-            </div>
-        `;
-        container.appendChild(assignmentElement);
     });
 }
 
-function getDayWord(days) {
-    if (days === 1) return 'день';
-    if (days >= 2 && days <= 4) return 'дня';
-    return 'дней';
+// =====================================================
+//  ОТОБРАЖЕНИЕ АКТИВНЫХ / ПРОСРОЧЕННЫХ
+// =====================================================
+
+function displayAssignments(items) {
+    const container = document.getElementById('active-assignments');
+    if (!container) return;
+
+    if (!items || items.length === 0) {
+        container.innerHTML = `
+            <div class="no-assignments">
+                <h3>Нет заданий</h3>
+            </div>`;
+        document.getElementById('assignments-count').textContent = "0";
+        return;
+    }
+
+    container.innerHTML = "";
+    document.getElementById('assignments-count').textContent = String(items.length);
+
+    const now = new Date();
+
+    items.forEach(item => {
+        const a = item.assignment;
+        const sub = item.submission;
+        const deadline = a.deadline ? new Date(a.deadline) : null;
+
+        let statusClass = "active";
+        let statusText = "Активно";
+
+        if (sub && sub.status === "submitted") {
+            statusClass = "submitted";
+            statusText = "Отправлено";
+        }
+
+        if (!sub && deadline && deadline < now) {
+            statusClass = "overdue";
+            statusText = "Просрочено";
+        }
+
+        container.innerHTML += `
+            <div class="assignment-item ${statusClass}">
+                <div class="assignment-header">
+                    <h3>${a.title}</h3>
+                    <div class="assignment-status ${statusClass}">
+                        ${statusText}
+                    </div>
+                </div>
+                <div class="assignment-body">
+                    <p>${a.description || ""}</p>
+                    <p><b>Дедлайн:</b> ${deadline ? deadline.toLocaleDateString('ru-RU') : "Нет"}</p>
+                    ${sub ? `<p><b>Отправлено:</b> ${new Date(sub.submittedAt).toLocaleString('ru-RU')}</p>` : ""}
+                </div>
+            </div>
+        `;
+    });
 }
 
 function updateAssignmentDropdown(assignments) {
     const select = document.getElementById('assignmentSelect');
+    if (!select) return;
+
     select.innerHTML = '<option value="">Выберите задание</option>';
 
     if (assignments && assignments.length > 0) {
-        // Фильтруем только задания, которые еще не просрочены
         const now = new Date();
-        const activeAssignments = assignments.filter(a => new Date(a.deadline) > now);
+        const activeAssignments = assignments.filter(a => !a.deadline || new Date(a.deadline) > now);
 
         if (activeAssignments.length === 0) {
             select.innerHTML = '<option value="">Нет активных заданий</option>';
@@ -191,10 +223,13 @@ function updateAssignmentDropdown(assignments) {
         }
 
         activeAssignments.forEach(assignment => {
-            const deadline = new Date(assignment.deadline);
+            const deadline = assignment.deadline ? new Date(assignment.deadline) : null;
             const option = document.createElement('option');
             option.value = assignment.id;
-            option.textContent = `${assignment.title} (до ${deadline.toLocaleDateString('ru-RU')})`;
+            const deadlineText = deadline
+                ? deadline.toLocaleDateString('ru-RU')
+                : 'без дедлайна';
+            option.textContent = `${assignment.title} (до ${deadlineText})`;
             select.appendChild(option);
         });
     } else {
@@ -202,38 +237,32 @@ function updateAssignmentDropdown(assignments) {
     }
 }
 
-function updateStats(assignments) {
-    if (!assignments) assignments = [];
-
-    const now = new Date();
-    const total = assignments.length;
-    const overdue = assignments.filter(a => new Date(a.deadline) < now).length;
-    const completed = 0; // TODO: Get from API
-
-    document.getElementById('total-assignments').textContent = total;
-    document.getElementById('overdue-assignments').textContent = overdue;
-    document.getElementById('completed-assignments').textContent = completed;
-    document.getElementById('assignments-count').textContent = total;
+function updateStats() {
+    document.getElementById('total-assignments').textContent =
+        String(studentStats.totalAssignments || 0);
+    document.getElementById('overdue-assignments').textContent =
+        String(studentStats.overdueAssignments || 0);
+    document.getElementById('completed-assignments').textContent =
+        String(studentStats.completedAssignments || 0);
+    document.getElementById('average-grade').textContent =
+        String(studentStats.averageGrade || 0);
 }
 
 function getAssignmentType(type) {
     const types = {
-        'homework': 'Домашнее задание',
-        'test': 'Тест',
-        'quiz': 'Контрольная',
-        'sor': 'СОР',
-        'soch': 'СОЧ',
-        'HOMEWORK': 'Домашнее задание',
-        'TEST': 'Тест'
+        HOMEWORK: 'Домашнее задание',
+        CLASSWORK: 'Классная работа',
+        TEST: 'Тест',
+        PROJECT: 'Проект'
     };
-    return types[type] || type;
+    return types[type] || 'Задание';
 }
+
+// ============================ ОЦЕНКИ =============================
 
 async function loadStudentGrades() {
     try {
         const gradesList = document.getElementById('grades-list');
-
-        // TODO: Replace with real API call
         const grades = await ApiService.get('/students/grades');
 
         if (!grades || grades.length === 0) {
@@ -244,49 +273,57 @@ async function loadStudentGrades() {
                     <p>Здесь будут отображаться ваши оценки</p>
                 </div>
             `;
+            studentStats.completedAssignments = 0;
+            studentStats.averageGrade = 0;
+            updateStats();
             return;
         }
 
         gradesList.innerHTML = '';
-
         grades.forEach(grade => {
             const gradeElement = document.createElement('div');
             gradeElement.className = 'grade-item';
             gradeElement.innerHTML = `
                 <div class="grade-header">
-                    <div class="grade-title">${grade.assignmentTitle}</div>
+                    <div class="grade-title">${grade.assignmentTitle || 'Задание'}</div>
                     <div class="grade-value">${grade.grade}/100</div>
                 </div>
                 <div class="grade-meta">
-                    <span><i>📅</i> ${new Date(grade.gradedAt).toLocaleDateString('ru-RU')}</span>
-                    <span><i>📚</i> ${grade.subjectName || ''}</span>
+                    <span><i>📘</i> ${grade.subjectName || ''}</span>
+                    <span><i>📅</i> ${grade.gradedAt ? new Date(grade.gradedAt).toLocaleDateString('ru-RU') : ''}</span>
                 </div>
-                ${grade.comment ? `
-                <div class="grade-comment">
-                    <strong>Комментарий:</strong> ${grade.comment}
-                </div>
-                ` : ''}
+                ${grade.comment ? `<div class="grade-comment">${grade.comment}</div>` : ''}
             `;
             gradesList.appendChild(gradeElement);
         });
 
-        // Calculate average grade
+        studentStats.completedAssignments = grades.length;
         if (grades.length > 0) {
-            const average = Math.round(grades.reduce((sum, g) => sum + g.grade, 0) / grades.length);
-            document.getElementById('average-grade').textContent = average;
+            const average = Math.round(
+                grades.reduce((sum, g) => sum + (g.grade || 0), 0) / grades.length
+            );
+            studentStats.averageGrade = average;
+        } else {
+            studentStats.averageGrade = 0;
         }
+        updateStats();
 
     } catch (error) {
         console.error('Error loading grades:', error);
-        document.getElementById('grades-list').innerHTML = `
-            <div class="no-assignments">
-                <i>❌</i>
-                <h3>Ошибка загрузки</h3>
-                <p>Не удалось загрузить оценки</p>
-            </div>
-        `;
+        const gradesList = document.getElementById('grades-list');
+        if (gradesList) {
+            gradesList.innerHTML = `
+                <div class="no-assignments">
+                    <i>❌</i>
+                    <h3>Ошибка загрузки</h3>
+                    <p>Не удалось загрузить оценки</p>
+                </div>
+            `;
+        }
     }
 }
+
+// ====================== ПРОГРЕСС (геймификация) ==================
 
 async function loadProgressPreview() {
     try {
@@ -294,60 +331,52 @@ async function loadProgressPreview() {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
 
-        if (response.ok) {
-            const stats = await response.json();
-            const progressPercentage = Math.round((stats.currentLevelXp / stats.nextLevelXp) * 100);
-
-            document.getElementById('progressPreview').innerHTML = `
-                <div class="level-display">
-                    <div class="level-number">Уровень ${stats.level}</div>
-                    <div class="level-label">${stats.currentLevelXp} / ${stats.nextLevelXp} XP</div>
-                </div>
-                
-                <div class="xp-progress">
-                    <div class="xp-labels">
-                        <span>${stats.currentLevelXp} XP</span>
-                        <span>${stats.nextLevelXp} XP</span>
-                    </div>
-                    <div class="xp-bar">
-                        <div class="xp-fill" style="width: ${progressPercentage}%"></div>
-                    </div>
-                </div>
-                
-                <div class="stats-grid-small">
-                    <div class="stat-item-small">
-                        <div class="stat-value-small">${stats.completedAssignments}</div>
-                        <div class="stat-label-small">Выполнено</div>
-                    </div>
-                    <div class="stat-item-small">
-                        <div class="stat-value-small">${stats.achievementsUnlocked}</div>
-                        <div class="stat-label-small">Достижений</div>
-                    </div>
-                </div>
-            `;
-        } else {
-            throw new Error('Failed to load progress');
+        if (!response.ok) {
+            console.warn('Gamification stats not available');
+            return;
         }
+
+        const stats = await response.json();
+        const progressPercentage = Math.round((stats.currentLevelXp / stats.nextLevelXp) * 100);
+
+        const progressBar = document.getElementById('xpProgress');
+        const currentXpEl = document.getElementById('currentXP');
+        const nextLevelXpEl = document.getElementById('nextLevelXP');
+
+        if (progressBar) {
+            progressBar.style.width = `${progressPercentage}%`;
+        }
+        if (currentXpEl) {
+            currentXpEl.textContent = stats.currentLevelXp;
+        }
+        if (nextLevelXpEl) {
+            nextLevelXpEl.textContent = stats.nextLevelXp;
+        }
+
     } catch (error) {
         console.error('Error loading progress preview:', error);
-        document.getElementById('progressPreview').innerHTML = `
-            <div class="no-assignments">
-                <i>❌</i>
-                <h3>Не удалось загрузить прогресс</h3>
-            </div>
-        `;
     }
 }
+
+// ========================= ОТПРАВКА ЗАДАНИЯ ======================
 
 function setupFileUpload() {
     const fileInput = document.getElementById('assignmentFile');
     const fileInfo = document.getElementById('file-info');
+    const form = document.getElementById('submitAssignmentForm');
+    const submitBtn = document.getElementById('submit-btn');
+    const submitMessage = document.getElementById('submit-message');
+
+    if (!fileInput || !form) {
+        return;
+    }
 
     fileInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
+        if (!fileInfo) return;
+
         if (file) {
             const fileSizeMB = (file.size / 1024 / 1024).toFixed(2);
-
             if (fileSizeMB > 10) {
                 fileInfo.innerHTML = `
                     <div style="color: var(--danger);">
@@ -355,57 +384,52 @@ function setupFileUpload() {
                     </div>
                 `;
                 fileInput.value = '';
-            } else {
-                fileInfo.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <i>📎</i>
-                        <span style="font-weight: 500;">${file.name}</span>
-                        <span style="color: var(--text-light); font-size: 0.875rem;">
-                            (${fileSizeMB} MB)
-                        </span>
-                    </div>
-                `;
+                return;
             }
+
+            fileInfo.innerHTML = `
+                <div>
+                    <i>📎</i> ${file.name} (${fileSizeMB} MB)
+                </div>
+            `;
         } else {
             fileInfo.innerHTML = '';
         }
     });
+
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const assignmentId = document.getElementById('assignmentSelect').value;
+        const comment = document.getElementById('assignmentComment').value || '';
+
+        if (!assignmentId) {
+            submitMessage.innerHTML = `
+                <div class="form-message error">
+                    <i>⚠️</i> Пожалуйста, выберите задание
+                </div>
+            `;
+            submitMessage.style.display = 'block';
+            return;
+        }
+
+        if (!fileInput.files || !fileInput.files[0]) {
+            submitMessage.innerHTML = `
+                <div class="form-message error">
+                    <i>⚠️</i> Пожалуйста, выберите файл
+                </div>
+            `;
+            submitMessage.style.display = 'block';
+            return;
+        }
+
+        await submitAssignment(assignmentId, fileInput.files[0], comment, submitBtn, submitMessage);
+    });
 }
 
-// Form submission handler
-document.getElementById('submitAssignmentForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-
-    const assignmentId = document.getElementById('assignmentSelect').value;
-    const fileInput = document.getElementById('assignmentFile');
-    const comment = document.getElementById('assignmentComment').value;
-    const submitBtn = document.getElementById('submit-btn');
-    const submitMessage = document.getElementById('submit-message');
-
-    if (!assignmentId) {
-        submitMessage.innerHTML = `
-            <div class="form-message error">
-                <i>❌</i> Выберите задание
-            </div>
-        `;
-        submitMessage.style.display = 'block';
-        return;
-    }
-
-    if (!fileInput.files[0]) {
-        submitMessage.innerHTML = `
-            <div class="form-message error">
-                <i>❌</i> Выберите файл
-            </div>
-        `;
-        submitMessage.style.display = 'block';
-        return;
-    }
-
-    await submitAssignment(assignmentId, fileInput.files[0], comment, submitBtn, submitMessage);
-});
-
 async function submitAssignment(assignmentId, file, comment = '', submitBtn, submitMessage) {
+    if (!submitBtn || !submitMessage) return;
+
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i>⏳</i> Отправка...';
 
@@ -443,19 +467,20 @@ async function submitAssignment(assignmentId, file, comment = '', submitBtn, sub
 
         submitMessage.innerHTML = `
             <div class="form-message success">
-                <i>✅</i> Задание успешно сдано!
+                <i>✅</i> Задание успешно отправлено!
             </div>
         `;
         submitMessage.style.display = 'block';
 
-        // Reset form
+        // Сброс формы
         document.getElementById('submitAssignmentForm').reset();
-        document.getElementById('file-info').innerHTML = '';
+        const fileInfo = document.getElementById('file-info');
+        if (fileInfo) fileInfo.innerHTML = '';
 
-        // Reload assignments
+        // Перезагрузка заданий и оценок
         await loadStudentAssignments();
+        await loadStudentGrades();
 
-        // Hide message after 5 seconds
         setTimeout(() => {
             submitMessage.style.display = 'none';
         }, 5000);
@@ -470,24 +495,31 @@ async function submitAssignment(assignmentId, file, comment = '', submitBtn, sub
         submitMessage.style.display = 'block';
     } finally {
         submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i>📤</i> Сдать задание';
+        submitBtn.innerHTML = '📤 Сдать задание';
     }
 }
 
+// ============================ ПРОЧЕЕ =============================
+
 function logout() {
     localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userRole');
     window.location.href = '/login.html';
 }
 
+// Для отладки из консоли
 window.debugStudent = async function() {
     console.log('=== STUDENT DEBUG ===');
-
     try {
         const studentMe = await ApiService.get('/students/me');
         console.log('Student me:', studentMe);
 
         const assignments = await ApiService.get('/students/assignments/my-class');
         console.log('Assignments:', assignments);
+
+        const submissions = await ApiService.get('/submissions/my');
+        console.log('Submissions:', submissions);
     } catch (error) {
         console.error('Debug error:', error);
     }

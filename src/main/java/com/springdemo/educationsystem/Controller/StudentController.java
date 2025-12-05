@@ -1,7 +1,10 @@
 package com.springdemo.educationsystem.Controller;
 
 import com.springdemo.educationsystem.DTO.AssignmentDTO;
+import com.springdemo.educationsystem.DTO.StudentGradeDTO;
+import com.springdemo.educationsystem.Entity.Grade;
 import com.springdemo.educationsystem.Entity.Student;
+import com.springdemo.educationsystem.Repository.GradeRepository;
 import com.springdemo.educationsystem.Repository.StudentRepository;
 import com.springdemo.educationsystem.Service.AssignmentService;
 import com.springdemo.educationsystem.Service.AuthService;
@@ -14,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/students")
@@ -25,10 +29,12 @@ public class StudentController {
     private final StudentRepository studentRepository;
     private final AssignmentService assignmentService;
     private final AuthService authService;
-    public StudentController(StudentRepository studentRepository, AssignmentService assignmentService, AuthService authService) {
+    private final GradeRepository gradeRepository;
+    public StudentController(StudentRepository studentRepository, AssignmentService assignmentService, AuthService authService, GradeRepository gradeRepository) {
         this.studentRepository = studentRepository;
         this.assignmentService = assignmentService;
         this.authService = authService;
+        this.gradeRepository = gradeRepository;
     }
 
     @GetMapping("/me")
@@ -96,6 +102,76 @@ public class StudentController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+//    private String extractToken(String authorizationHeader) {
+//        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+//            return authorizationHeader.substring(7);
+//        }
+//        return "";
+//    }
+
+    @GetMapping("/grades")
+    public ResponseEntity<?> getMyGrades(
+            @RequestHeader("Authorization") String authorizationHeader) {
+
+        try {
+            String token = extractToken(authorizationHeader);
+            if (!authService.isValidToken(token)) {
+                return ResponseEntity.status(401)
+                        .body(Map.of("error", "Authentication required"));
+            }
+
+            Long userId = authService.getUserId(token);
+
+            // StudentRepository уже используется в других контроллерах через findByUserId(...)
+            Student student = studentRepository.findByUserId(userId).orElse(null);
+
+            if (student == null) {
+                logger.info("Student not found for user {}", userId);
+                return ResponseEntity.ok(List.of());
+            }
+
+            List<Grade> grades = gradeRepository.findByStudentId(student.getId());
+            logger.info("Loaded {} grades for student {}", grades.size(), student.getId());
+
+            List<StudentGradeDTO> response = grades.stream()
+                    .map(this::convertToStudentGradeDTO)
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            logger.error("Error while loading student grades: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+
+    private StudentGradeDTO convertToStudentGradeDTO(Grade grade) {
+
+        String assignmentTitle = null;
+        String subjectName = null;
+
+        if (grade.getSubmission() != null &&
+                grade.getSubmission().getAssignment() != null) {
+
+            assignmentTitle = grade.getSubmission().getAssignment().getTitle();
+
+            if (grade.getSubmission().getAssignment().getSubject() != null) {
+                subjectName = grade.getSubmission().getAssignment().getSubject().getName();
+            }
+        }
+
+        return new StudentGradeDTO(
+                assignmentTitle,
+                subjectName,
+                grade.getGradeValue(),
+                grade.getGradedAt(),
+                grade.getComment()
+        );
+    }
+
 
     private String extractToken(String authorizationHeader) {
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {

@@ -18,6 +18,33 @@ public class SubmissionDTO {
 
     public SubmissionDTO() {}
 
+    public SubmissionDTO(Long id,
+                         Long assignmentId,
+                         String assignmentTitle,
+                         Long studentId,
+                         String studentName,
+                         String fileName,
+                         Long fileSize,
+                         LocalDateTime submittedAt,
+                         String status,
+                         String comment,
+                         Integer grade,
+                         String teacherComment) {
+        this.id = id;
+        this.assignmentId = assignmentId;
+        this.assignmentTitle = assignmentTitle;
+        this.studentId = studentId;
+        this.studentName = studentName;
+        this.fileName = fileName;
+        this.fileSize = fileSize;
+        this.submittedAt = submittedAt;
+        this.status = status;
+        this.comment = comment;
+        this.grade = grade;
+        this.teacherComment = teacherComment;
+    }
+
+
     // Геттеры и сеттеры
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
