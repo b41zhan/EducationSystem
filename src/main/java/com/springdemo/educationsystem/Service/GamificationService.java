@@ -699,11 +699,9 @@ public class GamificationService {
 
         return leaderboard;
     }
-
     // -----------------------------------------
     // ACHIEVEMENTS LIST FOR STUDENT
     // -----------------------------------------
-
     public List<AchievementDTO> getStudentAchievements(Long studentId) {
         List<Achievement> allAchievements = achievementRepository.findAllOrderByRequiredValue();
         List<StudentAchievement> studentAchievements = studentAchievementRepository.findByStudentId(studentId);
@@ -751,11 +749,9 @@ public class GamificationService {
                 })
                 .collect(Collectors.toList());
     }
-
     // -----------------------------------------
     // DEFAULT ACHIEVEMENTS INITIALIZATION
     // -----------------------------------------
-
     @Transactional
     public void initializeDefaultAchievements() {
         if (achievementRepository.count() == 0) {
@@ -778,7 +774,6 @@ public class GamificationService {
             logger.info("Initialized default achievements");
         }
     }
-
     private Achievement createAchievement(String name, String description, String icon, String type, int requiredValue, int xpReward) {
         Achievement achievement = new Achievement();
         achievement.setName(name);
@@ -789,11 +784,9 @@ public class GamificationService {
         achievement.setXpReward(xpReward);
         return achievement;
     }
-
     // -----------------------------------------
     // MAIN STUDENT STATS DTO
     // -----------------------------------------
-
     public StudentGamificationStatsDTO getStudentGamificationStats(Long studentId) {
         try {
             Student student = studentRepository.findById(studentId)
@@ -856,11 +849,9 @@ public class GamificationService {
             throw new RuntimeException("Student stats not found");
         }
     }
-
     // -----------------------------------------
     // XP HISTORY FOR CHART
     // -----------------------------------------
-
     public List<XpHistoryDTO> getXpHistory(Long studentId) {
         List<XpEvent> events = xpEventRepository.findByStudentIdOrderByCreatedAtAsc(studentId);
 
@@ -884,11 +875,9 @@ public class GamificationService {
 
         return result;
     }
-
     // -----------------------------------------
     // ACHIEVEMENT STATS FOR CHART
     // -----------------------------------------
-
     public AchievementsStatsDTO getAchievementStats(Long studentId) {
         AchievementsStatsDTO dto = new AchievementsStatsDTO();
 
@@ -914,6 +903,125 @@ public class GamificationService {
         dto.setUnlockedByType(unlockedByType);
 
         return dto;
+    }
+
+    public TeacherStudentGamificationDetailsDTO getTeacherStudentDetails(Long studentId) {
+
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+
+        StudentStats stats = studentStatsRepository.findByStudentId(studentId)
+                .orElseGet(() -> initializeStudentStats(studentId));
+
+        // ---------- Полученные достижения ----------
+        List<StudentAchievement> unlocked = studentAchievementRepository.findByStudentId(studentId);
+
+        List<AchievementDTO> unlockedDto = unlocked.stream()
+                .map(sa -> {
+                    Achievement a = sa.getAchievement();
+                    AchievementDTO dto = new AchievementDTO();
+
+                    dto.setId(a.getId());
+                    dto.setName(a.getName());
+                    dto.setDescription(a.getDescription());
+                    dto.setType(a.getType());
+                    dto.setIcon(a.getIcon());
+                    dto.setUnlocked(true);
+                    dto.setProgress(a.getRequiredValue());
+                    dto.setProgressPercentage(100);
+                    dto.setUnlockedAt(sa.getUnlockedAt());
+
+
+                    return dto;
+                })
+                .toList();
+        // ---------- Заблокированные ----------
+        Set<Long> unlockedIds = unlocked.stream()
+                .map(sa -> sa.getAchievement().getId())
+                .collect(Collectors.toSet());
+
+        List<Achievement> all = achievementRepository.findAll();
+
+        List<AchievementDTO> lockedDto = all.stream()
+                .filter(a -> !unlockedIds.contains(a.getId()))
+                .map(a -> {
+                    AchievementDTO dto = new AchievementDTO();
+
+                    dto.setId(a.getId());
+                    dto.setName(a.getName());
+                    dto.setDescription(a.getDescription());
+                    dto.setType(a.getType());
+                    dto.setIcon(a.getIcon());
+                    dto.setUnlocked(false);
+
+                    int progress = switch (a.getType()) {
+                        case "assignments" -> stats.getCompletedAssignments();
+                        case "perfect_assignments" -> stats.getPerfectAssignments();
+                        case "streak" -> stats.getMaxStreak();
+                        case "level" -> stats.getLevel();
+                        default -> 0;
+                    };
+
+                    dto.setProgress(progress);
+                    dto.setProgressPercentage(Math.min(100, (progress * 100) / a.getRequiredValue()));
+
+                    return dto;
+                })
+                .toList();
+        // ---------- XP Activity ----------
+        List<XpEvent> events = xpEventRepository.findTop20ByStudentOrderByCreatedAtDesc(student);
+
+        List<ActivityDTO> activity = events.stream()
+                .map(e -> new ActivityDTO(
+                        buildTitle(e),
+                        buildDescription(e),
+                        e.getSource(),      // тип: assignment, achievement...
+                        e.getCreatedAt()    // дата
+                ))
+                .collect(Collectors.toList());
+
+        // ---------- DTO ----------
+        TeacherStudentGamificationDetailsDTO dto = new TeacherStudentGamificationDetailsDTO();
+
+        dto.setStudentId(student.getId());
+        dto.setStudentName(student.getUser().getFirstName() + " " + student.getUser().getLastName());
+        dto.setClassName(student.getSchoolClass() != null ? student.getSchoolClass().getName() : "-");
+
+        dto.setTotalXp(stats.getTotalXp());
+        dto.setLevel(stats.getLevel());
+        dto.setCompletedAssignments(stats.getCompletedAssignments());
+        dto.setPerfectAssignments(stats.getPerfectAssignments());
+        dto.setCurrentStreak(stats.getCurrentStreak());
+        dto.setMaxStreak(stats.getMaxStreak());
+
+        dto.setNextLevelXp(calculateNextLevelXp(stats.getLevel()));
+        dto.setCurrentLevelXp(stats.getTotalXp() - calculateCurrentLevelXp(stats.getLevel()));
+
+        dto.setAchievements(unlockedDto);
+        dto.setAvailableAchievements(lockedDto);
+
+        dto.setAchievementsUnlocked(unlockedDto.size());
+        dto.setTotalAchievements(all.size());
+
+        dto.setRecentActivity(activity);
+
+        return dto;
+    }
+
+    private String buildTitle(XpEvent e) {
+        return switch (e.getSource()) {
+            case "assignment" -> "Выполнено задание";
+            case "perfect" -> "Отличная оценка";
+            case "achievement" -> "Получено достижение";
+            case "streak" -> "Серия успехов";
+            case "level" -> "Новый уровень!";
+            default -> "Активность";
+        };
+    }
+
+    private String buildDescription(XpEvent e) {
+        return "Изменение XP: " + e.getXpChange() +
+                ", всего теперь: " + e.getTotalXpAfter();
     }
 }
 

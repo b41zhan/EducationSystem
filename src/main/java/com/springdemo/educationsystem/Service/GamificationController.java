@@ -180,19 +180,15 @@ public class GamificationController {
         this.gamificationService = gamificationService;
         this.authService = authService;
     }
-
     // --------------------------------------------------
     // ВСПОМОГАТЕЛЬНЫЙ МЕТОД
     // --------------------------------------------------
-
     private String extractToken(String authorizationHeader) {
         return authorizationHeader.substring(7);
     }
-
     // --------------------------------------------------
     // СТАТИСТИКА СТУДЕНТА (ОСНОВНАЯ КАРТОЧКА)
     // --------------------------------------------------
-
     @GetMapping("/student/stats")
     public ResponseEntity<?> getStudentStats(
             @RequestHeader("Authorization") String authorizationHeader) {
@@ -217,11 +213,9 @@ public class GamificationController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
-
     // --------------------------------------------------
     // СТАТИСТИКА КОНКРЕТНОГО СТУДЕНТА ДЛЯ УЧИТЕЛЯ
     // --------------------------------------------------
-
     @GetMapping("/teacher/student/{studentId}/stats")
     public ResponseEntity<?> getStudentStatsForTeacher(
             @PathVariable Long studentId,
@@ -239,13 +233,16 @@ public class GamificationController {
         }
 
         try {
-            StudentGamificationStatsDTO stats = gamificationService.getStudentGamificationStats(studentId);
+            // ВАЖНО: используем НОВЫЙ DTO
+            var stats = gamificationService.getTeacherStudentDetails(studentId);
             return ResponseEntity.ok(stats);
+
         } catch (Exception e) {
-            logger.error("Error getting student gamification stats for teacher: {}", e.getMessage());
+            logger.error("Error getting student gamification details for teacher: {}", e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
 
     // --------------------------------------------------
     // ЛИДЕРБОРД
@@ -298,11 +295,9 @@ public class GamificationController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
-
     // --------------------------------------------------
     // ИНИЦИАЛИЗАЦИЯ НАБОРА ДОСТИЖЕНИЙ (АДМИН)
     // --------------------------------------------------
-
     @PostMapping("/admin/initialize-achievements")
     public ResponseEntity<?> initializeAchievements(
             @RequestHeader("Authorization") String authorizationHeader) {
@@ -324,11 +319,9 @@ public class GamificationController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
-
     // --------------------------------------------------
     // НОВОЕ: ИСТОРИЯ XP ДЛЯ ГРАФИКА
     // --------------------------------------------------
-
     @GetMapping("/student/xp-history")
     public ResponseEntity<?> getStudentXpHistory(
             @RequestHeader("Authorization") String authorizationHeader) {
@@ -353,11 +346,9 @@ public class GamificationController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
-
     // --------------------------------------------------
     // НОВОЕ: СТАТИСТИКА ДОСТИЖЕНИЙ ДЛЯ ДИАГРАММ
     // --------------------------------------------------
-
     @GetMapping("/student/achievement-stats")
     public ResponseEntity<?> getStudentAchievementStats(
             @RequestHeader("Authorization") String authorizationHeader) {

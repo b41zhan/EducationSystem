@@ -130,7 +130,9 @@ function updateAchievements(stats) {
                 <div class="achievement-content">
                     <div class="achievement-name">${achievement.name}</div>
                     <div class="achievement-desc">${achievement.description}</div>
-                    ${achievement.date ? `<div class="achievement-date">Получено: ${formatDate(achievement.date)}</div>` : ''}
+                    ${achievement.unlockedAt
+            ? `<div class="achievement-date">Получено: ${formatDateTime(achievement.unlockedAt)}</div>`
+            : ''}
                 </div>
                 <div class="achievement-status status-unlocked">Получено</div>
             </div>
@@ -169,6 +171,43 @@ function updateAchievements(stats) {
         `;
     }
 }
+function formatDateTime(dateString) {
+    const d = new Date(dateString);
+    return d.toLocaleString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+function renderUnlockedAchievements(list) {
+    const container = document.getElementById("unlockedAchievementsList");
+    container.innerHTML = "";
+
+    list.forEach(a => {
+        container.innerHTML += `
+            <div class="achievement-card unlocked">
+                <div class="ach-icon">
+                    <img src="${a.icon}" alt="">
+                </div>
+
+                <div class="ach-info">
+                    <div class="ach-name">${a.name}</div>
+                    <div class="ach-desc">${a.description}</div>
+
+                    ${a.unlockedAt
+            ? `<div class="ach-date">Получено: ${formatDateTime(a.unlockedAt)}</div>`
+            : ""
+        }
+                </div>
+
+                <div class="ach-status">Получено</div>
+            </div>
+        `;
+    });
+}
+
 
 // Обновление истории активности
 function updateActivityHistory(activities) {

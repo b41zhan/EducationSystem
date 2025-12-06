@@ -1,5 +1,6 @@
 package com.springdemo.educationsystem.Repository;
 
+import com.springdemo.educationsystem.Entity.Student;
 import com.springdemo.educationsystem.Entity.XpEvent;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -12,4 +13,6 @@ public interface XpEventRepository extends JpaRepository<XpEvent, Long> {
 
     @Query("SELECT e FROM XpEvent e WHERE e.student.id = :studentId ORDER BY e.createdAt ASC")
     List<XpEvent> getHistory(Long studentId);
+
+    List<XpEvent> findTop20ByStudentOrderByCreatedAtDesc(Student student);
 }
