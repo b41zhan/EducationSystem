@@ -245,6 +245,11 @@ body {
     box-shadow: 0 4px 8px rgba(239, 68, 68, 0.2);
 }
 
+.filter-select{
+    padding: 5px;
+    border-radius: 5px;
+}
+
 /* ===== BADGES ===== */
 .nav-badge, #notification-badge {
     background: var(--danger);

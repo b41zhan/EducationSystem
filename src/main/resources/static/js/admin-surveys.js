@@ -63,7 +63,7 @@ function addSurveyQuestion() {
                 <input type="text" class="survey-option-input" placeholder="Вариант 1">
                 <input type="text" class="survey-option-input" placeholder="Вариант 2">
             </div>
-            <button type="button" class="btn-secondary" onclick="addSurveyOption(this)">
+            <button type="button" class="btn-submit2" onclick="addSurveyOption(this)">
                 ➕ Добавить вариант
             </button>
         </div>

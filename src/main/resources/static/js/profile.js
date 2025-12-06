@@ -265,7 +265,7 @@ function updateBackLink(role) {
     };
 
     link.href = pages[role] || '/student-dashboard.html';
-    link.textContent = `← Назад в ${titles[role]}`;
+    link.textContent = `← ${titles[role]}`;
 }
 
 function goBackToDashboard() {

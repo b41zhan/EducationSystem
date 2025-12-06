@@ -370,7 +370,7 @@
 
                 <div class="form-group">
                     <label>Описание</label>
-                    <textarea id="surveyDescription" rows="2"
+                    <textarea class="description" id="surveyDescription" rows="2"
                               placeholder="Кратко расскажите, о чем этот опрос"></textarea>
                 </div>
 
@@ -385,13 +385,13 @@
                 <div class="form-group">
                     <label class="required">Вопросы</label>
                     <div id="surveyQuestionsContainer"></div>
-                    <button type="button" class="btn-secondary" onclick="addSurveyQuestion()">
+                    <button type="button" class="btn-submit2" onclick="addSurveyQuestion()">
                         ➕ Добавить вопрос
                     </button>
                 </div>
 
                 <div class="modal-footer">
-                    <button type="submit" class="btn-primary">Сохранить опрос</button>
+                    <button type="submit" class="btn-submit">Сохранить опрос</button>
                 </div>
             </form>
 
@@ -405,7 +405,7 @@
                     <select id="surveyResultsSelect"></select>
                 </div>
 
-                <button type="button" class="btn-secondary" onclick="loadSurveyResults()">
+                <button type="button" class="btn-submit2" onclick="loadSurveyResults()">
                     Показать результаты
                 </button>
 
