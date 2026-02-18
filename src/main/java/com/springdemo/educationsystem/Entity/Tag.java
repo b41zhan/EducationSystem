@@ -1,5 +1,6 @@
 package com.springdemo.educationsystem.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +19,7 @@ public class Tag {
     private String description;
 
     @ManyToMany(mappedBy = "tags")
+    @JsonIgnore
     private List<Student> students = new ArrayList<>();
 
     public Tag() {}

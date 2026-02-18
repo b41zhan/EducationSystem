@@ -1,0 +1,65 @@
+<head>
+    <link rel="stylesheet" href="/css/parent.css">
+</head>>
+    <div class="dashboard">
+
+    <div class="topbar">
+        <h2 id="parent-title">Панель родителя</h2>
+        <div class="child-switch">
+            <label>Активный ребёнок:</label>
+            <select id="activeChildSelect"></select>
+        </div>
+    </div>
+
+    <div class="grid">
+
+        <section class="card">
+            <h3>Мои дети</h3>
+            <div id="childrenCards" class="cards"></div>
+        </section>
+
+        <section class="card">
+            <div class="row-between">
+                <h3>Расписание</h3>
+                <div>
+                    <button id="btnToday">Сегодня</button>
+                    <button id="btnTomorrow">Завтра</button>
+                </div>
+            </div>
+            <div id="scheduleList"></div>
+        </section>
+
+        <section class="card">
+            <div class="row-between">
+                <h3>Оценки (последние)</h3>
+                <select id="gradesLimit">
+                    <option value="10">10</option>
+                    <option value="20" selected>20</option>
+                    <option value="50">50</option>
+                </select>
+            </div>
+
+            <table class="table">
+                <thead>
+                <tr><th>Дата</th><th>Предмет</th><th>Оценка</th></tr>
+                </thead>
+                <tbody id="gradesTbody"></tbody>
+            </table>
+        </section>
+
+        <section class="card">
+            <h3>Уведомления</h3>
+            <div id="notificationsList"></div>
+        </section>
+
+        <section class="card">
+            <h3>Сообщения</h3>
+            <div id="messagesStub">
+                <p>Скоро: диалоги и чат.</p>
+            </div>
+        </section>
+
+    </div>
+</div>
+
+<script src="parent.js"></script>

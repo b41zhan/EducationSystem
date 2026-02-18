@@ -38,8 +38,4 @@ public class UserController {
         return userService.registerTeacher(user);
     }
 
-    @PostMapping("/parents")
-    public UserDTO registerParent(@RequestBody User user) {
-        return userService.registerParent(user);
-    }
 }

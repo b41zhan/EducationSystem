@@ -138,6 +138,12 @@
         <h2><i class="fas fa-chalkboard-teacher"></i> Регистрация учителя</h2>
         <form id="registerTeacherForm">
             <div class="form-group">
+                <label for="teacherSchoolSelect">Школа:</label>
+                <select id="teacherSchoolSelect" required>
+                    <option value="">Выберите школу</option>
+                </select>
+            </div>
+            <div class="form-group">
                 <label for="teacherEmail">Email:</label>
                 <input type="email" id="teacherEmail" required placeholder="teacher@school.edu">
             </div>
@@ -179,6 +185,18 @@
         <h2><i class="fas fa-user-graduate"></i> Регистрация студента</h2>
         <form id="registerStudentForm">
             <div class="form-group">
+                <label for="studentSchoolSelect">Школа:</label>
+                <select id="studentSchoolSelect" required>
+                    <option value="">Выберите школу</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="studentClassSelect">Класс:</label>
+                <select id="studentClassSelect" required>
+                    <option value="">Сначала выберите школу</option>
+                </select>
+            </div>
+            <div class="form-group">
                 <label for="studentEmail">Email:</label>
                 <input type="email" id="studentEmail" required placeholder="student@school.edu">
             </div>
@@ -201,24 +219,6 @@
                 <label for="studentPatronymic">Отчество:</label>
                 <input type="text" id="studentPatronymic" placeholder="Сатпаевич">
             </div>
-            <div class="form-group">
-                <label for="studentClass">Класс:</label>
-                <select id="studentClass" required>
-                    <option value="">Выберите класс</option>
-                    <option value="8А">8А</option>
-                    <option value="8Б">8Б</option>
-                    <option value="8В">8В</option>
-                    <option value="9А">9А</option>
-                    <option value="9Б">9Б</option>
-                    <option value="9В">9В</option>
-                    <option value="10А">10А</option>
-                    <option value="10Б">10Б</option>
-                    <option value="10В">10В</option>
-                    <option value="11А">11А</option>
-                    <option value="11Б">11Б</option>
-                    <option value="11В">11В</option>
-                </select>
-            </div>
             <div class="form-actions">
                 <button type="submit" class="btn-primary">
                     <i class="fas fa-user-plus"></i> Зарегистрировать
@@ -237,6 +237,28 @@
         <span class="close" onclick="closeRegisterParentModal()">&times;</span>
         <h2><i class="fas fa-user-friends"></i> Регистрация родителя</h2>
         <form id="registerParentForm">
+            <div class="form-group">
+                <label for="parentSchoolSelect">Школа:</label>
+                <select id="parentSchoolSelect" required>
+                    <option value="">Выберите школу</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="parentClassSelect">Класс:</label>
+                <select id="parentClassSelect" required>
+                    <option value="">Сначала выберите школу</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="parentStudentsSelect">Дети (можно несколько):</label>
+                <select id="parentStudentsSelect" multiple required>
+                    <option value="">Сначала выберите класс</option>
+                </select>
+                <div class="form-hint">Зажмите Ctrl (Windows) / Cmd (Mac), чтобы выбрать несколько</div>
+            </div>
+
             <div class="form-group">
                 <label for="parentEmail">Email:</label>
                 <input type="email" id="parentEmail" required placeholder="parent@email.com">
@@ -259,14 +281,6 @@
             <div class="form-group">
                 <label for="parentPatronymic">Отчество:</label>
                 <input type="text" id="parentPatronymic" placeholder="Ивановна">
-            </div>
-            <div class="form-group">
-                <label for="parentStudent">Привязать к студенту:</label>
-                <select id="parentStudent">
-                    <option value="">Не привязывать</option>
-                    <!-- Будет заполняться динамически -->
-                </select>
-                <div class="form-hint">Опционально, можно добавить позже</div>
             </div>
             <div class="form-actions">
                 <button type="submit" class="btn-primary">

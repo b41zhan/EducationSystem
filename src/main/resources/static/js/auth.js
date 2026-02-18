@@ -16,20 +16,48 @@ async function handleLogin(event) {
 
     try {
         const response = await ApiService.post('/auth/login', { email, password });
+        console.log("LOGIN RESPONSE:", response);
 
-        if (response.token) {
-            localStorage.setItem('token', response.token);
-            localStorage.setItem('userRole', response.role);
-            localStorage.setItem('userId', response.userId);
-            localStorage.setItem('userName', `${response.firstName} ${response.lastName}`);
+        const token =
+            response?.token ||
+            response?.accessToken ||
+            response?.jwt ||
+            response?.data?.token ||
+            response?.data?.accessToken;
 
-            redirectToDashboard(response.role);
+        const role =
+            response?.role ||
+            response?.userRole ||
+            response?.data?.role ||
+            response?.data?.userRole;
+
+        const userId =
+            response?.userId ||
+            response?.id ||
+            response?.data?.userId ||
+            response?.data?.id;
+
+        if (!token) {
+            errorDiv.textContent = 'Логин успешен, но токен не пришёл. Смотри Console -> LOGIN RESPONSE';
+            errorDiv.style.display = 'block';
+            return;
         }
+
+        localStorage.setItem('token', token);
+        if (role) localStorage.setItem('userRole', role);
+        if (userId) localStorage.setItem('userId', String(userId));
+        if (response?.firstName || response?.lastName) {
+            localStorage.setItem('userName', `${response.firstName ?? ''} ${response.lastName ?? ''}`.trim());
+        }
+
+        redirectToDashboard(role);
     } catch (e) {
-        errorDiv.textContent = 'Ошибка входа: проверьте email и пароль';
+        console.error(e);
+        errorDiv.textContent = 'Ошибка входа: ' + (e.message || 'проверьте email и пароль');
         errorDiv.style.display = 'block';
     }
 }
+
 
 function checkAuthStatus() {
     const token = localStorage.getItem('token');
@@ -54,11 +82,15 @@ function redirectToDashboard(role) {
         case 'admin':
             window.location.href = '/admin-dashboard.html';
             break;
+        case 'parent':
+            window.location.href = '/parent-dashboard.html';
+            break;
         default:
             localStorage.clear();
             window.location.href = '/login.html';
     }
 }
+
 
 function logout() {
     localStorage.clear();

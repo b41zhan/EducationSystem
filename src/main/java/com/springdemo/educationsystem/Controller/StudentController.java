@@ -180,4 +180,20 @@ public class StudentController {
         return "";
     }
 
+    @GetMapping("/classes/{classId}/students")
+    public List<StudentDTO> getStudentsByClass(@PathVariable Long classId) {
+        return studentRepository.findBySchoolClass_Id(classId)
+                .stream()
+                .map(s -> new StudentDTO(
+                        s.getId(),
+                        s.getUser().getFirstName(),
+                        s.getUser().getLastName(),
+                        s.getUser().getPatronymic(),
+                        s.getSchoolClass().getName()
+                ))
+                .toList();
+    }
+
+    public record StudentDTO(Long id, String firstName, String lastName, String patronymic, String className) {}
+
 }

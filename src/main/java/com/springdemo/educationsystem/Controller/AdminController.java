@@ -1,5 +1,6 @@
 package com.springdemo.educationsystem.Controller;
 
+import com.springdemo.educationsystem.DTO.RegisterParentRequest;
 import com.springdemo.educationsystem.DTO.UpdateUserDTO;
 import com.springdemo.educationsystem.DTO.UserDTO;
 import com.springdemo.educationsystem.Entity.User;
@@ -43,10 +44,13 @@ public class AdminController {
     @PostMapping("/register/teacher")
     public ResponseEntity<?> registerTeacher(
             @RequestBody User user,
-            @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
+            @RequestParam Long schoolId,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader
+    ) {
 
         logger.info("Received register teacher request for email: {}", user.getEmail());
         logger.info("Authorization header: {}", authorizationHeader);
+        logger.info("SchoolId: {}", schoolId);
 
         if (!isAdminAuthorized(authorizationHeader)) {
             logger.error("Access denied - not admin");
@@ -55,7 +59,7 @@ public class AdminController {
 
         try {
             logger.info("Attempting to register teacher: {}", user.getEmail());
-            UserDTO result = userService.registerTeacher(user);
+            UserDTO result = userService.registerTeacher(user, schoolId); // ✅ ВОТ ТУТ МЕНЯЕМ
             logger.info("Teacher registered successfully: {}", result.getEmail());
             return ResponseEntity.ok(result);
 
@@ -64,6 +68,9 @@ public class AdminController {
             return ResponseEntity.badRequest().body("Error: " + e.getMessage());
         }
     }
+
+
+
 
     @PostMapping("/register/student")
     public ResponseEntity<?> registerStudent(
@@ -87,23 +94,25 @@ public class AdminController {
     }
     @PostMapping("/register/parent")
     public ResponseEntity<?> registerParent(
-            @RequestBody User user,
+            @RequestBody RegisterParentRequest req,
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
 
-        logger.info("Received register parent request for email: {}", user.getEmail());
+        logger.info("Received register parent request for email: {}", req.getEmail());
 
         if (!isAdminAuthorized(authorizationHeader)) {
             return ResponseEntity.status(403).body("Access denied. Admin rights required.");
         }
 
         try {
-            UserDTO result = userService.registerParent(user);
+            UserDTO result = userService.registerParent(req);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             logger.error("Error registering parent: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body("Error: " + e.getMessage());
         }
     }
+
+
 
     @PutMapping("/users/{userId}")
     public ResponseEntity<?> updateUser(

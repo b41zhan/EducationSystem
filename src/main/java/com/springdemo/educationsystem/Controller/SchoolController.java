@@ -1,6 +1,9 @@
 package com.springdemo.educationsystem.Controller;
 
 import com.springdemo.educationsystem.Entity.School;
+import com.springdemo.educationsystem.Entity.SchoolClass;
+import com.springdemo.educationsystem.Repository.SchoolClassRepository;
+import com.springdemo.educationsystem.Repository.SchoolRepository;
 import com.springdemo.educationsystem.Service.SchoolService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -12,14 +15,24 @@ import java.util.List;
 @CrossOrigin("*")
 public class SchoolController {
     private final SchoolService schoolService;
-    public SchoolController(SchoolService schoolService) {
+    private final SchoolRepository schoolRepository;
+    private final SchoolClassRepository schoolClassRepository;
+    public SchoolController(SchoolService schoolService, SchoolRepository schoolRepository, SchoolClassRepository schoolClassRepository) {
         this.schoolService = schoolService;
+        this.schoolRepository = schoolRepository;
+        this.schoolClassRepository = schoolClassRepository;
     }
 
     @GetMapping
     public List<School> getAllSchools() {
-        return schoolService.getAllSchools();
+        return schoolRepository.findAll();
     }
+
+    @GetMapping("/{schoolId}/classes")
+    public List<SchoolClass> getClassesBySchool(@PathVariable Long schoolId) {
+        return schoolClassRepository.findBySchoolId(schoolId);
+    }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<School> getSchoolById(@PathVariable Long id) {

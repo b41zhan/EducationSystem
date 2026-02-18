@@ -20,6 +20,8 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
             "WHERE s.schoolClass.id = :classId " +
             "ORDER BY u.lastName, u.firstName")
     List<Student> findBySchoolClassIdWithUser(@Param("classId") Long classId);
+    List<Student> findBySchoolClass_Id(Long classId);
+
 
 
 }

@@ -1,8 +1,10 @@
 package com.springdemo.educationsystem.Service;
+import com.springdemo.educationsystem.DTO.RegisterParentRequest;
 import com.springdemo.educationsystem.DTO.UpdateUserDTO;
 import com.springdemo.educationsystem.DTO.UserDTO;
 import com.springdemo.educationsystem.Entity.*;
 import com.springdemo.educationsystem.Repository.*;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -25,9 +28,11 @@ public class UserService {
     private final ParentRepository parentRepository;
     private final SchoolClassRepository classRepository;
     private final SchoolRepository schoolRepository;
+    private final ParentStudentRepository parentStudentRepository;
     public UserService (UserRepository userRepository, RoleRepository roleRepository,
                         StudentRepository studentRepository, TeacherRepository teacherRepository,
-                        ParentRepository parentRepository, SchoolRepository schoolRepository, SchoolClassRepository classRepository) {
+                        ParentRepository parentRepository, SchoolRepository schoolRepository, SchoolClassRepository classRepository,
+                        ParentStudentRepository parentStudentRepository) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.studentRepository = studentRepository;
@@ -35,6 +40,7 @@ public class UserService {
         this.parentRepository = parentRepository;
         this.schoolRepository = schoolRepository;
         this.classRepository = classRepository;
+        this.parentStudentRepository = parentStudentRepository;
     }
 
     @Value("${file.upload-dir:uploads}")
@@ -103,17 +109,18 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
     }
 
-    public UserDTO registerTeacher(User user) {
+    public UserDTO registerTeacher(User user, Long schoolId) {
         Role teacherRole = roleRepository.findByName("teacher")
-                .orElseThrow(() -> new RuntimeException("Role 'teacher' not found"));
+                .orElseThrow(() -> new RuntimeException("Role teacher not found"));
 
-        if (user.getSchool() == null) {
-            School defaultSchool = schoolRepository.findById(1L)
-                    .orElseThrow(() -> new RuntimeException("Default school not found"));
-            user.setSchool(defaultSchool);
-        }
+        School school = schoolRepository.findById(schoolId)
+                .orElseThrow(() -> new RuntimeException("School not found: " + schoolId));
 
+        user.setSchool(school);
+
+        if (user.getRoles() == null) user.setRoles(new ArrayList<>());
         user.getRoles().add(teacherRole);
+
         User savedUser = userRepository.save(user);
 
         Teacher teacher = new Teacher();
@@ -123,19 +130,61 @@ public class UserService {
         return convertToDTO(savedUser);
     }
 
-    public UserDTO registerParent(User user) {
-        Role parentRole = roleRepository.findByName("parent")
-                .orElseThrow(() -> new RuntimeException("Role 'parent' not found"));
+    public UserDTO registerTeacher(User user) {
+        School school = schoolRepository.findAll()
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No schools found. Create a school first."));
 
+        return registerTeacher(user, school.getId());
+    }
+
+    @Transactional
+    public UserDTO registerParent(RegisterParentRequest req) {
+
+        Role parentRole = roleRepository.findByName("parent")
+                .orElseThrow(() -> new RuntimeException("Role parent not found"));
+
+        // 1) create user
+        User user = new User();
+        user.setEmail(req.getEmail());
+        user.setPasswordHash(req.getPasswordHash()); // если есть encoder - используй его
+        user.setFirstName(req.getFirstName());
+        user.setLastName(req.getLastName());
+        user.setPatronymic(req.getPatronymic());
+
+        if (user.getRoles() == null) user.setRoles(new ArrayList<>());
         user.getRoles().add(parentRole);
+
         User savedUser = userRepository.save(user);
 
+        // 2) create parent
         Parent parent = new Parent();
         parent.setUser(savedUser);
         parentRepository.save(parent);
 
+        // 3) link students in parent_student
+        if (req.getStudentIds() == null || req.getStudentIds().isEmpty()) {
+            throw new RuntimeException("Select at least one student");
+        }
+
+        List<Student> students = studentRepository.findAllById(req.getStudentIds());
+
+        if (students.isEmpty()) {
+            throw new RuntimeException("Students not found");
+        }
+
+        for (Student s : students) {
+            ParentStudent ps = new ParentStudent();
+            ps.setParent(parent);
+            ps.setStudent(s);
+            parentStudentRepository.save(ps);
+        }
+
         return convertToDTO(savedUser);
     }
+
+
 
     public void updateUserBio(Long userId, String bio) {
         User user = userRepository.findById(userId)

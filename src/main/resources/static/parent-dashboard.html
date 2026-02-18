@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Parent Dashboard</title>
+
+    <link rel="stylesheet" href="/css/parent-dashboard.css" />
+</head>
+<body>
+
+<header class="topbar">
+    <div class="brand">Education System</div>
+
+    <div class="right">
+        <select id="activeChildSelect" class="select"></select>
+        <button class="btn btn-outline" onclick="logout()">Выйти</button>
+    </div>
+</header>
+
+<main class="container">
+
+    <!-- 1) Мои дети -->
+    <section class="card">
+        <h2>Мои дети</h2>
+        <div id="childrenCards" class="children-grid"></div>
+        <button id="openAddChildModalBtn"
+                class="btn btn-primary"
+                style="margin-left:12px; display:inline-block; position:relative; z-index:9999;">
+            + Добавить ребёнка
+        </button>
+    </section>
+
+    <!-- 2) Расписание -->
+    <section class="card">
+        <div class="row-between">
+            <h2>Расписание</h2>
+
+            <div class="row" style="gap:10px; align-items:center;">
+                <label class="label">Дата:</label>
+                <input id="scheduleDate" type="date" class="select" />
+
+                <button id="btnDayMode" class="tab active">День</button>
+                <button id="btnWeekMode" class="tab">Неделя</button>
+            </div>
+        </div>
+
+        <div id="scheduleList" class="list"></div>
+    </section>
+
+
+    <!-- 3) Оценки -->
+    <section class="card">
+        <div class="row-between">
+            <h2>Оценки</h2>
+            <div class="row">
+                <label class="label">Показать:</label>
+                <select id="gradesLimit" class="select">
+                    <option value="10">10</option>
+                    <option value="20" selected>20</option>
+                    <option value="50">50</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Предмет</th>
+                    <th>Оценка</th>
+                </tr>
+                </thead>
+                <tbody id="gradesTbody"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- 4) Уведомления -->
+    <section class="card">
+        <h2>Уведомления</h2>
+        <div id="notificationsList" class="notif-list"></div>
+    </section>
+
+</main>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/parent-dashboard.js"></script>
+<!-- Add Child Modal -->
+<div id="addChildModal" style="display:none; position:fixed; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.4); align-items:center; justify-content:center;">
+    <div style="background:white; padding:20px; border-radius:10px; width:400px;">
+
+        <h3>Добавить ребёнка</h3>
+
+        <label>Школа</label>
+        <select id="parentSchoolSelect"></select>
+
+        <br><br>
+
+        <label>Класс</label>
+        <select id="parentClassSelect" disabled></select>
+
+        <br><br>
+
+        <label>Ученик</label>
+        <select id="parentStudentsSelect" disabled></select>
+
+
+        <br><br>
+
+        <button id="linkChildBtn" disabled>Привязать</button>
+        <button id="closeAddChildModalBtn">Закрыть</button>
+
+        <p id="linkChildMsg"></p>
+
+    </div>
+</div>
+</body>
+</html>
