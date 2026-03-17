@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мои квизы</title>
+    <style>
+        :root{
+            --bg:#f6f7fb;
+            --card:#fff;
+            --text:#1f2937;
+            --muted:#6b7280;
+            --border:#e5e7eb;
+            --primary:#2563eb;
+            --primary-dark:#1d4ed8;
+            --success:#16a34a;
+            --danger:#dc2626;
+            --shadow:0 10px 30px rgba(0,0,0,.08);
+            --radius:16px;
+        }
+        *{box-sizing:border-box}
+        body{
+            margin:0;
+            font-family:Inter, Arial, sans-serif;
+            background:var(--bg);
+            color:var(--text);
+        }
+        .page{
+            max-width:1100px;
+            margin:0 auto;
+            padding:24px;
+        }
+        .topbar{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:12px;
+            margin-bottom:24px;
+            flex-wrap:wrap;
+        }
+        .topbar h1{margin:0;font-size:30px}
+        .btn{
+            border:none;
+            border-radius:12px;
+            padding:12px 16px;
+            cursor:pointer;
+            font-weight:600;
+            text-decoration:none;
+            display:inline-flex;
+            align-items:center;
+            gap:8px;
+        }
+        .btn-primary{background:var(--primary);color:#fff}
+        .btn-primary:hover{background:var(--primary-dark)}
+        .btn-secondary{background:#fff;color:var(--text);border:1px solid var(--border)}
+        .btn-danger{background:var(--danger);color:#fff}
+        .message{
+            margin-bottom:16px;
+            padding:12px 14px;
+            border-radius:12px;
+            display:none;
+            font-weight:600;
+        }
+        .message.success{display:block;background:#dcfce7;color:#166534;border:1px solid #bbf7d0}
+        .message.error{display:block;background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
+        .card{
+            background:var(--card);
+            border-radius:var(--radius);
+            box-shadow:var(--shadow);
+            border:1px solid var(--border);
+            padding:20px;
+            margin-bottom:18px;
+        }
+        .list{
+            display:flex;
+            flex-direction:column;
+            gap:14px;
+        }
+        .item{
+            border:1px solid var(--border);
+            border-radius:14px;
+            padding:16px;
+        }
+        .head{
+            display:flex;
+            justify-content:space-between;
+            gap:12px;
+            align-items:flex-start;
+            flex-wrap:wrap;
+        }
+        .item h3{margin:0 0 8px 0}
+        .meta{
+            display:flex;
+            gap:10px;
+            flex-wrap:wrap;
+            margin-top:10px;
+            color:var(--muted);
+            font-size:13px;
+        }
+        .chip{
+            display:inline-block;
+            padding:5px 10px;
+            border-radius:999px;
+            background:#f3f4f6;
+            font-size:12px;
+            color:#374151;
+        }
+        .empty{
+            padding:18px;
+            text-align:center;
+            color:var(--muted);
+            border:1px dashed var(--border);
+            border-radius:14px;
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="topbar">
+        <div>
+            <h1>📘 Мои квизы</h1>
+            <div style="color:#6b7280;">Доступные сейчас квизы для прохождения</div>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <a href="/student-dashboard.html" class="btn btn-secondary">← Назад в панель студента</a>
+            <button class="btn btn-danger" onclick="logout()">Выйти</button>
+        </div>
+    </div>
+
+    <div id="pageMessage" class="message"></div>
+
+    <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+            <h2 style="margin:0;">Доступные квизы</h2>
+            <button class="btn btn-secondary" id="refreshAvailableBtn">Обновить</button>
+        </div>
+    </div>
+
+    <div id="availableList" class="list">
+        <div class="empty">Загрузка...</div>
+    </div>
+</div>
+
+<script src="/js/auth.js"></script>
+<script src="/js/student-quizzes.js"></script>
+</body>
+</html>

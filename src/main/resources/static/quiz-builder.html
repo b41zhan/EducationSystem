@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Builder</title>
+    <style>
+        :root{
+            --bg:#f6f7fb;
+            --card:#ffffff;
+            --text:#1f2937;
+            --muted:#6b7280;
+            --border:#e5e7eb;
+            --primary:#7c3aed;
+            --primary-dark:#6d28d9;
+            --success:#16a34a;
+            --danger:#dc2626;
+            --warning:#d97706;
+            --shadow:0 10px 30px rgba(0,0,0,0.08);
+            --radius:16px;
+        }
+
+        *{box-sizing:border-box}
+        body{
+            margin:0;
+            font-family:Inter, Arial, sans-serif;
+            background:var(--bg);
+            color:var(--text);
+        }
+
+        .page{
+            max-width:1400px;
+            margin:0 auto;
+            padding:24px;
+        }
+
+        .topbar{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:16px;
+            margin-bottom:24px;
+            flex-wrap:wrap;
+        }
+
+        .topbar h1{
+            margin:0;
+            font-size:32px;
+        }
+
+        .topbar-actions{
+            display:flex;
+            gap:12px;
+            flex-wrap:wrap;
+        }
+
+        .btn{
+            border:none;
+            border-radius:12px;
+            padding:12px 16px;
+            cursor:pointer;
+            font-weight:600;
+            transition:.2s ease;
+            text-decoration:none;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            gap:8px;
+        }
+
+        .btn:hover{transform:translateY(-1px)}
+        .btn-primary{background:var(--primary);color:#fff}
+        .btn-primary:hover{background:var(--primary-dark)}
+        .btn-secondary{background:#fff;color:var(--text);border:1px solid var(--border)}
+        .btn-success{background:var(--success);color:#fff}
+        .btn-danger{background:var(--danger);color:#fff}
+        .btn-warning{background:var(--warning);color:#fff}
+        .btn-small{padding:8px 12px;border-radius:10px;font-size:14px}
+
+        .grid{
+            display:grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap:24px;
+        }
+
+        .card{
+            background:var(--card);
+            border-radius:var(--radius);
+            box-shadow:var(--shadow);
+            border:1px solid var(--border);
+            padding:20px;
+            margin-bottom:24px;
+        }
+
+        .card h2{
+            margin:0 0 16px 0;
+            font-size:22px;
+        }
+
+        .muted{color:var(--muted)}
+        .row{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:14px;
+        }
+
+        .row-3{
+            display:grid;
+            grid-template-columns:1fr 1fr 1fr;
+            gap:14px;
+        }
+
+        .field{
+            margin-bottom:14px;
+        }
+
+        label{
+            display:block;
+            margin-bottom:6px;
+            font-size:14px;
+            font-weight:600;
+        }
+
+        input, textarea, select{
+            width:100%;
+            padding:12px 14px;
+            border:1px solid var(--border);
+            border-radius:12px;
+            font:inherit;
+            background:#fff;
+        }
+
+        textarea{
+            min-height:100px;
+            resize:vertical;
+        }
+
+        .template-header{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:12px;
+            margin-bottom:12px;
+            flex-wrap:wrap;
+        }
+
+        .template-badge{
+            display:inline-block;
+            padding:8px 12px;
+            border-radius:999px;
+            background:#ede9fe;
+            color:var(--primary);
+            font-weight:700;
+            font-size:13px;
+        }
+
+        .questions-wrap{
+            display:flex;
+            flex-direction:column;
+            gap:16px;
+        }
+
+        .question-card{
+            border:1px solid var(--border);
+            border-radius:14px;
+            padding:16px;
+            background:#fafafa;
+        }
+
+        .question-top{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:12px;
+            margin-bottom:12px;
+            flex-wrap:wrap;
+        }
+
+        .question-title{
+            font-weight:700;
+        }
+
+        .option-list{
+            display:flex;
+            flex-direction:column;
+            gap:10px;
+            margin-top:10px;
+        }
+
+        .option-item{
+            display:grid;
+            grid-template-columns: 1fr auto auto;
+            gap:10px;
+            align-items:center;
+        }
+
+        .option-item label{
+            margin:0;
+            font-size:13px;
+            color:var(--muted);
+        }
+
+        .toolbar{
+            display:flex;
+            gap:10px;
+            flex-wrap:wrap;
+            margin-top:14px;
+        }
+
+        .template-list{
+            display:flex;
+            flex-direction:column;
+            gap:12px;
+        }
+
+        .template-item{
+            border:1px solid var(--border);
+            border-radius:14px;
+            padding:16px;
+            background:#fff;
+        }
+
+        .template-item.active{
+            border-color:var(--primary);
+            box-shadow:0 0 0 2px rgba(124,58,237,0.12);
+        }
+
+        .template-item-head{
+            display:flex;
+            justify-content:space-between;
+            gap:12px;
+            align-items:flex-start;
+            flex-wrap:wrap;
+        }
+
+        .template-item h3{
+            margin:0 0 6px 0;
+            font-size:18px;
+        }
+
+        .meta{
+            display:flex;
+            gap:10px;
+            flex-wrap:wrap;
+            margin-top:8px;
+            color:var(--muted);
+            font-size:13px;
+        }
+
+        .assign-box{
+            margin-top:14px;
+            border-top:1px dashed var(--border);
+            padding-top:14px;
+        }
+
+        .message{
+            margin-bottom:16px;
+            padding:12px 14px;
+            border-radius:12px;
+            display:none;
+            font-weight:600;
+        }
+
+        .message.success{
+            display:block;
+            background:#dcfce7;
+            color:#166534;
+            border:1px solid #bbf7d0;
+        }
+
+        .message.error{
+            display:block;
+            background:#fee2e2;
+            color:#991b1b;
+            border:1px solid #fecaca;
+        }
+
+        .empty{
+            padding:18px;
+            border:1px dashed var(--border);
+            border-radius:14px;
+            color:var(--muted);
+            text-align:center;
+        }
+
+        .assignments-list{
+            display:flex;
+            flex-direction:column;
+            gap:12px;
+        }
+
+        .assignment-item{
+            border:1px solid var(--border);
+            border-radius:14px;
+            padding:14px;
+            background:#fff;
+        }
+
+        .assignment-item h4{
+            margin:0 0 6px 0;
+        }
+
+        .chip{
+            display:inline-block;
+            padding:5px 10px;
+            border-radius:999px;
+            background:#f3f4f6;
+            font-size:12px;
+            color:#374151;
+        }
+
+        @media (max-width: 1100px){
+            .grid{grid-template-columns:1fr}
+        }
+
+        @media (max-width: 700px){
+            .row, .row-3{grid-template-columns:1fr}
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="topbar">
+        <div>
+            <h1>🧠 Конструктор квизов</h1>
+            <div class="muted">Создание шаблона, вопросы, назначение и просмотр квизов</div>
+        </div>
+        <div class="topbar-actions">
+            <a class="btn btn-secondary" href="/teacher-dashboard.html">← Назад в панель учителя</a>
+            <button class="btn btn-danger" onclick="logout()">Выйти</button>
+        </div>
+    </div>
+
+    <div id="pageMessage" class="message"></div>
+
+    <div class="grid">
+        <div>
+            <div class="card">
+                <div class="template-header">
+                    <div>
+                        <h2>1. Шаблон квиза</h2>
+                        <div class="muted">Сначала создай шаблон, потом добавь вопросы, потом назначь квиз</div>
+                    </div>
+                    <div id="currentQuizBadge" class="template-badge">Шаблон не выбран</div>
+                </div>
+
+                <div class="row">
+                    <div class="field">
+                        <label for="quizTitle">Название квиза</label>
+                        <input id="quizTitle" type="text" placeholder="Например: История — Вторая мировая война">
+                    </div>
+                    <div class="field">
+                        <label for="quizSubject">Предмет</label>
+                        <select id="quizSubject">
+                            <option value="">Без предмета</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="quizDescription">Описание</label>
+                    <textarea id="quizDescription" placeholder="Краткое описание квиза, инструкция для учеников"></textarea>
+                </div>
+
+                <div class="toolbar">
+                    <button class="btn btn-primary" id="createQuizBtn">Создать шаблон</button>
+                    <button class="btn btn-secondary" id="refreshQuizzesBtn">Обновить мои квизы</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>2. Вопросы</h2>
+                <div class="muted" style="margin-bottom:14px;">Можно добавлять сколько угодно вопросов. Сейчас UI поддерживает Single Choice, Multiple Choice и Text Answer.</div>
+
+                <div id="questionsWrap" class="questions-wrap"></div>
+
+                <div class="toolbar">
+                    <button class="btn btn-secondary" id="addSingleBtn">+ Single Choice</button>
+                    <button class="btn btn-secondary" id="addMultipleBtn">+ Multiple Choice</button>
+                    <button class="btn btn-secondary" id="addTextBtn">+ Text Answer</button>
+                    <button class="btn btn-success" id="saveQuestionsBtn">Сохранить все новые вопросы</button>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="card">
+                <h2>3. Назначить квиз</h2>
+                <div class="muted" style="margin-bottom:14px;">Назначение идёт не на сам шаблон, а на отдельный запуск квиза с временем и лимитом.</div>
+
+                <div class="field">
+                    <label for="assignQuizSelect">Шаблон квиза</label>
+                    <select id="assignQuizSelect">
+                        <option value="">Выбери шаблон</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="assignClassSelect">Класс</label>
+                    <select id="assignClassSelect">
+                        <option value="">Выбери класс</option>
+                    </select>
+                </div>
+
+                <div class="row">
+                    <div class="field">
+                        <label for="assignStartTime">Открытие</label>
+                        <input id="assignStartTime" type="datetime-local">
+                    </div>
+                    <div class="field">
+                        <label for="assignEndTime">Закрытие</label>
+                        <input id="assignEndTime" type="datetime-local">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="assignTimeLimit">Лимит прохождения (минуты)</label>
+                    <input id="assignTimeLimit" type="number" min="1" placeholder="Например: 40">
+                </div>
+
+                <div class="toolbar">
+                    <button class="btn btn-primary" id="assignQuizBtn">Назначить квиз</button>
+                    <button class="btn btn-secondary" id="refreshAssignmentsBtn">Обновить назначения</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Мои квизы</h2>
+                <div id="quizList" class="template-list">
+                    <div class="empty">Пока нет созданных квизов</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Мои назначения</h2>
+                <div id="assignmentList" class="assignments-list">
+                    <div class="empty">Пока нет назначений</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/auth.js"></script>
+<script src="/js/quiz-builder.js"></script>
+</body>
+</html>

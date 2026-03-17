@@ -8,12 +8,15 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import com.springdemo.educationsystem.Entity.Teacher;
+import com.springdemo.educationsystem.Entity.User;
 
 @Service
 public class AuthService {
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
     private final UserRepository userRepository;
     private final GamificationService gamificationService;
+
 
     public AuthService(UserRepository userRepository,  GamificationService gamificationService) {
         this.userRepository = userRepository;
@@ -117,4 +120,6 @@ public class AuthService {
     private String generateToken() {
         return UUID.randomUUID().toString();
     }
+
+
 }

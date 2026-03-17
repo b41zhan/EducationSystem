@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Результаты квиза</title>
+
+    <style>
+        body{
+            font-family:Arial;
+            background:#f5f7fb;
+            padding:40px;
+        }
+
+        .container{
+            max-width:800px;
+            margin:auto;
+            background:white;
+            padding:25px;
+            border-radius:12px;
+            box-shadow:0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .item{
+            padding:15px;
+            border-bottom:1px solid #eee;
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+        }
+
+        button{
+            padding:8px 14px;
+            border:none;
+            background:#7c3aed;
+            color:white;
+            border-radius:6px;
+            cursor:pointer;
+        }
+
+        h1{
+            margin-top:0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📊 Результаты студентов</h1>
+    <div id="list"></div>
+</div>
+
+<script src="/js/quiz-results.js"></script>
+</body>
+</html>
