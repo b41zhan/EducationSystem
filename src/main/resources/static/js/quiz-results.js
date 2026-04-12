@@ -1,37 +1,39 @@
 const token = localStorage.getItem("token");
 
-function getAssignmentId(){
+function getAssignmentId() {
     const params = new URLSearchParams(window.location.search);
     return params.get("assignmentId");
 }
 
-async function loadResults(){
-
+async function loadResults() {
     const assignmentId = getAssignmentId();
 
-    if(!assignmentId){
+    if (!assignmentId) {
         alert("assignmentId не найден");
         return;
     }
 
     const response = await fetch(`/api/teacher/quiz/results/${assignmentId}`, {
-        headers:{
+        headers: {
             "Authorization": "Bearer " + token
         }
     });
 
-    if(!response.ok){
+    if (!response.ok) {
         alert("Ошибка загрузки результатов");
         return;
     }
 
     const data = await response.json();
-
     const container = document.getElementById("list");
     container.innerHTML = "";
 
-    data.forEach(item => {
+    if (!Array.isArray(data) || data.length === 0) {
+        container.innerHTML = `<div class="item">Пока нет попыток студентов</div>`;
+        return;
+    }
 
+    data.forEach(item => {
         const div = document.createElement("div");
         div.className = "item";
 
@@ -51,8 +53,8 @@ async function loadResults(){
     });
 }
 
-function openAttempt(id){
-    window.location.href = `/quiz-result.html?attemptId=${id}`;
+function openAttempt(id) {
+    window.location.href = `/teacher-quiz-attempt.html?attemptId=${id}`;
 }
 
 document.addEventListener("DOMContentLoaded", loadResults);

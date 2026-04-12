@@ -55,7 +55,7 @@ public class StudentQuizController {
         );
     }
 
-    @GetMapping("/api/student/quiz/result/{attemptId}")
+    @GetMapping("/result/{attemptId}")
     public Map<String, Object> getStudentResult(@PathVariable Long attemptId){
 
         QuizAttempt attempt = attemptRepository.findById(attemptId)

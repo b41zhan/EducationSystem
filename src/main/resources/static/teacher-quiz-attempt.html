@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Проверка квиза</title>
+    <style>
+        :root{
+            --bg:#f6f7fb;
+            --card:#ffffff;
+            --text:#1f2937;
+            --muted:#6b7280;
+            --border:#e5e7eb;
+            --primary:#7c3aed;
+            --primary-dark:#6d28d9;
+            --success:#16a34a;
+            --danger:#dc2626;
+            --warning:#d97706;
+            --shadow:0 10px 30px rgba(0,0,0,0.08);
+            --radius:16px;
+        }
+
+        *{box-sizing:border-box}
+
+        body{
+            margin:0;
+            font-family:Inter, Arial, sans-serif;
+            background:var(--bg);
+            color:var(--text);
+        }
+
+        .page{
+            max-width:1100px;
+            margin:0 auto;
+            padding:24px;
+        }
+
+        .topbar{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:12px;
+            flex-wrap:wrap;
+            margin-bottom:24px;
+        }
+
+        .btn{
+            border:none;
+            border-radius:12px;
+            padding:12px 16px;
+            cursor:pointer;
+            font-weight:600;
+            text-decoration:none;
+            display:inline-flex;
+            align-items:center;
+            gap:8px;
+        }
+
+        .btn-primary{background:var(--primary);color:#fff}
+        .btn-primary:hover{background:var(--primary-dark)}
+        .btn-secondary{background:#fff;color:var(--text);border:1px solid var(--border)}
+        .btn-danger{background:var(--danger);color:#fff}
+
+        .card{
+            background:var(--card);
+            border-radius:var(--radius);
+            box-shadow:var(--shadow);
+            border:1px solid var(--border);
+            padding:20px;
+            margin-bottom:18px;
+        }
+
+        .meta{
+            display:flex;
+            flex-wrap:wrap;
+            gap:10px;
+            margin-top:10px;
+        }
+
+        .chip{
+            display:inline-block;
+            padding:6px 10px;
+            border-radius:999px;
+            background:#f3f4f6;
+            font-size:12px;
+            color:#374151;
+        }
+
+        .question{
+            border:1px solid var(--border);
+            border-radius:14px;
+            padding:16px;
+            background:#fff;
+            margin-top:14px;
+        }
+
+        .question-title{
+            font-size:18px;
+            font-weight:700;
+            margin-bottom:10px;
+        }
+
+        .muted{
+            color:var(--muted);
+        }
+
+        .option{
+            padding:10px 12px;
+            border:1px solid var(--border);
+            border-radius:10px;
+            margin-top:8px;
+            background:#fafafa;
+        }
+
+        .option.correct{
+            border-color:#86efac;
+            background:#f0fdf4;
+        }
+
+        .student-answer{
+            margin-top:12px;
+            padding:12px;
+            border-radius:10px;
+            background:#f9fafb;
+            border:1px solid var(--border);
+            white-space:pre-wrap;
+        }
+
+        .grading-box{
+            margin-top:12px;
+            padding:14px;
+            border:1px dashed var(--border);
+            border-radius:12px;
+            background:#fafafa;
+        }
+
+        .grading-box input{
+            width:120px;
+            padding:10px 12px;
+            border:1px solid var(--border);
+            border-radius:10px;
+            font:inherit;
+        }
+
+        .row{
+            display:flex;
+            align-items:center;
+            gap:12px;
+            flex-wrap:wrap;
+        }
+
+        .message{
+            margin-bottom:16px;
+            padding:12px 14px;
+            border-radius:12px;
+            display:none;
+            font-weight:600;
+        }
+
+        .message.success{
+            display:block;
+            background:#dcfce7;
+            color:#166534;
+            border:1px solid #bbf7d0;
+        }
+
+        .message.error{
+            display:block;
+            background:#fee2e2;
+            color:#991b1b;
+            border:1px solid #fecaca;
+        }
+
+        .status-ok{color:var(--success);font-weight:700;}
+        .status-bad{color:var(--danger);font-weight:700;}
+        .status-wait{color:var(--warning);font-weight:700;}
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="topbar">
+        <div>
+            <h1 style="margin:0;">🧾 Проверка попытки квиза</h1>
+            <div class="muted">Детальный просмотр ответов студента</div>
+        </div>
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            <a id="backLink" href="/quiz-results.html" class="btn btn-secondary">← Назад к результатам</a>
+            <button class="btn btn-danger" onclick="logout()">Выйти</button>
+        </div>
+    </div>
+
+    <div id="pageMessage" class="message"></div>
+
+    <div class="card">
+        <h2 id="quizTitle" style="margin:0;">Загрузка...</h2>
+        <div class="meta" id="attemptMeta"></div>
+    </div>
+
+    <div class="card">
+        <div class="row" style="justify-content:space-between;">
+            <h2 style="margin:0;">Вопросы и ответы</h2>
+            <button id="saveGradesBtn" class="btn btn-primary">Сохранить проверку текстовых ответов</button>
+        </div>
+        <div id="questionsContainer" style="margin-top:18px;"></div>
+    </div>
+</div>
+
+<script src="/js/teacher-quiz-attempt.js"></script>
+</body>
+</html>

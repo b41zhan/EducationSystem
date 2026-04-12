@@ -2,53 +2,208 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Результаты квиза</title>
 
     <style>
+        :root{
+            --bg:#f5f7fb;
+            --card:#ffffff;
+            --text:#111827;
+            --muted:#6b7280;
+            --border:#e5e7eb;
+            --primary:#7c3aed;
+            --primary-dark:#6d28d9;
+            --danger:#dc2626;
+            --shadow:0 10px 30px rgba(0,0,0,0.10);
+            --radius:16px;
+        }
+
+        *{
+            box-sizing:border-box;
+        }
+
         body{
-            font-family:Arial;
-            background:#f5f7fb;
+            margin:0;
+            font-family:Arial, sans-serif;
+            background:var(--bg);
+            color:var(--text);
             padding:40px;
         }
 
-        .container{
-            max-width:800px;
-            margin:auto;
-            background:white;
-            padding:25px;
+        .page{
+            max-width:1000px;
+            margin:0 auto;
+        }
+
+        .topbar{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:12px;
+            flex-wrap:wrap;
+            margin-bottom:20px;
+        }
+
+        .topbar-left h1{
+            margin:0;
+            font-size:42px;
+            line-height:1.1;
+        }
+
+        .topbar-left p{
+            margin:8px 0 0 0;
+            color:var(--muted);
+            font-size:16px;
+        }
+
+        .topbar-actions{
+            display:flex;
+            gap:12px;
+            flex-wrap:wrap;
+        }
+
+        .btn{
+            display:inline-flex;
+            align-items:center;
+            gap:8px;
+            text-decoration:none;
+            border:none;
             border-radius:12px;
-            box-shadow:0 10px 30px rgba(0,0,0,0.1);
+            padding:12px 18px;
+            cursor:pointer;
+            font-size:16px;
+            font-weight:600;
+            transition:0.2s ease;
+        }
+
+        .btn:hover{
+            transform:translateY(-1px);
+        }
+
+        .btn-secondary{
+            background:#fff;
+            color:var(--text);
+            border:1px solid var(--border);
+        }
+
+        .btn-primary{
+            background:var(--primary);
+            color:#fff;
+        }
+
+        .btn-primary:hover{
+            background:var(--primary-dark);
+        }
+
+        .btn-danger{
+            background:var(--danger);
+            color:#fff;
+        }
+
+        .container{
+            background:var(--card);
+            padding:30px;
+            border-radius:var(--radius);
+            box-shadow:var(--shadow);
+        }
+
+        .results-title{
+            margin-top:0;
+            margin-bottom:24px;
+            font-size:34px;
         }
 
         .item{
-            padding:15px;
+            padding:18px 0;
             border-bottom:1px solid #eee;
             display:flex;
             justify-content:space-between;
             align-items:center;
+            gap:16px;
         }
 
-        button{
-            padding:8px 14px;
+        .item:last-child{
+            border-bottom:none;
+        }
+
+        .student-info{
+            font-size:18px;
+        }
+
+        .student-info b{
+            display:block;
+            margin-bottom:6px;
+            font-size:20px;
+        }
+
+        .empty{
+            color:var(--muted);
+            font-size:18px;
+            text-align:center;
+            padding:20px 0;
+        }
+
+        .open-btn{
+            padding:10px 16px;
             border:none;
-            background:#7c3aed;
+            background:var(--primary);
             color:white;
-            border-radius:6px;
+            border-radius:10px;
             cursor:pointer;
+            font-size:15px;
+            font-weight:600;
         }
 
-        h1{
-            margin-top:0;
+        .open-btn:hover{
+            background:var(--primary-dark);
+        }
+
+        @media (max-width: 700px){
+            body{
+                padding:20px;
+            }
+
+            .topbar-left h1{
+                font-size:32px;
+            }
+
+            .results-title{
+                font-size:28px;
+            }
+
+            .item{
+                flex-direction:column;
+                align-items:flex-start;
+            }
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>📊 Результаты студентов</h1>
-    <div id="list"></div>
+<div class="page">
+
+    <div class="topbar">
+        <div class="topbar-left">
+            <h1>📊 Результаты студентов</h1>
+            <p>Просмотр попыток и переход к детальному разбору ответов</p>
+        </div>
+
+        <div class="topbar-actions">
+            <a href="/quiz-builder.html" class="btn btn-secondary">← К конструктору квизов</a>
+            <a href="/teacher-dashboard.html" class="btn btn-primary">🏠 На главную учителя</a>
+            <button type="button" class="btn btn-danger" onclick="logout()">Выйти</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2 class="results-title">Список результатов</h2>
+        <div id="list">Загрузка...</div>
+    </div>
+
 </div>
 
-<script src="/js/quiz-results.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/quiz-results.js?v=3"></script>
 </body>
 </html>
