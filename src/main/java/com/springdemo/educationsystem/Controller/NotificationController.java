@@ -25,7 +25,6 @@ public class NotificationController {
     @GetMapping
     public ResponseEntity<?> getUserNotifications(
             @RequestHeader("Authorization") String authorizationHeader) {
-
         String token = extractToken(authorizationHeader);
         if (!authService.isValidToken(token)) {
             return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
@@ -33,14 +32,12 @@ public class NotificationController {
 
         Long userId = authService.getUserId(token);
         List<NotificationDTO> notifications = notificationService.getUserNotifications(userId);
-
         return ResponseEntity.ok(notifications);
     }
 
     @GetMapping("/unread")
     public ResponseEntity<?> getUnreadNotifications(
             @RequestHeader("Authorization") String authorizationHeader) {
-
         String token = extractToken(authorizationHeader);
         if (!authService.isValidToken(token)) {
             return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
@@ -48,14 +45,12 @@ public class NotificationController {
 
         Long userId = authService.getUserId(token);
         List<NotificationDTO> notifications = notificationService.getUnreadNotifications(userId);
-
         return ResponseEntity.ok(notifications);
     }
 
     @GetMapping("/unread-count")
     public ResponseEntity<?> getUnreadCount(
             @RequestHeader("Authorization") String authorizationHeader) {
-
         String token = extractToken(authorizationHeader);
         if (!authService.isValidToken(token)) {
             return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
@@ -63,7 +58,6 @@ public class NotificationController {
 
         Long userId = authService.getUserId(token);
         long count = notificationService.getUnreadCount(userId);
-
         return ResponseEntity.ok(Map.of("count", count));
     }
 
@@ -71,7 +65,6 @@ public class NotificationController {
     public ResponseEntity<?> markAsRead(
             @PathVariable Long notificationId,
             @RequestHeader("Authorization") String authorizationHeader) {
-
         String token = extractToken(authorizationHeader);
         if (!authService.isValidToken(token)) {
             return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
@@ -85,10 +78,27 @@ public class NotificationController {
         }
     }
 
+    // НОВЫЙ ЭНДПОИНТ ДЛЯ СКРЫТИЯ УВЕДОМЛЕНИЯ
+    @PostMapping("/{notificationId}/hide")
+    public ResponseEntity<?> hideNotification(
+            @PathVariable Long notificationId,
+            @RequestHeader("Authorization") String authorizationHeader) {
+        String token = extractToken(authorizationHeader);
+        if (!authService.isValidToken(token)) {
+            return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
+        }
+
+        try {
+            notificationService.hideNotification(notificationId);
+            return ResponseEntity.ok(Map.of("message", "Notification hidden"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @PostMapping("/mark-all-read")
     public ResponseEntity<?> markAllAsRead(
             @RequestHeader("Authorization") String authorizationHeader) {
-
         String token = extractToken(authorizationHeader);
         if (!authService.isValidToken(token)) {
             return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
@@ -96,7 +106,6 @@ public class NotificationController {
 
         Long userId = authService.getUserId(token);
         notificationService.markAllAsRead(userId);
-
         return ResponseEntity.ok(Map.of("message", "All notifications marked as read"));
     }
 

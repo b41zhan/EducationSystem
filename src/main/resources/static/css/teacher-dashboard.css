@@ -1731,3 +1731,194 @@ body {
     margin-top: 0.25rem;
     font-size: 0.9rem;
 }
+/* ... (все существующие стили остаются без изменений) ... */
+
+/* ===== СТИЛИ ДЛЯ КОЛОКОЛЬЧИКА УВЕДОМЛЕНИЙ ===== */
+.notification-bell-container {
+    position: relative;
+}
+
+#notification-bell-btn {
+    position: relative;
+}
+
+#notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: var(--danger);
+    color: white;
+    border-radius: 50%;
+    min-width: 20px;
+    height: 20px;
+    text-align: center;
+    line-height: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0 4px;
+    box-shadow: var(--shadow-sm);
+}
+
+.notification-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.5rem;
+    width: 360px;
+    max-height: 480px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.notification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    background: #f8fafc;
+}
+
+.notification-header h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0;
+}
+
+.btn-text {
+    background: none;
+    border: none;
+    color: var(--primary);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+}
+
+.btn-text:hover {
+    background: #eff6ff;
+}
+
+.notification-list {
+    overflow-y: auto;
+    max-height: 400px;
+}
+
+.notification-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border-light);
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.notification-item:hover {
+    background: #f8fafc;
+}
+
+.notification-item.unread {
+    background: #f0f9ff;
+    border-left: 3px solid var(--primary);
+}
+
+.notification-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #eff6ff;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.notification-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-message {
+    font-size: 0.875rem;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+    line-height: 1.4;
+    word-wrap: break-word;
+}
+
+.notification-time {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    margin-bottom: 0.5rem;
+}
+
+.notification-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.notification-action-btn {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 0.125rem 0.5rem;
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+    border: 1px solid var(--border);
+}
+
+.notification-action-btn:hover {
+    background: var(--border-light);
+    color: var(--text);
+}
+
+.notification-delete-btn {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+    opacity: 0;
+    flex-shrink: 0;
+}
+
+.notification-item:hover .notification-delete-btn {
+    opacity: 1;
+}
+
+.notification-delete-btn:hover {
+    color: var(--danger);
+    background: #fef2f2;
+}
+
+.notification-loading,
+.notification-empty {
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-light);
+    font-size: 0.875rem;
+}
+
+/* Адаптивность */
+@media (max-width: 640px) {
+    .notification-dropdown {
+        width: calc(100vw - 2rem);
+        right: -70px; /* Примерное позиционирование, можно подправить */
+    }
+}

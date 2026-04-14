@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class SubmissionService {
+
     private final SubmissionRepository submissionRepository;
     private final GradeRepository gradeRepository;
     private final AssignmentRepository assignmentRepository;
@@ -22,7 +23,6 @@ public class SubmissionService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final GamificationService gamificationService;
-
     private static final Logger logger = LoggerFactory.getLogger(SubmissionService.class);
 
     public SubmissionService(SubmissionRepository submissionRepository,
@@ -49,8 +49,7 @@ public class SubmissionService {
         dto.setAssignmentId(submission.getAssignment().getId());
         dto.setAssignmentTitle(submission.getAssignment().getTitle());
         dto.setStudentId(submission.getStudent().getId());
-        dto.setStudentName(submission.getStudent().getUser().getFirstName() + " " +
-                submission.getStudent().getUser().getLastName());
+        dto.setStudentName(submission.getStudent().getUser().getFirstName() + " " + submission.getStudent().getUser().getLastName());
         dto.setFileName(submission.getFileName());
         dto.setFileSize(submission.getFileSize());
         dto.setSubmittedAt(submission.getSubmittedAt());
@@ -68,8 +67,6 @@ public class SubmissionService {
 
     /**
      * Создание/обновление сдачи.
-     * Теперь для пары (assignmentId, studentId) существует только ОДНА запись Submission.
-     * Если студент пересдаёт работу — обновляем существующую запись.
      */
     public Submission createSubmission(Long assignmentId, Long studentId, String filePath,
                                        String fileName, Long fileSize, String comment) {
@@ -80,19 +77,17 @@ public class SubmissionService {
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new RuntimeException("Student not found"));
 
-        // ИЩЕМ существующую сдачу этого студента по этому заданию
+        // Ищем существующую сдачу
         Submission submission = submissionRepository
                 .findByAssignmentIdAndStudentId(assignmentId, studentId)
                 .orElse(null);
 
         if (submission == null) {
-            // Первая сдача этого задания данным студентом
             submission = new Submission();
             submission.setAssignment(assignment);
             submission.setStudent(student);
         }
 
-        // В любом случае (первая сдача или пересдача) обновляем данные
         submission.setFilePath(filePath);
         submission.setFileName(fileName);
         submission.setFileSize(fileSize);
@@ -100,7 +95,27 @@ public class SubmissionService {
         submission.setSubmittedAt(LocalDateTime.now());
         submission.setStatus("submitted");
 
-        return submissionRepository.save(submission);
+        Submission savedSubmission = submissionRepository.save(submission);
+
+        // ================== НОВЫЙ КОД ==================
+        // 1. Создаем уведомление для учителя
+        try {
+            Teacher teacher = assignment.getTeacher();
+            if (teacher != null) {
+                User teacherUser = teacher.getUser();
+                String studentName = student.getUser().getFirstName() + " " + student.getUser().getLastName();
+                String message = String.format("Студент %s сдал работу \"%s\" на проверку", studentName, assignment.getTitle());
+
+                Notification notification = new Notification(teacherUser, message, "submission_graded", savedSubmission.getId());
+                notificationRepository.save(notification);
+                logger.info("Created submission notification for teacher: {}", teacherUser.getEmail());
+            }
+        } catch (Exception e) {
+            logger.error("Error creating submission notification for teacher: {}", e.getMessage());
+        }
+        // ================== КОНЕЦ НОВОГО КОДА ==================
+
+        return savedSubmission;
     }
 
     public Grade gradeSubmission(GradeDTO gradeDTO, Long teacherId) {
@@ -111,8 +126,8 @@ public class SubmissionService {
                 .orElseThrow(() -> new RuntimeException("Teacher not found"));
 
         Grade existingGrade = gradeRepository.findBySubmissionId(gradeDTO.getSubmissionId()).orElse(null);
-
         Grade grade;
+
         if (existingGrade != null) {
             grade = existingGrade;
         } else {
@@ -145,12 +160,9 @@ public class SubmissionService {
         try {
             User student = submission.getStudent().getUser();
             String message = "Ваша работа \"" + submission.getAssignment().getTitle() + "\" оценена: " + gradeValue + "/100";
-
             Notification notification = new Notification(student, message, "grade", submission.getId());
             notificationRepository.save(notification);
-
             logger.info("Created grade notification for student: {}", student.getEmail());
-
         } catch (Exception e) {
             logger.error("Error creating grade notification: {}", e.getMessage());
         }
@@ -171,9 +183,7 @@ public class SubmissionService {
     }
 
     public List<SubmissionDTO> getSubmissionsForTeacher(Long teacherId) {
-        // Получаем все задания учителя, затем все сдачи этих заданий
         List<Assignment> teacherAssignments = assignmentRepository.findByTeacherId(teacherId);
-
         return teacherAssignments.stream()
                 .flatMap(assignment -> submissionRepository.findByAssignmentId(assignment.getId()).stream())
                 .map(this::convertToDTO)

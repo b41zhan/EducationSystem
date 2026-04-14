@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -31,29 +32,39 @@
 
         <!-- Top Actions -->
         <div class="top-actions">
+            <!-- НОВЫЙ КОЛОКОЛЬЧИК УВЕДОМЛЕНИЙ -->
             <!-- Profile Button -->
             <a href="/profile.html" class="btn-action btn-nav">
                 👤 Мой профиль
             </a>
-
             <!-- Chat Button -->
             <a href="/chat.html" class="btn-action btn-nav">
                 💬 Чат
                 <span id="chat-badge" class="nav-badge" style="display: none;"></span>
             </a>
-
             <a href="/student-quizzes.html" class="btn-action btn-nav">
                 📝 Квизы
             </a>
-
             <!-- Progress Button -->
             <a href="gamification.html" class="btn-action btn-nav">
                 🏆 Мой прогресс
             </a>
-
-            <!-- Notification Badge -->
-            <span id="notification-badge" style="display: none;"></span>
-
+            <!-- НОВЫЙ КОЛОКОЛЬЧИК УВЕДОМЛЕНИЙ -->
+            <div class="notification-bell-container">
+                <button id="notification-bell-btn" class="btn-action btn-nav">
+                    🔔
+                    <span id="notification-badge" class="nav-badge" style="display: none;"></span>
+                </button>
+                <div id="notification-dropdown" class="notification-dropdown" style="display: none;">
+                    <div class="notification-header">
+                        <h3>Уведомления</h3>
+                        <button id="mark-all-read-btn" class="btn-text">Отметить все как прочитанные</button>
+                    </div>
+                    <div id="notification-list" class="notification-list">
+                        <div class="notification-loading">Загрузка уведомлений...</div>
+                    </div>
+                </div>
+            </div>
             <!-- Logout Button -->
             <button class="btn-logout" onclick="logout()">
                 <span class="logout-icon">🚪</span>
@@ -245,6 +256,7 @@
 <script src="/js/auth.js"></script>
 <script src="/js/student.js"></script>
 <script src="/js/wikipedia.js"></script>
+<script src="/js/chat-badge.js"></script>
 <script src="/js/notification.js"></script>
 <script src="/js/schedule.js"></script>
 </body>

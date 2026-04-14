@@ -10,8 +10,10 @@ class ChatManager {
         this.loadConversations();
         this.setupEventListeners();
         this.startPolling();
-    }
 
+        // Вызываем обновление бейджа при инициализации
+        this.updateChatBadge();
+    }
 
     async loadConversations() {
         try {
@@ -25,7 +27,6 @@ class ChatManager {
 
     displayConversations(conversations) {
         const container = document.getElementById('conversations-list');
-
         if (!conversations || conversations.length === 0) {
             container.innerHTML = '<div class="no-conversations">Нет диалогов</div>';
             return;
@@ -35,11 +36,13 @@ class ChatManager {
         conversations.forEach(conversation => {
             const initials = this.getInitials(conversation.otherUserName);
             const preview = conversation.lastMessage.length > 50 ?
-                conversation.lastMessage.substring(0, 50) + '...' : conversation.lastMessage;
+                conversation.lastMessage.substring(0, 50) + '...' :
+                conversation.lastMessage;
             const time = this.formatTime(conversation.lastMessageTime);
 
             html += `
-                <div class="conversation-item" data-conversation-id="${conversation.conversationId}" 
+                <div class="conversation-item" 
+                     data-conversation-id="${conversation.conversationId}"
                      data-user-id="${conversation.otherUserId}">
                     <div class="user-avatar">
                         ${conversation.otherUserAvatar ?
@@ -61,7 +64,6 @@ class ChatManager {
 
         container.innerHTML = html;
 
-        // Добавляем обработчики клика
         container.querySelectorAll('.conversation-item').forEach(item => {
             item.addEventListener('click', () => {
                 const userId = item.getAttribute('data-user-id');
@@ -71,11 +73,9 @@ class ChatManager {
     }
 
     async openConversation(otherUserId) {
-        console.log('Opening conversation with user:', otherUserId); // Отладочная информация
-
+        console.log('Opening conversation with user:', otherUserId);
         this.currentConversation = otherUserId;
 
-        // Обновляем активный элемент в списке
         document.querySelectorAll('.conversation-item').forEach(item => {
             item.classList.remove('active');
         });
@@ -85,24 +85,28 @@ class ChatManager {
             activeItem.classList.add('active');
         }
 
-        // Показываем окно чата
         document.getElementById('no-chat-selected').style.display = 'none';
         const chatWindow = document.getElementById('chat-window');
         chatWindow.style.display = 'flex';
 
-        // Фокусируемся на поле ввода
         setTimeout(() => {
             document.getElementById('message-input').focus();
         }, 100);
 
         await this.loadMessages(otherUserId);
         await this.updatePartnerInfo(otherUserId);
+
+        // После открытия диалога обновляем бейдж
+        this.updateChatBadge();
     }
 
     async loadMessages(otherUserId) {
         try {
             const messages = await ApiService.get(`/chat/conversation/${otherUserId}`);
             this.displayMessages(messages);
+
+            // После загрузки сообщений обновляем бейдж
+            this.updateChatBadge();
         } catch (error) {
             console.error('Error loading messages:', error);
             this.showMessage('Ошибка загрузки сообщений', 'error');
@@ -119,12 +123,12 @@ class ChatManager {
 
         if (!messages || messages.length === 0) {
             container.innerHTML = `
-            <div class="no-messages">
-                <div class="no-messages-icon">💬</div>
-                <div class="no-messages-text">Нет сообщений</div>
-                <div class="no-messages-hint">Напишите первое сообщение!</div>
-            </div>
-        `;
+                <div class="no-messages">
+                    <div class="no-messages-icon">💬</div>
+                    <div class="no-messages-text">Нет сообщений</div>
+                    <div class="no-messages-hint">Напишите первое сообщение!</div>
+                </div>
+            `;
             return;
         }
 
@@ -133,13 +137,11 @@ class ChatManager {
             container.appendChild(messageElement);
         });
 
-        // Прокручиваем вниз только если пользователь уже был внизу
         if (wasAtBottom) {
             container.scrollTop = container.scrollHeight;
         }
     }
 
-// Проверяем, прокручен ли контейнер до конца
     isScrolledToBottom(container) {
         return container.scrollTop + container.clientHeight >= container.scrollHeight - 50;
     }
@@ -147,7 +149,6 @@ class ChatManager {
     createMessageElement(message) {
         const messageDiv = document.createElement('div');
         const isSent = message.senderId == this.currentUserId;
-
         messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
         messageDiv.dataset.messageId = message.id;
 
@@ -156,7 +157,6 @@ class ChatManager {
             minute: '2-digit'
         });
 
-        // Формируем содержимое сообщения с учетом ответа
         let messageContent = '';
 
         if (message.replyTo) {
@@ -172,7 +172,6 @@ class ChatManager {
             <div class="message-content">${this.escapeHtml(message.content)}</div>
         `;
 
-        // Добавляем реакции, если они есть
         let reactionsHtml = '';
         if (message.reactions && Object.keys(message.reactions).length > 0) {
             const reactionCounts = {};
@@ -229,7 +228,6 @@ class ChatManager {
                 content: content
             };
 
-            // Добавляем ID сообщения для ответа, если есть
             if (this.replyingTo) {
                 messageData.replyToId = this.replyingTo.id;
             }
@@ -237,7 +235,8 @@ class ChatManager {
             const response = await ApiService.post('/chat/send', messageData);
 
             input.value = '';
-            this.cancelReply(); // Сбрасываем ответ после отправки
+            this.cancelReply();
+
             await this.loadMessages(this.currentConversation);
             await this.loadConversations();
 
@@ -245,6 +244,9 @@ class ChatManager {
             container.scrollTop = container.scrollHeight;
 
             this.showMessage('Сообщение отправлено!', 'success');
+
+            // После отправки сообщения обновляем бейдж
+            this.updateChatBadge();
 
         } catch (error) {
             console.error('Error sending message:', error);
@@ -265,13 +267,11 @@ class ChatManager {
         }
 
         try {
-            // Используем правильный endpoint
             const users = await ApiService.get(`/friends/search-users?query=${encodeURIComponent(query)}`);
-            console.log('Found users:', users); // Для отладки
+            console.log('Found users:', users);
             this.displaySearchResults(users);
         } catch (error) {
             console.error('Error searching users:', error);
-            // Пробуем альтернативный endpoint
             try {
                 const users = await ApiService.get(`/api/friends/search?query=${encodeURIComponent(query)}`);
                 this.displaySearchResults(users);
@@ -297,28 +297,27 @@ class ChatManager {
             const initials = this.getInitials(fullName);
 
             html += `
-            <div class="search-result-item" data-user-id="${user.id}">
-                <div class="user-avatar-small">
-                    ${user.profilePhotoPath ?
-                `<img src="/uploads/${user.profilePhotoPath}" alt="${fullName}" 
-                              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` :
+                <div class="search-result-item" data-user-id="${user.id}">
+                    <div class="user-avatar-small">
+                        ${user.profilePhotoPath ?
+                `<img src="/uploads/${user.profilePhotoPath}" alt="${fullName}"
+                                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` :
                 ''}
-                    <div class="avatar-placeholder-small" ${user.profilePhotoPath ? 'style="display: none;"' : ''}>
-                        ${initials}
+                        <div class="avatar-placeholder-small" ${user.profilePhotoPath ? 'style="display: none;"' : ''}>
+                            ${initials}
+                        </div>
+                    </div>
+                    <div class="user-search-info">
+                        <div class="user-name">${this.escapeHtml(fullName)}</div>
+                        <div class="user-email">${this.escapeHtml(user.email)}</div>
                     </div>
                 </div>
-                <div class="user-search-info">
-                    <div class="user-name">${this.escapeHtml(fullName)}</div>
-                    <div class="user-email">${this.escapeHtml(user.email)}</div>
-                </div>
-            </div>
-        `;
+            `;
         });
 
         container.innerHTML = html;
         container.style.display = 'block';
 
-        // Добавляем обработчики
         container.querySelectorAll('.search-result-item').forEach(item => {
             item.addEventListener('click', () => {
                 const userId = item.getAttribute('data-user-id');
@@ -335,40 +334,37 @@ class ChatManager {
 
     async updatePartnerInfo(userId) {
         try {
-            // Загружаем информацию о пользователе
             const user = await ApiService.get(`/users/${userId}`);
             const partnerInfo = document.getElementById('chat-partner-info');
             const fullName = `${user.firstName} ${user.lastName}`;
             const initials = this.getInitials(fullName);
 
             partnerInfo.innerHTML = `
-            <div class="user-avatar">
-                ${user.profilePhotoPath ?
-                `<img src="/uploads/${user.profilePhotoPath}" alt="${fullName}" 
-                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` :
+                <div class="user-avatar">
+                    ${user.profilePhotoPath ?
+                `<img src="/uploads/${user.profilePhotoPath}" alt="${fullName}"
+                              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` :
                 ''}
-                <div class="avatar-placeholder" ${user.profilePhotoPath ? 'style="display: none;"' : ''}>
-                    ${initials}
+                    <div class="avatar-placeholder" ${user.profilePhotoPath ? 'style="display: none;"' : ''}>
+                        ${initials}
+                    </div>
                 </div>
-            </div>
-            <div class="partner-info">
-                <div class="partner-name">${this.escapeHtml(fullName)}</div>
-                <div class="partner-email">${this.escapeHtml(user.email)}</div>
-            </div>
-        `;
-
+                <div class="partner-info">
+                    <div class="partner-name">${this.escapeHtml(fullName)}</div>
+                    <div class="partner-email">${this.escapeHtml(user.email)}</div>
+                </div>
+            `;
         } catch (error) {
             console.error('Error loading user info:', error);
-            // Fallback если не удалось загрузить информацию
             const partnerInfo = document.getElementById('chat-partner-info');
             partnerInfo.innerHTML = `
-            <div class="user-avatar">
-                <div class="avatar-placeholder">U</div>
-            </div>
-            <div class="partner-info">
-                <div class="partner-name">Пользователь ${userId}</div>
-            </div>
-        `;
+                <div class="user-avatar">
+                    <div class="avatar-placeholder">U</div>
+                </div>
+                <div class="partner-info">
+                    <div class="partner-name">Пользователь ${userId}</div>
+                </div>
+            `;
         }
     }
 
@@ -378,7 +374,10 @@ class ChatManager {
                 await this.loadMessages(this.currentConversation);
             }
             await this.loadConversations();
-        }, 5000); // Обновление каждые 5 секунд
+
+            // Обновляем бейдж при каждом поллинге
+            this.updateChatBadge();
+        }, 5000);
     }
 
     stopPolling() {
@@ -388,14 +387,11 @@ class ChatManager {
     }
 
     setupEventListeners() {
-        // Поиск пользователей
         const searchInput = document.getElementById('user-search');
         if (searchInput) {
-            searchInput.addEventListener('input',
-                this.debounce(this.searchUsers.bind(this), 300));
+            searchInput.addEventListener('input', this.debounce(this.searchUsers.bind(this), 300));
         }
 
-        // Новая кнопка чата
         const newChatBtn = document.getElementById('new-chat-btn');
         if (newChatBtn) {
             newChatBtn.addEventListener('click', () => {
@@ -403,7 +399,6 @@ class ChatManager {
             });
         }
 
-        // Кнопка назад
         const backBtn = document.getElementById('back-btn');
         if (backBtn) {
             backBtn.addEventListener('click', () => {
@@ -411,7 +406,6 @@ class ChatManager {
             });
         }
 
-        // Отправка сообщения
         const sendBtn = document.getElementById('send-message-btn');
         if (sendBtn) {
             sendBtn.addEventListener('click', () => {
@@ -419,7 +413,6 @@ class ChatManager {
             });
         }
 
-        // Enter для отправки сообщения
         const messageInput = document.getElementById('message-input');
         if (messageInput) {
             messageInput.addEventListener('input', (e) => {
@@ -437,7 +430,6 @@ class ChatManager {
 
         this.setupContextMenu();
 
-        // НОВОЕ: Закрытие контекстного меню при клике вне его
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.context-menu') && !e.target.closest('.message-bubble')) {
                 this.hideContextMenu();
@@ -448,7 +440,6 @@ class ChatManager {
 
     setupContextMenu() {
         const messagesContainer = document.getElementById('messages-container');
-
         messagesContainer.addEventListener('contextmenu', (e) => {
             const messageElement = e.target.closest('.message');
             if (messageElement && !messageElement.classList.contains('sent')) {
@@ -489,7 +480,6 @@ class ChatManager {
 
         document.body.appendChild(menu);
 
-        // Обработчики для пунктов меню
         menu.querySelectorAll('.context-menu-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 const action = e.currentTarget.dataset.action;
@@ -499,7 +489,6 @@ class ChatManager {
             });
         });
 
-        // Скрываем меню при клике вне его
         setTimeout(() => {
             document.addEventListener('click', this.hideContextMenu.bind(this), { once: true });
         });
@@ -533,7 +522,6 @@ class ChatManager {
         }
     }
 
-
     startReply(messageId, messageElement) {
         const messageContent = messageElement.querySelector('.message-content').textContent;
         const senderName = messageElement.querySelector('.sender-name')?.textContent || 'Пользователь';
@@ -544,13 +532,11 @@ class ChatManager {
             senderName: senderName
         };
 
-        // Показываем индикатор ответа
         this.showReplyIndicator();
     }
 
     showReplyIndicator() {
         let indicator = document.getElementById('reply-indicator');
-
         if (!indicator) {
             indicator = document.createElement('div');
             indicator.id = 'reply-indicator';
@@ -568,7 +554,6 @@ class ChatManager {
             const inputContainer = document.querySelector('.message-input-container');
             inputContainer.parentNode.insertBefore(indicator, inputContainer);
 
-            // Обработчик отмены ответа
             indicator.querySelector('.btn-cancel-reply').addEventListener('click', () => {
                 this.cancelReply();
             });
@@ -583,11 +568,8 @@ class ChatManager {
         `;
 
         indicator.style.display = 'block';
-
-        // Фокусируемся на поле ввода
         document.getElementById('message-input').focus();
     }
-
 
     cancelReply() {
         this.replyingTo = null;
@@ -642,7 +624,6 @@ class ChatManager {
     async addReaction(messageId, reaction) {
         try {
             await ApiService.post(`/chat/${messageId}/react`, { reaction });
-            // Перезагружаем сообщения для обновления реакций
             if (this.currentConversation) {
                 await this.loadMessages(this.currentConversation);
             }
@@ -651,7 +632,6 @@ class ChatManager {
             this.showMessage('Ошибка добавления реакции', 'error');
         }
     }
-
 
     async removeReaction(messageId) {
         try {
@@ -671,63 +651,9 @@ class ChatManager {
         });
     }
 
-    async sendMessage() {
-        const input = document.getElementById('message-input');
-        const content = input.value.trim();
-
-        if (!content) {
-            this.showMessage('Введите сообщение', 'error');
-            return;
-        }
-
-        if (!this.currentConversation) {
-            this.showMessage('Выберите пользователя для чата', 'error');
-            return;
-        }
-
-        const sendBtn = document.getElementById('send-message-btn');
-        const originalText = sendBtn.textContent;
-
-        try {
-            sendBtn.disabled = true;
-            sendBtn.textContent = 'Отправка...';
-
-            const messageData = {
-                receiverId: this.currentConversation,
-                content: content
-            };
-
-            // Добавляем ID сообщения для ответа, если есть
-            if (this.replyingTo) {
-                messageData.replyToId = this.replyingTo.id;
-            }
-
-            const response = await ApiService.post('/chat/send', messageData);
-
-            input.value = '';
-            this.cancelReply(); // Сбрасываем ответ после отправки
-            await this.loadMessages(this.currentConversation);
-            await this.loadConversations();
-
-            const container = document.getElementById('messages-container');
-            container.scrollTop = container.scrollHeight;
-
-            this.showMessage('Сообщение отправлено!', 'success');
-
-        } catch (error) {
-            console.error('Error sending message:', error);
-            this.showMessage('Ошибка отправки сообщения: ' + error.message, 'error');
-        } finally {
-            sendBtn.disabled = false;
-            sendBtn.textContent = originalText;
-        }
-    }
-
-
-
     autoResizeTextarea(textarea) {
         textarea.style.height = 'auto';
-        textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px'; // Максимум 150px
+        textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
     }
 
     updateMessageCounter(length) {
@@ -740,7 +666,6 @@ class ChatManager {
         }
 
         counter.textContent = `${length}/1000`;
-
         if (length > 800) {
             counter.style.color = '#ff6b6b';
         } else if (length > 500) {
@@ -751,15 +676,32 @@ class ChatManager {
     }
 
     goBack() {
-        // Возвращаемся на предыдущую страницу или на dashboard
-        if (document.referrer && document.referrer.includes(window.location.hostname)) {
-            window.history.back();
-        } else {
-            window.location.href = '/student-dashboard.html';
+        const userRole = localStorage.getItem('userRole');
+
+        // ВСЕГДА переходим на дашборд в зависимости от роли
+        switch (userRole) {
+            case 'teacher':
+                window.location.href = '/teacher-dashboard.html';
+                break;
+            case 'student':
+                window.location.href = '/student-dashboard.html';
+                break;
+            case 'admin':
+                window.location.href = '/admin-dashboard.html';
+                break;
+            case 'parent':
+                window.location.href = '/parent-dashboard.html';
+                break;
+            default:
+                // Если роль не определена, пробуем history.back()
+                if (document.referrer && document.referrer.includes(window.location.hostname)) {
+                    window.history.back();
+                } else {
+                    window.location.href = '/login.html';
+                }
         }
     }
 
-    // Вспомогательные методы
     getInitials(name) {
         return name.split(' ').map(n => n[0]).join('').toUpperCase();
     }
@@ -798,12 +740,10 @@ class ChatManager {
     }
 
     showMessage(message, type) {
-        // Используем существующую систему сообщений
         const messageDiv = document.createElement('div');
         messageDiv.className = type === 'error' ? 'error-message' : 'success-message';
         messageDiv.textContent = message;
         messageDiv.style.margin = '10px';
-
         document.body.appendChild(messageDiv);
 
         setTimeout(() => {
@@ -812,9 +752,91 @@ class ChatManager {
             }
         }, 5000);
     }
+
+    // ========== МЕТОД ДЛЯ ОБНОВЛЕНИЯ БЕЙДЖА ЧАТА ==========
+    async updateChatBadge() {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            const response = await ApiService.get('/chat/unread-count');
+            const badge = document.getElementById('chat-badge');
+
+            if (badge) {
+                const unreadCount = response.unreadCount || 0;
+                if (unreadCount > 0) {
+                    badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                    badge.style.display = 'inline-block';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        } catch (error) {
+            console.error('Error updating chat badge:', error);
+            const badge = document.getElementById('chat-badge');
+            if (badge) {
+                badge.style.display = 'none';
+            }
+        }
+    }
 }
+
+// ========== ГЛОБАЛЬНАЯ ФУНКЦИЯ ДЛЯ ОБНОВЛЕНИЯ БЕЙДЖА ЧАТА ==========
+// Эта функция будет вызываться из notification.js
+// ========== ГЛОБАЛЬНАЯ ФУНКЦИЯ ДЛЯ ОБНОВЛЕНИЯ БЕЙДЖА ЧАТА ==========
+window.updateChatBadge = async function() {
+    console.log('💬 updateChatBadge called');
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            console.log('❌ No token found for chat badge');
+            return;
+        }
+
+        const response = await ApiService.get('/chat/unread-count');
+        console.log('📊 Chat unread count response:', response);
+
+        const badge = document.getElementById('chat-badge');
+        console.log('🏷️ Chat badge element:', badge);
+
+        if (badge) {
+            const unreadCount = response.unreadCount || 0;
+            console.log('🔴 Unread count:', unreadCount);
+
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                badge.style.display = 'inline-block';
+                console.log('✅ Chat badge displayed with count:', unreadCount);
+            } else {
+                badge.style.display = 'none';
+                console.log('✅ Chat badge hidden (no unread messages)');
+            }
+        } else {
+            console.error('❌ Chat badge element not found in DOM!');
+        }
+    } catch (error) {
+        console.error('❌ Error updating chat badge:', error);
+        const badge = document.getElementById('chat-badge');
+        if (badge) {
+            badge.style.display = 'none';
+        }
+    }
+};
+
+// Инициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 ChatManager initializing...');
+    window.chatManager = new ChatManager();
+
+    // Вызываем обновление бейджа сразу после загрузки
+    setTimeout(() => {
+        console.log('⏰ Initial chat badge update');
+        window.updateChatBadge();
+    }, 1000);
+});
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
     window.chatManager = new ChatManager();
 });
+

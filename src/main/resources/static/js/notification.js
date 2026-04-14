@@ -1,60 +1,263 @@
+
 class NotificationManager {
     constructor() {
-        this.notificationContainer = null;
+        this.unreadCount = 0;
+        this.isDropdownOpen = false;
         this.pollingInterval = null;
-        this.isPolling = false;
+
+        // Определяем роль пользователя
+        this.userRole = localStorage.getItem('userRole');
+
         this.init();
     }
 
     init() {
-        this.createNotificationContainer();
-        this.startPolling();
+        this.cacheElements();
+        this.bindEvents();
         this.updateNotificationBadge();
+        this.startPolling();
     }
 
-    createNotificationContainer() {
-        this.notificationContainer = document.createElement('div');
-        this.notificationContainer.id = 'notification-container';
-        this.notificationContainer.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 10000;
-            max-width: 350px;
-        `;
-        document.body.appendChild(this.notificationContainer);
+    cacheElements() {
+        this.bellBtn = document.getElementById('notification-bell-btn');
+        this.badge = document.getElementById('notification-badge');
+        this.dropdown = document.getElementById('notification-dropdown');
+        this.listContainer = document.getElementById('notification-list');
+        this.markAllReadBtn = document.getElementById('mark-all-read-btn');
     }
 
-    startPolling() {
-        if (this.isPolling) return;
+    bindEvents() {
+        if (this.bellBtn) {
+            this.bellBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleDropdown();
+            });
+        }
 
-        this.isPolling = true;
-        this.checkNewNotifications();
+        if (this.markAllReadBtn) {
+            this.markAllReadBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.markAllAsRead();
+            });
+        }
 
-        this.pollingInterval = setInterval(() => {
-            this.checkNewNotifications();
-        }, 10000);
+        // Закрываем дропдаун при клике вне его
+        document.addEventListener('click', (e) => {
+            if (this.isDropdownOpen && !this.bellBtn.contains(e.target) && !this.dropdown.contains(e.target)) {
+                this.closeDropdown();
+            }
+        });
     }
 
-    stopPolling() {
-        this.isPolling = false;
-        if (this.pollingInterval) {
-            clearInterval(this.pollingInterval);
+    async toggleDropdown() {
+        if (this.isDropdownOpen) {
+            this.closeDropdown();
+        } else {
+            await this.openDropdown();
+        }
+    }
+
+    async openDropdown() {
+        this.dropdown.style.display = 'flex';
+        this.isDropdownOpen = true;
+        await this.loadNotifications();
+    }
+
+    closeDropdown() {
+        this.dropdown.style.display = 'none';
+        this.isDropdownOpen = false;
+    }
+
+    async loadNotifications() {
+        try {
+            this.listContainer.innerHTML = '<div class="notification-loading">Загрузка уведомлений...</div>';
+            const notifications = await ApiService.get('/notifications');
+            this.renderNotifications(notifications);
+        } catch (error) {
+            console.error('Error loading notifications:', error);
+            this.listContainer.innerHTML = '<div class="notification-empty">Ошибка загрузки уведомлений</div>';
+        }
+    }
+
+    renderNotifications(notifications) {
+        if (!notifications || notifications.length === 0) {
+            this.listContainer.innerHTML = '<div class="notification-empty">У вас нет уведомлений</div>';
+            return;
+        }
+
+        let html = '';
+        notifications.forEach(notification => {
+            const time = this.formatTime(notification.createdAt);
+            const unreadClass = notification.read ? '' : 'unread';
+            const icon = this.getNotificationIcon(notification.type);
+
+            // Определяем, активно ли еще уведомление (для submission_graded)
+            let isActive = true;
+            let customMessage = notification.message;
+
+            if (notification.type === 'submission_graded' && notification.relatedEntityStatus === 'graded') {
+                isActive = false;
+                // Пытаемся извлечь название работы из сообщения
+                const match = notification.message.match(/"([^"]*)"/);
+                if (match && match[1]) {
+                    customMessage = `Работа "${match[1]}" проверена`;
+                } else {
+                    customMessage = 'Работа проверена';
+                }
+            }
+
+            html += `
+                <div class="notification-item ${unreadClass}" data-id="${notification.id}">
+                    <div class="notification-icon">${icon}</div>
+                    <div class="notification-content">
+                        <div class="notification-message">${this.escapeHtml(customMessage)}</div>
+                        <div class="notification-time">${time}</div>
+                        <div class="notification-actions">
+                            ${isActive ? this.getActionButton(notification) : ''}
+                        </div>
+                    </div>
+                    <button class="notification-delete-btn" data-id="${notification.id}" title="Скрыть">✕</button>
+                </div>
+            `;
+        });
+
+        this.listContainer.innerHTML = html;
+
+        // Добавляем обработчики событий для элементов списка
+        this.listContainer.querySelectorAll('.notification-item').forEach(item => {
+            const id = item.dataset.id;
+            const notification = notifications.find(n => n.id == id);
+
+            // Клик по элементу (кроме кнопок) - отметить как прочитанное
+            item.addEventListener('click', (e) => {
+                if (!e.target.closest('button') && !e.target.closest('.notification-action-btn')) {
+                    this.handleNotificationClick(notification);
+                }
+            });
+
+            // Кнопка "Скрыть"
+            const deleteBtn = item.querySelector('.notification-delete-btn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.hideNotification(id);
+                });
+            }
+
+            // Кнопки действий
+            const actionBtn = item.querySelector('.notification-action-btn');
+            if (actionBtn) {
+                actionBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.handleActionClick(notification);
+                });
+            }
+        });
+    }
+
+    async handleNotificationClick(notification) {
+        if (!notification.read) {
+            await this.markAsRead(notification.id);
+            // Обновляем UI элемента, чтобы он стал "прочитанным"
+            const item = this.listContainer.querySelector(`.notification-item[data-id="${notification.id}"]`);
+            if (item) {
+                item.classList.remove('unread');
+            }
+            // Обновляем счетчик
+            this.updateNotificationBadge();
+        }
+
+        // Навигация в зависимости от типа уведомления
+        if (notification.relatedId) {
+            this.navigateToRelatedContent(notification);
+        }
+    }
+
+    handleActionClick(notification) {
+        this.navigateToRelatedContent(notification);
+    }
+
+    navigateToRelatedContent(notification) {
+        // Определяем переход в зависимости от роли и типа уведомления
+        if (this.userRole === 'teacher') {
+            switch (notification.type) {
+                case 'submission_graded': // Студент сдал работу (для учителя это "submission_graded", но по сути - новая сдача)
+                    // Открываем страницу учителя и пытаемся открыть модалку с оценкой
+                    window.location.href = `/teacher-dashboard.html?submissionId=${notification.relatedId}`;
+                    break;
+                case 'quiz_submitted':
+                    // Переход к проверке квиза
+                    window.location.href = `/quiz-results.html`;
+                    break;
+                default:
+                    window.location.href = '/teacher-dashboard.html';
+                    break;
+            }
+        } else {
+            // Логика для студента
+            switch (notification.type) {
+                case 'new_assignment':
+                case 'grade': // assignment_graded
+                    window.location.href = '/student-dashboard.html';
+                    break;
+                case 'quiz_graded':
+                    window.location.href = `/quiz-result.html?attemptId=${notification.relatedId}`;
+                    break;
+                case 'friend_request':
+                case 'friend_request_accepted':
+                    window.location.href = '/profile.html';
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    async hideNotification(notificationId) {
+        try {
+            await ApiService.post(`/notifications/${notificationId}/hide`);
+            const item = this.listContainer.querySelector(`.notification-item[data-id="${notificationId}"]`);
+            if (item) item.remove();
+            if (this.listContainer.children.length === 0) {
+                this.listContainer.innerHTML = '<div class="notification-empty">У вас нет уведомлений</div>';
+            }
+            this.updateNotificationBadge();
+        } catch (error) {
+            console.error('Error hiding notification:', error);
+        }
+    }
+
+    async markAsRead(notificationId) {
+        try {
+            await ApiService.post(`/notifications/${notificationId}/mark-read`);
+        } catch (error) {
+            console.error('Error marking notification as read:', error);
+        }
+    }
+
+    async markAllAsRead() {
+        try {
+            await ApiService.post('/notifications/mark-all-read');
+            this.listContainer.querySelectorAll('.notification-item.unread').forEach(item => {
+                item.classList.remove('unread');
+            });
+            this.updateNotificationBadge();
+        } catch (error) {
+            console.error('Error marking all as read:', error);
         }
     }
 
     async updateNotificationBadge() {
         try {
             const response = await ApiService.get('/notifications/unread-count');
-            const count = response.count;
+            this.unreadCount = response.count;
 
-            const badge = document.getElementById('notification-badge');
-            if (badge) {
-                if (count > 0) {
-                    badge.textContent = count > 99 ? '99+' : count;
-                    badge.style.display = 'inline-block';
+            if (this.badge) {
+                if (this.unreadCount > 0) {
+                    this.badge.textContent = this.unreadCount > 99 ? '99+' : this.unreadCount;
+                    this.badge.style.display = 'inline-block';
                 } else {
-                    badge.style.display = 'none';
+                    this.badge.style.display = 'none';
                 }
             }
         } catch (error) {
@@ -62,461 +265,96 @@ class NotificationManager {
         }
     }
 
-    async checkNewNotifications() {
-        try {
-            const unreadNotifications = await ApiService.get('/notifications/unread');
-
-            const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000);
-            const newNotifications = unreadNotifications.filter(notification =>
-                new Date(notification.createdAt) > twoMinutesAgo
-            );
-
-            newNotifications.forEach(notification => {
-                this.showNotification(notification);
-                this.markAsRead(notification.id);
-            });
-
-            this.updateNotificationBadge();
-
-        } catch (error) {
-            console.error('Error checking notifications:', error);
-        }
-    }
-
-    showNotification(notification) {
-        const notificationElement = document.createElement('div');
-        notificationElement.className = 'notification';
-        notificationElement.style.cssText = `
-            background: white;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            animation: slideIn 0.3s ease-out;
-            position: relative;
-            max-width: 350px;
-            border-left: 4px solid ${this.getNotificationColor(notification.type)};
-        `;
-
-        const icon = this.getNotificationIcon(notification.type);
-        const title = this.getNotificationTitle(notification.type);
-
-        notificationElement.innerHTML = `
-            <button class="notification-close" 
-                    onclick="this.parentElement.remove()"
-                    style="position: absolute; top: 5px; right: 5px; background: none; border: none; font-size: 16px; cursor: pointer; color: #666;">
-                ×
-            </button>
-            <div style="font-weight: bold; margin-bottom: 5px;">${icon} ${title}</div>
-            <div style="font-size: 14px; color: #333;">${notification.message}</div>
-            <div style="font-size: 12px; color: #666; margin-top: 5px;">
-                ${new Date(notification.createdAt).toLocaleTimeString('ru-RU')}
-            </div>
-            ${this.getNotificationActions(notification)}
-        `;
-
-        this.notificationContainer.appendChild(notificationElement);
-
-        setTimeout(() => {
-            if (notificationElement.parentElement) {
-                notificationElement.remove();
-            }
-        }, 8000);
-    }
-
+    // ========== Вспомогательные методы ==========
     getNotificationIcon(type) {
         const icons = {
-            'grade': '🎓',
+            'grade': '📊',
             'new_assignment': '📝',
             'friend_request': '👋',
             'friend_request_accepted': '✅',
             'friend_request_rejected': '❌',
-            'comment': '💬'
+            'comment': '💬',
+            'quiz_graded': '🧠',
+            'submission_graded': '📋', // Для учителя это новая сдача, для студента - оценка за сдачу
+            'achievement': '🏆'
         };
         return icons[type] || '📢';
     }
 
-    getNotificationColor(type) {
-        const colors = {
-            'grade': '#28a745',
-            'new_assignment': '#007bff',
-            'friend_request': '#ffc107',
-            'friend_request_accepted': '#28a745',
-            'friend_request_rejected': '#dc3545',
-            'comment': '#6f42c1'
-        };
-        return colors[type] || '#667eea';
-    }
-
-    getNotificationTitle(type) {
-        const titles = {
-            'grade': 'Новая оценка',
-            'new_assignment': 'Новое задание',
-            'friend_request': 'Запрос на дружбу',
-            'friend_request_accepted': 'Запрос принят',
-            'friend_request_rejected': 'Запрос отклонен',
-            'comment': 'Новый комментарий'
-        };
-        return titles[type] || 'Новое уведомление';
-    }
-
-    getNotificationActions(notification) {
-        if (notification.type === 'friend_request' && notification.relatedId) {
-            return `
-                <div style="margin-top: 10px; display: flex; gap: 5px;">
-                    <button class="btn-notification-accept" 
-                            onclick="notificationManager.handleFriendRequest(${notification.id}, ${notification.relatedId}, 'accept')"
-                            style="flex: 1; padding: 5px 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
-                        Принять
-                    </button>
-                    <button class="btn-notification-reject" 
-                            onclick="notificationManager.handleFriendRequest(${notification.id}, ${notification.relatedId}, 'reject')"
-                            style="flex: 1; padding: 5px 10px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
-                        Отклонить
-                    </button>
-                </div>
-            `;
+    getActionButton(notification) {
+        // Логика кнопок в зависимости от роли и типа
+        if (this.userRole === 'teacher') {
+            if (notification.type === 'submission_graded') {
+                // Проверяем статус. Если relatedEntityStatus === 'graded', то кнопка не нужна.
+                if (notification.relatedEntityStatus === 'graded') {
+                    return ''; // Кнопка не показывается
+                }
+                return `<button class="notification-action-btn">Проверить работу</button>`;
+            }
+            if (notification.type === 'quiz_submitted') {
+                return `<button class="notification-action-btn">Проверить квиз</button>`;
+            }
+        } else {
+            // Логика для студента
+            if (notification.type === 'grade') {
+                return `<button class="notification-action-btn">Посмотреть оценку</button>`;
+            }
+            if (notification.type === 'quiz_graded') {
+                return `<button class="notification-action-btn">Посмотреть результат</button>`;
+            }
         }
-
-        if (notification.relatedId && (notification.type === 'friend_request_accepted' || notification.type === 'friend_request_rejected')) {
-            return `
-                <div style="margin-top: 10px;">
-                    <button class="btn-notification-view" 
-                            onclick="notificationManager.viewUserProfile(${notification.relatedId})"
-                            style="width: 100%; padding: 5px 10px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
-                        Посмотреть профиль
-                    </button>
-                </div>
-            `;
-        }
-
-        if (notification.relatedId && notification.type === 'new_assignment') {
-            return `
-                <div style="margin-top: 10px;">
-                    <button class="btn-notification-view" 
-                            onclick="notificationManager.viewAssignment(${notification.relatedId})"
-                            style="width: 100%; padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
-                        Посмотреть задание
-                    </button>
-                </div>
-            `;
-        }
-
         return '';
     }
 
-    async handleFriendRequest(notificationId, requesterId, action) {
-        try {
-            if (action === 'accept') {
-                // Находим friendshipId через pending запросы
-                const pendingRequests = await ApiService.get('/friends/pending');
-                const friendship = pendingRequests.find(req => req.requesterId === requesterId);
+    formatTime(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diff = now - date;
+        if (diff < 3600000) return `${Math.floor(diff / 60000)} мин. назад`;
+        if (diff < 86400000) return `${Math.floor(diff / 3600000)} ч. назад`;
+        return date.toLocaleDateString('ru-RU');
+    }
 
-                if (friendship) {
-                    await ApiService.post(`/friends/accept/${friendship.id}`);
-                    this.showTempMessage('Запрос на дружбу принят!', 'success');
-                }
-            } else if (action === 'reject') {
-                const pendingRequests = await ApiService.get('/friends/pending');
-                const friendship = pendingRequests.find(req => req.requesterId === requesterId);
+    escapeHtml(unsafe) {
+        if (!unsafe) return '';
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
 
-                if (friendship) {
-                    await ApiService.post(`/friends/reject/${friendship.id}`);
-                    this.showTempMessage('Запрос на дружбу отклонен', 'info');
-                }
+    // ========== Поллинг ==========
+    // ========== Поллинг ==========
+    startPolling() {
+        console.log('🔔 Notification polling started');
+        this.pollingInterval = setInterval(() => {
+            console.log('🔄 Polling cycle running...');
+            this.updateNotificationBadge();
+            if (this.isDropdownOpen) {
+                this.loadNotifications();
             }
 
-            // Помечаем уведомление как прочитанное
-            await this.markAsRead(notificationId);
-
-            // Обновляем бейдж
-            this.updateNotificationBadge();
-
-        } catch (error) {
-            console.error('Error handling friend request:', error);
-            this.showTempMessage('Ошибка обработки запроса: ' + error.message, 'error');
-        }
+            // Проверяем, существует ли глобальная функция
+            // if (typeof window.updateChatBadge === 'function') {
+            //     console.log('💬 Calling updateChatBadge');
+            //     window.updateChatBadge();
+            // } else {
+            //     console.error('❌ window.updateChatBadge is not defined!');
+            // }
+        }, 10000);
     }
 
-    viewUserProfile(userId) {
-        window.location.href = `/user-profile.html?id=${userId}`;
-    }
-
-    viewAssignment(assignmentId) {
-        // Редирект на страницу задания
-        if (window.location.pathname.includes('student-dashboard')) {
-            // Для студента - показать задание
-            window.location.href = `/student-dashboard.html#assignment-${assignmentId}`;
-        } else if (window.location.pathname.includes('teacher-dashboard')) {
-            // Для учителя - показать сдачи
-            window.location.href = `/teacher-dashboard.html#submissions-${assignmentId}`;
-        }
-    }
-
-    showTempMessage(message, type) {
-        const messageDiv = document.createElement('div');
-        messageDiv.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 15px 20px;
-            border-radius: 8px;
-            color: white;
-            font-weight: bold;
-            z-index: 10001;
-            background: ${type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : '#ffc107'};
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        `;
-        messageDiv.textContent = message;
-
-        document.body.appendChild(messageDiv);
-
-        setTimeout(() => {
-            if (messageDiv.parentElement) {
-                messageDiv.remove();
-            }
-        }, 3000);
-    }
-
-    async markAsRead(notificationId) {
-        try {
-            await ApiService.post(`/notifications/${notificationId}/mark-read`);
-            this.updateNotificationBadge();
-        } catch (error) {
-            console.error('Error marking notification as read:', error);
-        }
-    }
-
-    async manualCheck() {
-        await this.checkNewNotifications();
-    }
-
-    async markAllAsRead() {
-        try {
-            await ApiService.post('/notifications/mark-all-read');
-            this.updateNotificationBadge();
-        } catch (error) {
-            console.error('Error marking all notifications as read:', error);
-        }
-    }
-
-    // Новый метод для проверки запросов в друзья
-    async checkFriendRequests() {
-        try {
-            const pendingRequests = await ApiService.get('/friends/pending');
-            return pendingRequests.length;
-        } catch (error) {
-            console.error('Error checking friend requests:', error);
-            return 0;
-        }
-    }
-
-    // Метод для отправки уведомления о друзьях (для использования из других модулей)
-    static showFriendNotification(message, type = 'info') {
-        if (notificationManager) {
-            const tempNotification = {
-                id: Date.now(),
-                message: message,
-                type: 'friend_request',
-                createdAt: new Date().toISOString()
-            };
-            notificationManager.showNotification(tempNotification);
+    stopPolling() {
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
         }
     }
 }
 
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-    
-    .notification {
-        animation: slideIn 0.3s ease-out;
-    }
-
-    /* Стили для бейджа уведомлений */
-    #notification-badge {
-        transition: all 0.3s ease;
-    }
-
-    #notification-badge:hover {
-        transform: scale(1.1);
-    }
-
-    /* Стили для кнопок уведомлений */
-    .btn-notification-accept:hover {
-        background: #218838 !important;
-    }
-
-    .btn-notification-reject:hover {
-        background: #c82333 !important;
-    }
-
-    .btn-notification-view:hover {
-        background: #5a6268 !important;
-    }
-
-    /* Адаптивность для мобильных */
-    @media (max-width: 768px) {
-        #notification-container {
-            right: 10px;
-            left: 10px;
-            max-width: none;
-        }
-        
-        .notification {
-            max-width: none;
-        }
-    }
-
-    /* Анимация исчезновения */
-    @keyframes slideOut {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-    }
-
-    .notification.hiding {
-        animation: slideOut 0.3s ease-in;
-    }
-`;
-document.head.appendChild(style);
-
+// Инициализация
 let notificationManager;
-
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', () => {
     notificationManager = new NotificationManager();
-
-    // Добавляем обработчик для друзей, если на странице есть менеджер друзей
-    if (typeof friendsManager !== 'undefined') {
-        // Обновляем статистику друзей при получении уведомлений
-        notificationManager.updateNotificationBadge = async function() {
-            try {
-                const response = await ApiService.get('/notifications/unread-count');
-                const count = response.count;
-
-                const badge = document.getElementById('notification-badge');
-                if (badge) {
-                    if (count > 0) {
-                        badge.textContent = count > 99 ? '99+' : count;
-                        badge.style.display = 'inline-block';
-                    } else {
-                        badge.style.display = 'none';
-                    }
-                }
-
-                // Также обновляем статистику друзей
-                if (friendsManager && typeof friendsManager.loadFriendsStats === 'function') {
-                    friendsManager.loadFriendsStats();
-                }
-            } catch (error) {
-                console.error('Error updating notification badge:', error);
-            }
-        };
-    }
-});
-
-window.NotificationManager = {
-    checkNotifications: function() {
-        if (notificationManager) {
-            notificationManager.manualCheck();
-        }
-    },
-    markAllAsRead: function() {
-        if (notificationManager) {
-            notificationManager.markAllAsRead();
-        }
-    },
-    getUnreadCount: async function() {
-        try {
-            const response = await ApiService.get('/notifications/unread-count');
-            return response.count;
-        } catch (error) {
-            console.error('Error getting unread count:', error);
-            return 0;
-        }
-    },
-    showFriendNotification: function(message, type) {
-        if (notificationManager) {
-            notificationManager.showTempMessage(message, type);
-        }
-    },
-    checkFriendRequests: async function() {
-        if (notificationManager) {
-            return await notificationManager.checkFriendRequests();
-        }
-        return 0;
-    }
-};
-
-// Глобальные функции для использования в HTML
-window.handleFriendRequestAccept = function(requesterId) {
-    if (notificationManager) {
-        notificationManager.handleFriendRequest(null, requesterId, 'accept');
-    }
-};
-
-window.handleFriendRequestReject = function(requesterId) {
-    if (notificationManager) {
-        notificationManager.handleFriendRequest(null, requesterId, 'reject');
-    }
-};
-
-window.viewUserProfile = function(userId) {
-    if (notificationManager) {
-        notificationManager.viewUserProfile(userId);
-    }
-};
-
-// Добавить в auth.js или notifications.js
-
-// Функция для обновления бейджа непрочитанных сообщений
-async function updateChatBadge() {
-    try {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-
-        const response = await ApiService.get('/chat/unread-count');
-        const badge = document.getElementById('chat-badge');
-
-        if (badge && response.unreadCount > 0) {
-            badge.textContent = response.unreadCount > 99 ? '99+' : response.unreadCount;
-            badge.style.display = 'inline-block';
-        } else if (badge) {
-            badge.style.display = 'none';
-        }
-    } catch (error) {
-        console.error('Error updating chat badge:', error);
-        const badge = document.getElementById('chat-badge');
-        if (badge) {
-            badge.style.display = 'none';
-        }
-    }
-}
-
-// Запуск обновления бейджа
-function startChatBadgePolling() {
-    updateChatBadge();
-    setInterval(updateChatBadge, 30000); // Обновлять каждые 30 секунд
-}
-
-// Вызывать при загрузке страницы
-document.addEventListener('DOMContentLoaded', function() {
-    if (document.getElementById('chat-badge')) {
-        startChatBadgePolling();
-    }
 });
