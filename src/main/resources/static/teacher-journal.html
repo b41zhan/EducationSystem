@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Журнал учителя</title>
+    <link rel="stylesheet" href="/css/teacher-journal.css">
+</head>
+<body>
+<div class="page">
+    <div class="topbar">
+        <div>
+            <h1>📘 Журнал учителя</h1>
+            <p>Посещаемость, оценки и итоговые оценки</p>
+        </div>
+        <div class="actions">
+            <a href="/teacher-dashboard.html" class="btn btn-secondary">← Назад</a>
+            <button class="btn btn-danger" onclick="logout()">Выйти</button>
+        </div>
+    </div>
+
+    <div class="filters card">
+        <div class="field">
+            <label for="classSubjectSelect">Класс / предмет</label>
+            <select id="classSubjectSelect">
+                <option value="">Выберите класс и предмет</option>
+            </select>
+        </div>
+
+        <div class="field">
+            <label for="quarterSelect">Четверть</label>
+            <select id="quarterSelect">
+                <option value="1">1 четверть</option>
+                <option value="2">2 четверть</option>
+                <option value="3">3 четверть</option>
+                <option value="4">4 четверть</option>
+            </select>
+        </div>
+
+        <div class="field actions-row">
+            <button id="loadJournalBtn" class="btn btn-primary">Открыть журнал</button>
+            <button id="syncAssignmentsBtn" class="btn btn-secondary">Подтянуть задания</button>
+            <button id="syncQuizzesBtn" class="btn btn-secondary">Подтянуть квизы</button>
+        </div>
+    </div>
+
+    <div id="message" class="message" style="display:none;"></div>
+
+    <div class="card table-card">
+        <div id="journalContainer" class="journal-container">
+            <div class="empty">Сначала выбери класс и четверть</div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/teacher-journal.js"></script>
+</body>
+</html>
