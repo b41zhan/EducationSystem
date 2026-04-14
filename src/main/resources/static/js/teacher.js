@@ -1,3 +1,4 @@
+
 document.addEventListener('DOMContentLoaded', function() {
     loadTeacherData();
     loadClasses();
@@ -837,7 +838,26 @@ document.getElementById('gradeSubmissionForm').addEventListener('submit', async 
         alert('Ошибка при оценке задания: ' + error.message);
     }
 });
+// Проверяем, есть ли параметр submissionId в URL при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const submissionId = urlParams.get('submissionId');
+
+    if (submissionId) {
+        // Небольшая задержка, чтобы страница успела загрузиться и менеджеры инициализироваться
+        setTimeout(() => {
+            if (typeof viewSubmission === 'function') {
+                viewSubmission(submissionId);
+            } else {
+                console.error('viewSubmission function not found');
+            }
+            // Убираем параметр из URL, чтобы при обновлении страницы окно не открывалось снова
+            window.history.replaceState({}, document.title, "/teacher-dashboard.html");
+        }, 500);
+    }
+});
 
 function loadAssignmentsToGrade() {
     loadSubmissionsToGrade();
 }
+

@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -40,7 +41,6 @@
             <a href="/teacher-journal.html" class="btn-action btn-nav">
                 📘 Журнал
             </a>
-            <span id="notification-badge" style="display: none;"></span>
             <a href="/profile.html" class="btn-action btn-nav">
                 👤 Мой профиль
             </a>
@@ -48,8 +48,22 @@
                 💬 Чат
                 <span id="chat-badge" class="nav-badge" style="display: none;"></span>
             </a>
-
-
+            <!-- НОВЫЙ КОЛОКОЛЬЧИК УВЕДОМЛЕНИЙ -->
+            <div class="notification-bell-container">
+                <button id="notification-bell-btn" class="btn-action btn-nav">
+                    🔔
+                    <span id="notification-badge" class="nav-badge" style="display: none;"></span>
+                </button>
+                <div id="notification-dropdown" class="notification-dropdown" style="display: none;">
+                    <div class="notification-header">
+                        <h3>Уведомления</h3>
+                        <button id="mark-all-read-btn" class="btn-text">Отметить все как прочитанные</button>
+                    </div>
+                    <div id="notification-list" class="notification-list">
+                        <div class="notification-loading">Загрузка уведомлений...</div>
+                    </div>
+                </div>
+            </div>
             <!-- Logout Button -->
             <button class="btn-logout" onclick="logout()">
                 <span class="logout-icon">🚪</span>
@@ -450,6 +464,7 @@
 <script src="/js/auth.js"></script>
 <script src="/js/teacher.js"></script>
 <script src="/js/wikipedia.js"></script>
+<script src="/js/chat-badge.js"></script>
 <script src="/js/notification.js"></script>
 <script src="/js/statistics.js"></script>
 

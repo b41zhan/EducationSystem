@@ -2,8 +2,10 @@ package com.springdemo.educationsystem.Service;
 
 import com.springdemo.educationsystem.DTO.NotificationDTO;
 import com.springdemo.educationsystem.Entity.Notification;
+import com.springdemo.educationsystem.Entity.Submission;
 import com.springdemo.educationsystem.Entity.User;
 import com.springdemo.educationsystem.Repository.NotificationRepository;
+import com.springdemo.educationsystem.Repository.SubmissionRepository;
 import com.springdemo.educationsystem.Repository.UserRepository;
 import org.springframework.stereotype.Service;
 
@@ -12,12 +14,17 @@ import java.util.stream.Collectors;
 
 @Service
 public class NotificationService {
+
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final SubmissionRepository submissionRepository; // Добавили репозиторий
 
-    public NotificationService(NotificationRepository notificationRepository, UserRepository userRepository) {
+    public NotificationService(NotificationRepository notificationRepository,
+                               UserRepository userRepository,
+                               SubmissionRepository submissionRepository) {
         this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
+        this.submissionRepository = submissionRepository;
     }
 
     private NotificationDTO convertToDTO(Notification notification) {
@@ -28,18 +35,28 @@ public class NotificationService {
         dto.setRead(notification.isRead());
         dto.setRelatedId(notification.getRelatedId());
         dto.setCreatedAt(notification.getCreatedAt());
+
+        // Проверяем статус связанного объекта
+        if (notification.getType().equals("submission_graded") && notification.getRelatedId() != null) {
+            submissionRepository.findById(notification.getRelatedId()).ifPresent(submission -> {
+                dto.setRelatedEntityStatus(submission.getStatus());
+            });
+        }
+
         return dto;
     }
 
     public List<NotificationDTO> getUserNotifications(Long userId) {
-        return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId)
+        return notificationRepository.findByUserIdAndHiddenFalseOrderByCreatedAtDesc(userId)
                 .stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
+    // ... остальные методы остаются без изменений ...
+
     public List<NotificationDTO> getUnreadNotifications(Long userId) {
-        return notificationRepository.findByUserIdAndIsReadFalseOrderByCreatedAtDesc(userId)
+        return notificationRepository.findByUserIdAndIsReadFalseAndHiddenFalseOrderByCreatedAtDesc(userId)
                 .stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
@@ -52,14 +69,22 @@ public class NotificationService {
         notificationRepository.save(notification);
     }
 
+    public void hideNotification(Long notificationId) {
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new RuntimeException("Notification not found"));
+        notification.setHidden(true);
+        notification.setRead(true);
+        notificationRepository.save(notification);
+    }
+
     public void markAllAsRead(Long userId) {
-        List<Notification> unreadNotifications = notificationRepository.findByUserIdAndIsReadFalseOrderByCreatedAtDesc(userId);
+        List<Notification> unreadNotifications = notificationRepository.findByUserIdAndIsReadFalseAndHiddenFalseOrderByCreatedAtDesc(userId);
         unreadNotifications.forEach(notification -> notification.setRead(true));
         notificationRepository.saveAll(unreadNotifications);
     }
 
     public long getUnreadCount(Long userId) {
-        return notificationRepository.countByUserIdAndIsReadFalse(userId);
+        return notificationRepository.countByUserIdAndIsReadFalseAndHiddenFalse(userId);
     }
 
     public void createNewAssignmentNotification(User user, String assignmentTitle, Long assignmentId) {
