@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мой журнал</title>
+    <link rel="stylesheet" href="/css/student-journal.css">
+</head>
+<body>
+<div class="page">
+    <div class="topbar">
+        <div>
+            <h1>📘 Мой журнал</h1>
+            <p>Просмотр оценок, посещаемости и итогов по всем предметам</p>
+        </div>
+        <div class="actions">
+            <a href="/student-dashboard.html" class="btn btn-secondary">← Назад</a>
+            <button class="btn btn-danger" onclick="logout()">Выйти</button>
+        </div>
+    </div>
+
+    <div class="card filters">
+        <div class="field">
+            <label for="quarterSelect">Четверть</label>
+            <select id="quarterSelect">
+                <option value="1">1 четверть</option>
+                <option value="2">2 четверть</option>
+                <option value="3">3 четверть</option>
+                <option value="4">4 четверть</option>
+            </select>
+        </div>
+
+        <div class="field actions-row">
+            <button id="loadJournalBtn" class="btn btn-primary">Открыть журнал</button>
+        </div>
+    </div>
+
+    <div id="message" class="message" style="display:none;"></div>
+    <div id="subjectsContainer"></div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/student-journal.js"></script>
+</body>
+</html>

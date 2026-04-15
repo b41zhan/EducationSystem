@@ -8,7 +8,7 @@ import com.springdemo.educationsystem.Enum.QuizAttemptStatus;
 import com.springdemo.educationsystem.Repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import java.util.LinkedHashMap;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -83,6 +83,150 @@ public class TeacherJournalService {
 
         return new ArrayList<>(unique.values());
     }
+
+    @Transactional(readOnly = true)
+    public List<StudentJournalSubjectDTO> getStudentJournal(Long studentUserId, Integer quarter) {
+        Student student = studentRepository.findById(studentUserId)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+
+        if (student.getSchoolClass() == null) {
+            return new ArrayList<>();
+        }
+
+        Long classId = student.getSchoolClass().getId();
+        List<LocalDate> lessonDates = getQuarterDates(quarter);
+        List<String> dateStrings = lessonDates.stream().map(LocalDate::toString).toList();
+
+        List<JournalEntry> allEntries = journalEntryRepository.findAll()
+                .stream()
+                .filter(e -> e.getStudent() != null && Objects.equals(e.getStudent().getId(), student.getId()))
+                .filter(e -> e.getSchoolClass() != null && Objects.equals(e.getSchoolClass().getId(), classId))
+                .filter(e -> Objects.equals(e.getQuarter(), quarter))
+                .toList();
+
+        List<AttendanceMark> allAttendance = attendanceMarkRepository.findAll()
+                .stream()
+                .filter(a -> a.getStudent() != null && Objects.equals(a.getStudent().getId(), student.getId()))
+                .filter(a -> a.getSchoolClass() != null && Objects.equals(a.getSchoolClass().getId(), classId))
+                .filter(a -> Objects.equals(a.getQuarter(), quarter))
+                .toList();
+
+        List<JournalFinalGrade> allFinals = journalFinalGradeRepository.findAll()
+                .stream()
+                .filter(f -> f.getStudent() != null && Objects.equals(f.getStudent().getId(), student.getId()))
+                .filter(f -> f.getSchoolClass() != null && Objects.equals(f.getSchoolClass().getId(), classId))
+                .filter(f -> Objects.equals(f.getQuarter(), quarter))
+                .toList();
+
+        Map<Long, List<JournalEntry>> bySubjectEntries = allEntries.stream()
+                .filter(e -> e.getSubject() != null)
+                .collect(Collectors.groupingBy(e -> e.getSubject().getId(), LinkedHashMap::new, Collectors.toList()));
+
+        Map<Long, List<AttendanceMark>> bySubjectAttendance = allAttendance.stream()
+                .filter(a -> a.getSubject() != null)
+                .collect(Collectors.groupingBy(a -> a.getSubject().getId(), LinkedHashMap::new, Collectors.toList()));
+
+        Map<Long, JournalFinalGrade> bySubjectFinal = allFinals.stream()
+                .filter(f -> f.getSubject() != null)
+                .collect(Collectors.toMap(f -> f.getSubject().getId(), f -> f, (a, b) -> a, LinkedHashMap::new));
+
+        Set<Long> subjectIds = new LinkedHashSet<>();
+        subjectIds.addAll(bySubjectEntries.keySet());
+        subjectIds.addAll(bySubjectAttendance.keySet());
+        subjectIds.addAll(bySubjectFinal.keySet());
+
+        List<StudentJournalSubjectDTO> result = new ArrayList<>();
+
+        for (Long subjectId : subjectIds) {
+            Subject subject = subjectRepository.findById(subjectId).orElse(null);
+            if (subject == null) continue;
+
+            StudentJournalSubjectDTO dto = new StudentJournalSubjectDTO();
+            dto.setSubjectId(subject.getId());
+            dto.setSubjectName(subject.getName());
+            dto.setDates(dateStrings);
+
+            Map<String, AttendanceMark> attendanceMap = new HashMap<>();
+            for (AttendanceMark a : bySubjectAttendance.getOrDefault(subjectId, new ArrayList<>())) {
+                attendanceMap.put(a.getLessonDate().toString(), a);
+            }
+
+            Map<String, List<JournalEntry>> entryMap = new HashMap<>();
+            for (JournalEntry entry : bySubjectEntries.getOrDefault(subjectId, new ArrayList<>())) {
+                entryMap.computeIfAbsent(entry.getLessonDate().toString(), k -> new ArrayList<>()).add(entry);
+            }
+
+            List<StudentJournalSubjectDTO.DayCellDTO> cells = new ArrayList<>();
+            for (LocalDate date : lessonDates) {
+                StudentJournalSubjectDTO.DayCellDTO cell = new StudentJournalSubjectDTO.DayCellDTO();
+                cell.setDate(date.toString());
+
+                AttendanceMark mark = attendanceMap.get(date.toString());
+                if (mark != null && mark.getStatus() != AttendanceStatus.PRESENT) {
+                    cell.setAttendanceCode(attendanceCode(mark.getStatus()));
+                    cell.setAttendanceColor(attendanceColor(mark.getStatus()));
+                }
+
+                List<JournalEntry> dayEntries = new ArrayList<>(entryMap.getOrDefault(date.toString(), new ArrayList<>()));
+
+                List<StudentJournalSubjectDTO.EntryDTO> items = new ArrayList<>();
+                for (JournalEntry e : dayEntries) {
+                    StudentJournalSubjectDTO.EntryDTO item = new StudentJournalSubjectDTO.EntryDTO();
+                    item.setType(e.getEntryType().name());
+                    item.setLabel(labelForEntryType(e.getEntryType()));
+                    item.setDisplayValue(e.getDisplayValue());
+                    item.setNumericValue(e.getNumericValue());
+                    items.add(item);
+                }
+
+                cell.setEntries(pickLastThreeTypes(items));
+                cells.add(cell);
+            }
+
+            dto.setCells(cells);
+
+            JournalFinalGrade finalGrade = bySubjectFinal.get(subjectId);
+            if (finalGrade != null) {
+                StudentJournalSubjectDTO.FinalDTO fd = new StudentJournalSubjectDTO.FinalDTO();
+                fd.setQuarterGrade(finalGrade.getQuarterGrade());
+                fd.setCalculatedQuarterGrade(finalGrade.getCalculatedQuarterGrade());
+                fd.setYearGrade(finalGrade.getYearGrade());
+                fd.setCalculatedYearGrade(finalGrade.getCalculatedYearGrade());
+                dto.setFinalGrade(fd);
+            }
+
+            result.add(dto);
+        }
+
+        result.sort(Comparator.comparing(StudentJournalSubjectDTO::getSubjectName));
+        return result;
+    }
+
+    private List<StudentJournalSubjectDTO.EntryDTO> pickLastThreeTypes(List<StudentJournalSubjectDTO.EntryDTO> items) {
+        StudentJournalSubjectDTO.EntryDTO lesson = null;
+        StudentJournalSubjectDTO.EntryDTO assignment = null;
+        StudentJournalSubjectDTO.EntryDTO quiz = null;
+
+        for (StudentJournalSubjectDTO.EntryDTO item : items) {
+            if ("LESSON_GRADE".equals(item.getType())) {
+                lesson = item;
+            } else if ("ASSIGNMENT_GRADE".equals(item.getType())) {
+                assignment = item;
+            } else if ("QUIZ_GRADE".equals(item.getType())) {
+                quiz = item;
+            }
+        }
+
+        List<StudentJournalSubjectDTO.EntryDTO> result = new ArrayList<>();
+        if (quiz != null) result.add(quiz);
+        if (assignment != null) result.add(assignment);
+        if (lesson != null) result.add(lesson);
+        return result;
+    }
+
+
+
+
 
     @Transactional
     public TeacherJournalDTO getJournal(Long teacherUserId, Long classId, Long subjectId, Integer quarter) {
