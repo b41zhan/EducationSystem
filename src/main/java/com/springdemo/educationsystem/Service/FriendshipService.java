@@ -40,6 +40,7 @@ public class FriendshipService {
     public FriendshipDTO sendFriendRequest(Long requesterId, Long addresseeId) {
         User requester = userRepository.findById(requesterId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + requesterId));
+
         User addressee = userRepository.findById(addresseeId)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + addresseeId));
 
@@ -47,30 +48,53 @@ public class FriendshipService {
             throw new RuntimeException("Cannot send friend request to yourself");
         }
 
-        // Проверяем, существует ли уже запрос
         Optional<Friendship> existingFriendship = friendshipRepository
                 .findFriendshipBetweenUsers(requester, addressee);
 
         if (existingFriendship.isPresent()) {
             Friendship friendship = existingFriendship.get();
-            if (friendship.getStatus() == FriendshipStatus.PENDING) {
-                throw new RuntimeException("Friend request already sent");
-            } else if (friendship.getStatus() == FriendshipStatus.ACCEPTED) {
+
+            boolean sameDirection = friendship.getRequester().getId().equals(requesterId)
+                    && friendship.getAddressee().getId().equals(addresseeId);
+
+            boolean reverseDirection = friendship.getRequester().getId().equals(addresseeId)
+                    && friendship.getAddressee().getId().equals(requesterId);
+
+            if (friendship.getStatus() == FriendshipStatus.ACCEPTED) {
                 throw new RuntimeException("You are already friends");
-            } else {
-                // Если запрос был отклонен, обновляем статус
+            }
+
+            if (friendship.getStatus() == FriendshipStatus.PENDING) {
+                if (sameDirection) {
+                    throw new RuntimeException("Friend request already sent");
+                }
+
+                if (reverseDirection) {
+                    throw new RuntimeException("This user has already sent you a friend request");
+                }
+
+                throw new RuntimeException("Friend request already exists");
+            }
+
+            if (friendship.getStatus() == FriendshipStatus.REJECTED || friendship.getStatus() == FriendshipStatus.BLOCKED) {
+                if (reverseDirection) {
+                    friendship.setRequester(requester);
+                    friendship.setAddressee(addressee);
+                }
+
                 friendship.setStatus(FriendshipStatus.PENDING);
                 Friendship saved = friendshipRepository.save(friendship);
+
                 createFriendRequestNotification(addressee, requester);
+                logger.info("Friend request re-sent from {} to {}", requesterId, addresseeId);
+
                 return convertToDTO(saved);
             }
         }
 
-        // Создаем новый запрос
         Friendship friendship = new Friendship(requester, addressee, FriendshipStatus.PENDING);
         Friendship saved = friendshipRepository.save(friendship);
 
-        // Создаем уведомление для получателя
         createFriendRequestNotification(addressee, requester);
 
         logger.info("Friend request sent from {} to {}", requesterId, addresseeId);
@@ -92,7 +116,6 @@ public class FriendshipService {
         friendship.setStatus(FriendshipStatus.ACCEPTED);
         Friendship saved = friendshipRepository.save(friendship);
 
-        // Создаем уведомление для отправителя
         createFriendRequestAcceptedNotification(friendship.getRequester(), friendship.getAddressee());
 
         logger.info("Friend request accepted: {}", friendshipId);
@@ -107,10 +130,13 @@ public class FriendshipService {
             throw new RuntimeException("You can only reject requests sent to you");
         }
 
+        if (friendship.getStatus() != FriendshipStatus.PENDING) {
+            throw new RuntimeException("Friend request is not pending");
+        }
+
         friendship.setStatus(FriendshipStatus.REJECTED);
         Friendship saved = friendshipRepository.save(friendship);
 
-        // Создаем уведомление для отправителя
         createFriendRequestRejectedNotification(friendship.getRequester(), friendship.getAddressee());
 
         logger.info("Friend request rejected: {}", friendshipId);
@@ -120,6 +146,7 @@ public class FriendshipService {
     public void removeFriend(Long userId, Long friendId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
         User friend = userRepository.findById(friendId)
                 .orElseThrow(() -> new RuntimeException("Friend not found"));
 
@@ -193,7 +220,17 @@ public class FriendshipService {
                 .findFriendshipBetweenUsers(currentUser, otherUser);
 
         if (friendship.isPresent()) {
-            return friendship.get().getStatus().name();
+            Friendship f = friendship.get();
+
+            if (f.getStatus() == FriendshipStatus.PENDING) {
+                if (f.getRequester().getId().equals(currentUser.getId())) {
+                    return "PENDING";
+                } else {
+                    return "INCOMING_REQUEST";
+                }
+            }
+
+            return f.getStatus().name();
         }
 
         return "NONE";
@@ -228,6 +265,7 @@ public class FriendshipService {
     private void createFriendRequestNotification(User addressee, User requester) {
         String message = String.format("%s %s отправил(а) вам запрос на дружбу",
                 requester.getFirstName(), requester.getLastName());
+
         Notification notification = new Notification(addressee, message, "friend_request", requester.getId());
         notificationRepository.save(notification);
     }
@@ -235,6 +273,7 @@ public class FriendshipService {
     private void createFriendRequestAcceptedNotification(User requester, User addressee) {
         String message = String.format("%s %s принял(а) ваш запрос на дружбу",
                 addressee.getFirstName(), addressee.getLastName());
+
         Notification notification = new Notification(requester, message, "friend_request_accepted", addressee.getId());
         notificationRepository.save(notification);
     }
@@ -242,11 +281,11 @@ public class FriendshipService {
     private void createFriendRequestRejectedNotification(User requester, User addressee) {
         String message = String.format("%s %s отклонил(а) ваш запрос на дружбу",
                 addressee.getFirstName(), addressee.getLastName());
+
         Notification notification = new Notification(requester, message, "friend_request_rejected", addressee.getId());
         notificationRepository.save(notification);
     }
 
-    // DTO для статистики
     public static class FriendshipStatsDTO {
         private long friendsCount;
         private long pendingRequestsCount;
@@ -256,8 +295,12 @@ public class FriendshipService {
             this.pendingRequestsCount = pendingRequestsCount;
         }
 
-        // Геттеры
-        public long getFriendsCount() { return friendsCount; }
-        public long getPendingRequestsCount() { return pendingRequestsCount; }
+        public long getFriendsCount() {
+            return friendsCount;
+        }
+
+        public long getPendingRequestsCount() {
+            return pendingRequestsCount;
+        }
     }
 }
