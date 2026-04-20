@@ -4,25 +4,227 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Education System - Администратор</title>
+
     <link rel="stylesheet" href="/css/admin.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        .admin-section-title {
+            margin: 0 0 12px 0;
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .admin-subgrid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .admin-full-width {
+            grid-column: 1 / -1;
+        }
+
+        .mini-form {
+            display: grid;
+            gap: 12px;
+        }
+
+        .mini-form .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #eef2ff;
+            color: #4338ca;
+        }
+
+        .status-pill.inactive {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .management-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .management-item {
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 12px;
+            padding: 14px;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .management-item-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .management-item-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .management-item-meta {
+            color: #6b7280;
+            font-size: 13px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .management-item-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-small {
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+
+        .data-table-wrap {
+            overflow-x: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+            text-align: left;
+            vertical-align: top;
+        }
+
+        .data-table th {
+            font-size: 13px;
+            color: #6b7280;
+            font-weight: 600;
+            background: #fafafa;
+        }
+
+        .empty-state {
+            padding: 18px;
+            border: 1px dashed rgba(0,0,0,0.12);
+            border-radius: 12px;
+            color: #6b7280;
+            text-align: center;
+        }
+
+        .success-box,
+        .error-box,
+        .info-box {
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 12px;
+            display: none;
+        }
+
+        .success-box {
+            background: #ecfdf5;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .error-box {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .info-box {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+        }
+
+        .toolbar-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .toolbar-row .left-tools,
+        .toolbar-row .right-tools {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .select-full, .input-full {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid rgba(0,0,0,0.12);
+            border-radius: 10px;
+            font-size: 14px;
+            background: #fff;
+        }
+
+        .organization-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #6b7280;
+            background: #f8fafc;
+            border: 1px solid rgba(0,0,0,0.08);
+            padding: 8px 10px;
+            border-radius: 10px;
+        }
+
+        @media (max-width: 1100px) {
+            .admin-subgrid,
+            .mini-form .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
 <div class="dashboard">
-    <!-- Верхняя панель -->
     <header class="top-bar">
         <div class="brand">
             <h1><i class="fas fa-user-shield"></i> Панель администратора</h1>
             <p class="welcome-message" id="welcome-message">Добро пожаловать!</p>
         </div>
+
         <button class="btn-logout" onclick="logout()">
             <i class="fas fa-sign-out-alt"></i> Выйти
         </button>
     </header>
 
     <div class="container">
-        <!-- Левая колонка - Основные действия -->
         <aside class="sidebar">
             <div class="card">
                 <h2 class="card-header">
@@ -32,9 +234,11 @@
                     <button class="btn-action btn-primary" onclick="showRegisterTeacherModal()">
                         <i class="fas fa-chalkboard-teacher"></i> Новый учитель
                     </button>
+
                     <button class="btn-action btn-primary" onclick="showRegisterStudentModal()">
                         <i class="fas fa-user-graduate"></i> Новый студент
                     </button>
+
                     <button class="btn-action btn-primary" onclick="showRegisterParentModal()">
                         <i class="fas fa-user-friends"></i> Новый родитель
                     </button>
@@ -58,7 +262,6 @@
                 </div>
                 <i class="fas fa-chevron-right card-arrow"></i>
             </div>
-
 
             <div class="card stats-card">
                 <h2 class="card-header">
@@ -85,14 +288,142 @@
             </div>
         </aside>
 
-        <!-- Основной контент -->
         <main class="main-content">
+            <!-- Блок организационной структуры -->
+            <div class="card">
+                <div class="toolbar-row">
+                    <div class="left-tools">
+                        <h2 style="margin:0;"><i class="fas fa-school"></i> Управление структурой школы</h2>
+                        <span class="organization-badge">
+                            <i class="fas fa-sitemap"></i>
+                            Админ — центр управления классами, учениками и parent-child связями
+                        </span>
+                    </div>
+
+                    <div class="right-tools">
+                        <select id="organizationSchoolSelect" class="select-full" style="min-width:240px;"></select>
+                        <button class="btn-action btn-secondary" onclick="refreshStructureData()">
+                            <i class="fas fa-rotate"></i> Обновить
+                        </button>
+                    </div>
+                </div>
+
+                <div id="structureSuccessBox" class="success-box"></div>
+                <div id="structureErrorBox" class="error-box"></div>
+                <div id="structureInfoBox" class="info-box"></div>
+
+                <div class="admin-subgrid">
+                    <!-- Классы -->
+                    <section class="card admin-full-width" style="margin-bottom:0;">
+                        <div class="toolbar-row">
+                            <div class="left-tools">
+                                <h3 class="admin-section-title"><i class="fas fa-layer-group"></i> Классы школы</h3>
+                            </div>
+                            <div class="right-tools">
+                                <button class="btn-action btn-primary btn-small" onclick="openCreateClassModal()">
+                                    <i class="fas fa-plus"></i> Создать класс
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="classesManagementList" class="management-list">
+                            <div class="empty-state">Выберите школу, чтобы загрузить классы</div>
+                        </div>
+                    </section>
+
+                    <!-- Детали класса -->
+                    <section class="card" style="margin-bottom:0;">
+                        <div class="toolbar-row">
+                            <div class="left-tools">
+                                <h3 class="admin-section-title"><i class="fas fa-users"></i> Состав класса</h3>
+                            </div>
+                            <div class="right-tools">
+                                <select id="classDetailsSelect" class="select-full" style="min-width:220px;"></select>
+                                <button class="btn-action btn-secondary btn-small" onclick="loadSelectedClassDetails()">
+                                    <i class="fas fa-eye"></i> Показать
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="classDetailsContainer" class="empty-state">
+                            Выберите класс, чтобы увидеть его состав
+                        </div>
+                    </section>
+
+                    <!-- Ученики и переводы -->
+                    <section class="card" style="margin-bottom:0;">
+                        <h3 class="admin-section-title"><i class="fas fa-user-graduate"></i> Управление учениками по классам</h3>
+
+                        <div class="mini-form">
+                            <div>
+                                <label for="assignStudentSelect">Ученик без класса</label>
+                                <select id="assignStudentSelect" class="select-full"></select>
+                            </div>
+
+                            <div>
+                                <label for="assignTargetClassSelect">Назначить в класс</label>
+                                <select id="assignTargetClassSelect" class="select-full"></select>
+                            </div>
+
+                            <button class="btn-action btn-primary" onclick="assignStudentToClass()">
+                                <i class="fas fa-user-plus"></i> Назначить ученика в класс
+                            </button>
+
+                            <hr style="border:none;border-top:1px solid rgba(0,0,0,0.08);margin:6px 0;">
+
+                            <div>
+                                <label for="transferStudentSelect">Ученик</label>
+                                <select id="transferStudentSelect" class="select-full"></select>
+                            </div>
+
+                            <div>
+                                <label for="transferTargetClassSelect">Перевести в класс</label>
+                                <select id="transferTargetClassSelect" class="select-full"></select>
+                            </div>
+
+                            <button class="btn-action btn-secondary" onclick="transferStudentToClass()">
+                                <i class="fas fa-right-left"></i> Перевести ученика
+                            </button>
+                        </div>
+                    </section>
+
+                    <!-- Parent-child -->
+                    <section class="card" style="margin-bottom:0;">
+                        <h3 class="admin-section-title"><i class="fas fa-people-arrows"></i> Parent ↔ Child связи</h3>
+
+                        <div class="mini-form">
+                            <div>
+                                <label for="linkParentSelect">Родитель</label>
+                                <select id="linkParentSelect" class="select-full"></select>
+                            </div>
+
+                            <div>
+                                <label for="linkStudentSelect">Ученик</label>
+                                <select id="linkStudentSelect" class="select-full"></select>
+                            </div>
+
+                            <button class="btn-action btn-primary" onclick="linkParentToStudent()">
+                                <i class="fas fa-link"></i> Привязать родителя к ребёнку
+                            </button>
+                        </div>
+
+                        <div style="margin-top:16px;">
+                            <h4 style="margin:0 0 8px 0;">Текущие связи</h4>
+                            <div id="parentChildLinksList" class="management-list">
+                                <div class="empty-state">Выберите школу, чтобы загрузить связи</div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Пользователи -->
             <div class="content-header">
                 <h2><i class="fas fa-list"></i> Список пользователей</h2>
                 <div class="search-box">
                     <div class="search-input">
                         <i class="fas fa-search"></i>
-                        <input type="text" id="search-users" placeholder="Поиск по email или имени..." onkeypress="if(event.key === 'Enter') searchUsers()">
+                        <input type="text" id="search-users" placeholder="Поиск по email или имени..." oninput="searchUsers()">
                     </div>
                     <button class="btn-search" onclick="searchUsers()">Найти</button>
                 </div>
@@ -103,25 +434,19 @@
                     <div class="header-cell">Пользователь</div>
                     <div class="header-cell">Email</div>
                     <div class="header-cell">Роль</div>
+                    <div class="header-cell">Школа</div>
                     <div class="header-cell">Дата регистрации</div>
                     <div class="header-cell">Действия</div>
                 </div>
+
                 <div class="users-list" id="users-list">
                     <div class="loading-state">
                         <i class="fas fa-spinner fa-spin"></i>
                         <p>Загрузка пользователей...</p>
                     </div>
                 </div>
+
                 <div class="table-footer">
-                    <div class="pagination">
-                        <button class="pagination-btn" disabled>
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
-                        <span class="page-info">Страница 1 из 1</span>
-                        <button class="pagination-btn" disabled>
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
-                    </div>
                     <div class="users-count">
                         Всего: <span id="users-total-count">0</span> пользователей
                     </div>
@@ -143,15 +468,18 @@
                     <option value="">Выберите школу</option>
                 </select>
             </div>
+
             <div class="form-group">
                 <label for="teacherEmail">Email:</label>
                 <input type="email" id="teacherEmail" required placeholder="teacher@school.edu">
             </div>
+
             <div class="form-group">
                 <label for="teacherPassword">Пароль:</label>
                 <input type="password" id="teacherPassword" required placeholder="Минимум 8 символов">
                 <div class="form-hint">Минимум 8 символов</div>
             </div>
+
             <div class="form-row">
                 <div class="form-group">
                     <label for="teacherLastName">Фамилия:</label>
@@ -162,10 +490,12 @@
                     <input type="text" id="teacherFirstName" required placeholder="Айгуль">
                 </div>
             </div>
+
             <div class="form-group">
                 <label for="teacherPatronymic">Отчество:</label>
                 <input type="text" id="teacherPatronymic" placeholder="Ерланкызы">
             </div>
+
             <div class="form-actions">
                 <button type="submit" class="btn-primary">
                     <i class="fas fa-user-plus"></i> Зарегистрировать
@@ -190,21 +520,25 @@
                     <option value="">Выберите школу</option>
                 </select>
             </div>
+
             <div class="form-group">
                 <label for="studentClassSelect">Класс:</label>
                 <select id="studentClassSelect" required>
                     <option value="">Сначала выберите школу</option>
                 </select>
             </div>
+
             <div class="form-group">
                 <label for="studentEmail">Email:</label>
                 <input type="email" id="studentEmail" required placeholder="student@school.edu">
             </div>
+
             <div class="form-group">
                 <label for="studentPassword">Пароль:</label>
                 <input type="password" id="studentPassword" required placeholder="Минимум 8 символов">
                 <div class="form-hint">Минимум 8 символов</div>
             </div>
+
             <div class="form-row">
                 <div class="form-group">
                     <label for="studentLastName">Фамилия:</label>
@@ -215,10 +549,12 @@
                     <input type="text" id="studentFirstName" required placeholder="Дастан">
                 </div>
             </div>
+
             <div class="form-group">
                 <label for="studentPatronymic">Отчество:</label>
                 <input type="text" id="studentPatronymic" placeholder="Сатпаевич">
             </div>
+
             <div class="form-actions">
                 <button type="submit" class="btn-primary">
                     <i class="fas fa-user-plus"></i> Зарегистрировать
@@ -263,11 +599,13 @@
                 <label for="parentEmail">Email:</label>
                 <input type="email" id="parentEmail" required placeholder="parent@email.com">
             </div>
+
             <div class="form-group">
                 <label for="parentPassword">Пароль:</label>
                 <input type="password" id="parentPassword" required placeholder="Минимум 8 символов">
                 <div class="form-hint">Минимум 8 символов</div>
             </div>
+
             <div class="form-row">
                 <div class="form-group">
                     <label for="parentLastName">Фамилия:</label>
@@ -278,10 +616,12 @@
                     <input type="text" id="parentFirstName" required placeholder="Мария">
                 </div>
             </div>
+
             <div class="form-group">
                 <label for="parentPatronymic">Отчество:</label>
                 <input type="text" id="parentPatronymic" placeholder="Ивановна">
             </div>
+
             <div class="form-actions">
                 <button type="submit" class="btn-primary">
                     <i class="fas fa-user-plus"></i> Зарегистрировать
@@ -289,6 +629,50 @@
                 <button type="button" class="btn-secondary" onclick="closeRegisterParentModal()">
                     Отмена
                 </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Модалка класса -->
+<div id="classModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeClassModal()">&times;</span>
+        <h2 id="classModalTitle"><i class="fas fa-layer-group"></i> Новый класс</h2>
+
+        <form id="classForm">
+            <input type="hidden" id="classEditId">
+
+            <div class="form-group">
+                <label for="classSchoolSelect">Школа:</label>
+                <select id="classSchoolSelect" required></select>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="classNameInput">Название класса:</label>
+                    <input type="text" id="classNameInput" required placeholder="Например: 8A">
+                </div>
+
+                <div class="form-group">
+                    <label for="classAcademicYearInput">Учебный год:</label>
+                    <input type="text" id="classAcademicYearInput" required placeholder="Например: 2025-2026">
+                </div>
+            </div>
+
+            <div class="form-group" id="classActiveGroup" style="display:none;">
+                <label for="classActiveSelect">Статус:</label>
+                <select id="classActiveSelect">
+                    <option value="true">Активный</option>
+                    <option value="false">Архивный</option>
+                </select>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-save"></i> Сохранить
+                </button>
+                <button type="button" class="btn-secondary" onclick="closeClassModal()">Отмена</button>
             </div>
         </form>
     </div>
@@ -342,10 +726,10 @@
                 <h3><i class="fas fa-history"></i> Активность пользователя</h3>
                 <div id="editUserHistory" class="edit-user-history">
                     <div class="activity-item">
-                        <div class="activity-icon"><i class="fas fa-sign-in-alt"></i></div>
+                        <div class="activity-icon"><i class="fas fa-user"></i></div>
                         <div class="activity-content">
-                            <div class="activity-title">Последний вход</div>
-                            <div class="activity-time">12.01.2024 14:30</div>
+                            <div class="activity-title">Данные пользователя</div>
+                            <div class="activity-time">Редактирование доступно администратору</div>
                         </div>
                     </div>
                 </div>
@@ -355,10 +739,8 @@
                 <button type="submit" class="btn-primary">
                     <i class="fas fa-save"></i> Сохранить
                 </button>
-                <button type="button" class="btn-secondary" onclick="closeEditUserModal()">
-                    Отмена
-                </button>
-                <button type="button" class="btn-danger" id="deleteUserBtn" onclick="deleteUser()" style="display: none;">
+                <button type="button" class="btn-secondary" onclick="closeEditUserModal()">Отмена</button>
+                <button type="button" class="btn-danger" id="deleteUserBtn" style="display:none;">
                     <i class="fas fa-trash"></i> Удалить пользователя
                 </button>
             </div>
