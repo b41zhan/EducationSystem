@@ -5,6 +5,7 @@ public class AdminSchoolClassCreateDTO {
     private Long schoolId;
     private String name;
     private String academicYear;
+    private Long homeroomTeacherId; // nullable
 
     public AdminSchoolClassCreateDTO() {
     }
@@ -31,5 +32,13 @@ public class AdminSchoolClassCreateDTO {
 
     public void setAcademicYear(String academicYear) {
         this.academicYear = academicYear;
+    }
+
+    public Long getHomeroomTeacherId() {
+        return homeroomTeacherId;
+    }
+
+    public void setHomeroomTeacherId(Long homeroomTeacherId) {
+        this.homeroomTeacherId = homeroomTeacherId;
     }
 }

@@ -5,6 +5,7 @@ public class AdminSchoolClassUpdateDTO {
     private String name;
     private String academicYear;
     private Boolean active;
+    private Long homeroomTeacherId; // nullable
 
     public AdminSchoolClassUpdateDTO() {
     }
@@ -31,5 +32,13 @@ public class AdminSchoolClassUpdateDTO {
 
     public void setActive(Boolean active) {
         this.active = active;
+    }
+
+    public Long getHomeroomTeacherId() {
+        return homeroomTeacherId;
+    }
+
+    public void setHomeroomTeacherId(Long homeroomTeacherId) {
+        this.homeroomTeacherId = homeroomTeacherId;
     }
 }

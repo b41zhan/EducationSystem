@@ -6,12 +6,14 @@ import com.springdemo.educationsystem.Entity.ParentStudent;
 import com.springdemo.educationsystem.Entity.School;
 import com.springdemo.educationsystem.Entity.SchoolClass;
 import com.springdemo.educationsystem.Entity.Student;
+import com.springdemo.educationsystem.Entity.Teacher;
 import com.springdemo.educationsystem.Entity.User;
 import com.springdemo.educationsystem.Repository.ParentRepository;
 import com.springdemo.educationsystem.Repository.ParentStudentRepository;
 import com.springdemo.educationsystem.Repository.SchoolClassRepository;
 import com.springdemo.educationsystem.Repository.SchoolRepository;
 import com.springdemo.educationsystem.Repository.StudentRepository;
+import com.springdemo.educationsystem.Repository.TeacherRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,23 +30,33 @@ public class AdminSchoolStructureService {
     private final StudentRepository studentRepository;
     private final ParentRepository parentRepository;
     private final ParentStudentRepository parentStudentRepository;
+    private final TeacherRepository teacherRepository;
 
     public AdminSchoolStructureService(SchoolRepository schoolRepository,
                                        SchoolClassRepository schoolClassRepository,
                                        StudentRepository studentRepository,
                                        ParentRepository parentRepository,
-                                       ParentStudentRepository parentStudentRepository) {
+                                       ParentStudentRepository parentStudentRepository,
+                                       TeacherRepository teacherRepository) {
         this.schoolRepository = schoolRepository;
         this.schoolClassRepository = schoolClassRepository;
         this.studentRepository = studentRepository;
         this.parentRepository = parentRepository;
         this.parentStudentRepository = parentStudentRepository;
+        this.teacherRepository = teacherRepository;
     }
 
     public List<AdminSchoolClassDTO> getClassesBySchool(Long schoolId) {
         return schoolClassRepository.findBySchoolIdOrderByActiveDescNameAscAcademicYearAsc(schoolId)
                 .stream()
                 .map(this::toClassDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<AdminTeacherOptionDTO> getTeachersBySchool(Long schoolId) {
+        return teacherRepository.findByUserSchoolIdWithUser(schoolId)
+                .stream()
+                .map(this::toTeacherOptionDto)
                 .collect(Collectors.toList());
     }
 
@@ -70,6 +82,7 @@ public class AdminSchoolStructureService {
         schoolClass.setName(dto.getName().trim());
         schoolClass.setAcademicYear(dto.getAcademicYear().trim());
         schoolClass.setActive(true);
+        schoolClass.setHomeroomTeacher(resolveAndValidateHomeroomTeacher(dto.getHomeroomTeacherId(), school.getId()));
 
         return toClassDto(schoolClassRepository.save(schoolClass));
     }
@@ -85,11 +98,11 @@ public class AdminSchoolStructureService {
         String newName = dto.getName() != null ? dto.getName().trim() : schoolClass.getName();
         String newAcademicYear = dto.getAcademicYear() != null ? dto.getAcademicYear().trim() : schoolClass.getAcademicYear();
 
-        if (newName.isBlank()) {
+        if (newName == null || newName.isBlank()) {
             throw new RuntimeException("Class name is required");
         }
 
-        if (newAcademicYear.isBlank()) {
+        if (newAcademicYear == null || newAcademicYear.isBlank()) {
             throw new RuntimeException("Academic year is required");
         }
 
@@ -114,6 +127,10 @@ public class AdminSchoolStructureService {
             schoolClass.setActive(dto.getActive());
         }
 
+        schoolClass.setHomeroomTeacher(
+                resolveAndValidateHomeroomTeacher(dto.getHomeroomTeacherId(), schoolClass.getSchool().getId())
+        );
+
         return toClassDto(schoolClassRepository.save(schoolClass));
     }
 
@@ -129,14 +146,13 @@ public class AdminSchoolStructureService {
         return toClassDto(schoolClassRepository.save(schoolClass));
     }
 
-    @Transactional(readOnly = true)
     public AdminClassDetailsDTO getClassDetails(Long classId) {
         SchoolClass schoolClass = schoolClassRepository.findById(classId)
                 .orElseThrow(() -> new RuntimeException("Class not found"));
 
         List<AdminStudentInClassDTO> students = studentRepository.findBySchoolClassIdWithUser(classId)
                 .stream()
-                .map(this::toStudentDto)
+                .map(this::toStudentInClassDto)
                 .collect(Collectors.toList());
 
         AdminClassDetailsDTO dto = new AdminClassDetailsDTO();
@@ -145,61 +161,57 @@ public class AdminSchoolStructureService {
         return dto;
     }
 
-    @Transactional(readOnly = true)
     public List<AdminStudentInClassDTO> getStudentsByClass(Long classId) {
         return studentRepository.findBySchoolClassIdWithUser(classId)
                 .stream()
-                .map(this::toStudentDto)
+                .map(this::toStudentInClassDto)
                 .collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
     public List<AdminStudentInClassDTO> getStudentsBySchool(Long schoolId) {
         return studentRepository.findByUserSchoolIdWithUser(schoolId)
                 .stream()
-                .map(this::toStudentDto)
+                .map(this::toStudentInClassDto)
                 .collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
     public List<AdminStudentInClassDTO> getUnassignedStudentsBySchool(Long schoolId) {
         return studentRepository.findByUserSchoolIdAndSchoolClassIsNullWithUser(schoolId)
                 .stream()
-                .map(this::toStudentDto)
+                .map(this::toStudentInClassDto)
                 .collect(Collectors.toList());
     }
 
     public AdminStudentInClassDTO assignStudentToClass(AdminAssignStudentToClassDTO dto) {
         if (dto == null || dto.getStudentId() == null || dto.getClassId() == null) {
-            throw new RuntimeException("studentId and classId are required");
+            throw new RuntimeException("Student and class are required");
         }
 
         Student student = studentRepository.findById(dto.getStudentId())
                 .orElseThrow(() -> new RuntimeException("Student not found"));
 
-        SchoolClass targetClass = schoolClassRepository.findById(dto.getClassId())
+        SchoolClass schoolClass = schoolClassRepository.findById(dto.getClassId())
                 .orElseThrow(() -> new RuntimeException("Class not found"));
 
-        if (!targetClass.isActive()) {
-            throw new RuntimeException("Cannot assign student to archived class");
+        if (student.getSchoolClass() != null) {
+            throw new RuntimeException("Student is already assigned to a class");
         }
 
-        User studentUser = student.getUser();
-        if (studentUser == null || studentUser.getSchool() == null) {
+        if (student.getUser() == null || student.getUser().getSchool() == null) {
             throw new RuntimeException("Student school is not defined");
         }
 
-        if (!Objects.equals(studentUser.getSchool().getId(), targetClass.getSchool().getId())) {
-            throw new RuntimeException("Student and class belong to different schools");
+        if (!Objects.equals(student.getUser().getSchool().getId(), schoolClass.getSchool().getId())) {
+            throw new RuntimeException("Student and class must belong to the same school");
         }
 
-        student.setSchoolClass(targetClass);
-        return toStudentDto(studentRepository.save(student));
+        student.setSchoolClass(schoolClass);
+        return toStudentInClassDto(studentRepository.save(student));
     }
 
     public AdminStudentInClassDTO transferStudent(AdminTransferStudentDTO dto) {
         if (dto == null || dto.getStudentId() == null || dto.getToClassId() == null) {
-            throw new RuntimeException("studentId and toClassId are required");
+            throw new RuntimeException("Student and target class are required");
         }
 
         Student student = studentRepository.findById(dto.getStudentId())
@@ -208,26 +220,25 @@ public class AdminSchoolStructureService {
         SchoolClass targetClass = schoolClassRepository.findById(dto.getToClassId())
                 .orElseThrow(() -> new RuntimeException("Target class not found"));
 
-        if (!targetClass.isActive()) {
-            throw new RuntimeException("Cannot transfer student to archived class");
-        }
-
-        User studentUser = student.getUser();
-        if (studentUser == null || studentUser.getSchool() == null) {
+        if (student.getUser() == null || student.getUser().getSchool() == null) {
             throw new RuntimeException("Student school is not defined");
         }
 
-        if (!Objects.equals(studentUser.getSchool().getId(), targetClass.getSchool().getId())) {
-            throw new RuntimeException("Student and target class belong to different schools");
+        if (!Objects.equals(student.getUser().getSchool().getId(), targetClass.getSchool().getId())) {
+            throw new RuntimeException("Student and target class must belong to the same school");
+        }
+
+        if (student.getSchoolClass() != null && Objects.equals(student.getSchoolClass().getId(), targetClass.getId())) {
+            throw new RuntimeException("Student is already assigned to this class");
         }
 
         student.setSchoolClass(targetClass);
-        return toStudentDto(studentRepository.save(student));
+        return toStudentInClassDto(studentRepository.save(student));
     }
 
     public AdminParentChildViewDTO linkParentToStudent(AdminParentChildLinkDTO dto) {
         if (dto == null || dto.getParentId() == null || dto.getStudentId() == null) {
-            throw new RuntimeException("parentId and studentId are required");
+            throw new RuntimeException("Parent and student are required");
         }
 
         Parent parent = parentRepository.findById(dto.getParentId())
@@ -236,70 +247,76 @@ public class AdminSchoolStructureService {
         Student student = studentRepository.findById(dto.getStudentId())
                 .orElseThrow(() -> new RuntimeException("Student not found"));
 
-        if (parentStudentRepository.existsByParentIdAndStudentId(parent.getId(), student.getId())) {
-            throw new RuntimeException("This parent is already linked to the student");
+        if (parent.getUser() == null || parent.getUser().getSchool() == null) {
+            throw new RuntimeException("Parent school is not defined");
         }
 
-        Long parentSchoolId = parent.getUser() != null && parent.getUser().getSchool() != null
-                ? parent.getUser().getSchool().getId()
-                : null;
+        if (student.getUser() == null || student.getUser().getSchool() == null) {
+            throw new RuntimeException("Student school is not defined");
+        }
 
-        Long studentSchoolId = student.getUser() != null && student.getUser().getSchool() != null
-                ? student.getUser().getSchool().getId()
-                : null;
-
-        if (parentSchoolId == null || studentSchoolId == null || !Objects.equals(parentSchoolId, studentSchoolId)) {
+        if (!Objects.equals(parent.getUser().getSchool().getId(), student.getUser().getSchool().getId())) {
             throw new RuntimeException("Parent and student must belong to the same school");
         }
 
-        ParentStudent link = new ParentStudent();
-        link.setParent(parent);
-        link.setStudent(student);
+        boolean exists = parentStudentRepository.existsByParentIdAndStudentId(parent.getId(), student.getId());
+        if (exists) {
+            throw new RuntimeException("This parent-child link already exists");
+        }
 
-        ParentStudent saved = parentStudentRepository.save(link);
-        return toParentChildDto(saved);
+        ParentStudent parentStudent = new ParentStudent();
+        parentStudent.setParent(parent);
+        parentStudent.setStudent(student);
+
+        return toParentChildViewDto(parentStudentRepository.save(parentStudent));
     }
 
     public void unlinkParentFromStudent(Long parentId, Long studentId) {
-        ParentStudent link = parentStudentRepository.findByParentIdAndStudentId(parentId, studentId)
+        if (parentId == null || studentId == null) {
+            throw new RuntimeException("Parent and student are required");
+        }
+
+        ParentStudent parentStudent = parentStudentRepository.findByParentIdAndStudentId(parentId, studentId)
                 .orElseThrow(() -> new RuntimeException("Parent-child link not found"));
 
-        parentStudentRepository.delete(link);
+        parentStudentRepository.delete(parentStudent);
     }
 
-    @Transactional(readOnly = true)
-    public List<AdminParentChildViewDTO> getChildrenByParent(Long parentId) {
+    public List<AdminStudentInClassDTO> getChildrenByParent(Long parentId) {
         return parentStudentRepository.findByParentId(parentId)
                 .stream()
-                .map(this::toParentChildDto)
+                .map(ParentStudent::getStudent)
+                .map(this::toStudentInClassDto)
                 .collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
     public List<AdminParentChildViewDTO> getParentsByStudent(Long studentId) {
         return parentStudentRepository.findByStudentId(studentId)
                 .stream()
-                .map(this::toParentChildDto)
+                .map(this::toParentChildViewDto)
                 .collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
     public List<AdminParentChildViewDTO> getParentChildLinksBySchool(Long schoolId) {
-        return parentRepository.findByUserSchoolIdWithUser(schoolId)
+        return parentStudentRepository.findAll()
                 .stream()
-                .flatMap(parent -> parentStudentRepository.findByParentId(parent.getId()).stream())
-                .map(this::toParentChildDto)
+                .filter(ps ->
+                        ps.getStudent() != null
+                                && ps.getStudent().getUser() != null
+                                && ps.getStudent().getUser().getSchool() != null
+                                && Objects.equals(ps.getStudent().getUser().getSchool().getId(), schoolId)
+                )
+                .map(this::toParentChildViewDto)
                 .collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
     public List<AdminParentChildViewDTO> getAvailableParentsBySchool(Long schoolId) {
         return parentRepository.findByUserSchoolIdWithUser(schoolId)
                 .stream()
                 .map(parent -> {
                     AdminParentChildViewDTO dto = new AdminParentChildViewDTO();
                     dto.setParentId(parent.getId());
-                    dto.setParentName(buildFullName(parent.getUser()));
+                    dto.setParentName(formatUserFullName(parent.getUser()));
                     dto.setParentEmail(parent.getUser() != null ? parent.getUser().getEmail() : null);
                     return dto;
                 })
@@ -310,15 +327,37 @@ public class AdminSchoolStructureService {
         if (dto == null) {
             throw new RuntimeException("Request body is required");
         }
+
         if (dto.getSchoolId() == null) {
-            throw new RuntimeException("schoolId is required");
+            throw new RuntimeException("School is required");
         }
+
         if (dto.getName() == null || dto.getName().trim().isBlank()) {
             throw new RuntimeException("Class name is required");
         }
+
         if (dto.getAcademicYear() == null || dto.getAcademicYear().trim().isBlank()) {
             throw new RuntimeException("Academic year is required");
         }
+    }
+
+    private Teacher resolveAndValidateHomeroomTeacher(Long teacherId, Long schoolId) {
+        if (teacherId == null) {
+            return null;
+        }
+
+        Teacher teacher = teacherRepository.findById(teacherId)
+                .orElseThrow(() -> new RuntimeException("Homeroom teacher not found"));
+
+        if (teacher.getUser() == null || teacher.getUser().getSchool() == null) {
+            throw new RuntimeException("Selected teacher is not attached to a school");
+        }
+
+        if (!Objects.equals(teacher.getUser().getSchool().getId(), schoolId)) {
+            throw new RuntimeException("Selected homeroom teacher belongs to another school");
+        }
+
+        return teacher;
     }
 
     private AdminSchoolClassDTO toClassDto(SchoolClass schoolClass) {
@@ -334,16 +373,41 @@ public class AdminSchoolStructureService {
         }
 
         dto.setStudentsCount(schoolClass.getStudents() != null ? schoolClass.getStudents().size() : 0);
+
+        if (schoolClass.getHomeroomTeacher() != null) {
+            Teacher teacher = schoolClass.getHomeroomTeacher();
+            dto.setHomeroomTeacherId(teacher.getId());
+
+            if (teacher.getUser() != null) {
+                dto.setHomeroomTeacherUserId(teacher.getUser().getId());
+                dto.setHomeroomTeacherFullName(formatUserFullName(teacher.getUser()));
+                dto.setHomeroomTeacherEmail(teacher.getUser().getEmail());
+            }
+        }
+
         return dto;
     }
 
-    private AdminStudentInClassDTO toStudentDto(Student student) {
+    private AdminTeacherOptionDTO toTeacherOptionDto(Teacher teacher) {
+        AdminTeacherOptionDTO dto = new AdminTeacherOptionDTO();
+        dto.setTeacherId(teacher.getId());
+
+        if (teacher.getUser() != null) {
+            dto.setUserId(teacher.getUser().getId());
+            dto.setFullName(formatUserFullName(teacher.getUser()));
+            dto.setEmail(teacher.getUser().getEmail());
+        }
+
+        return dto;
+    }
+
+    private AdminStudentInClassDTO toStudentInClassDto(Student student) {
         AdminStudentInClassDTO dto = new AdminStudentInClassDTO();
         dto.setStudentId(student.getId());
 
         if (student.getUser() != null) {
             dto.setUserId(student.getUser().getId());
-            dto.setFullName(buildFullName(student.getUser()));
+            dto.setFullName(formatUserFullName(student.getUser()));
             dto.setEmail(student.getUser().getEmail());
 
             if (student.getUser().getSchool() != null) {
@@ -360,49 +424,48 @@ public class AdminSchoolStructureService {
         return dto;
     }
 
-    private AdminParentChildViewDTO toParentChildDto(ParentStudent link) {
+    private AdminParentChildViewDTO toParentChildViewDto(ParentStudent parentStudent) {
         AdminParentChildViewDTO dto = new AdminParentChildViewDTO();
 
-        if (link.getParent() != null) {
-            dto.setParentId(link.getParent().getId());
-            if (link.getParent().getUser() != null) {
-                dto.setParentName(buildFullName(link.getParent().getUser()));
-                dto.setParentEmail(link.getParent().getUser().getEmail());
+        if (parentStudent.getParent() != null) {
+            dto.setParentId(parentStudent.getParent().getId());
+
+            if (parentStudent.getParent().getUser() != null) {
+                dto.setParentName(formatUserFullName(parentStudent.getParent().getUser()));
+                dto.setParentEmail(parentStudent.getParent().getUser().getEmail());
             }
         }
 
-        if (link.getStudent() != null) {
-            dto.setStudentId(link.getStudent().getId());
-            if (link.getStudent().getUser() != null) {
-                dto.setStudentName(buildFullName(link.getStudent().getUser()));
-                dto.setStudentEmail(link.getStudent().getUser().getEmail());
+        if (parentStudent.getStudent() != null) {
+            dto.setStudentId(parentStudent.getStudent().getId());
+
+            if (parentStudent.getStudent().getUser() != null) {
+                dto.setStudentName(formatUserFullName(parentStudent.getStudent().getUser()));
+                dto.setStudentEmail(parentStudent.getStudent().getUser().getEmail());
             }
-            if (link.getStudent().getSchoolClass() != null) {
-                dto.setClassId(link.getStudent().getSchoolClass().getId());
-                dto.setClassName(link.getStudent().getSchoolClass().getName());
+
+            if (parentStudent.getStudent().getSchoolClass() != null) {
+                dto.setClassId(parentStudent.getStudent().getSchoolClass().getId());
+                dto.setClassName(parentStudent.getStudent().getSchoolClass().getName());
             }
         }
 
         return dto;
     }
 
-    private String buildFullName(User user) {
+    private String formatUserFullName(User user) {
         if (user == null) {
-            return "";
+            return "—";
         }
 
-        StringBuilder sb = new StringBuilder();
-        if (user.getLastName() != null && !user.getLastName().isBlank()) {
-            sb.append(user.getLastName().trim());
-        }
-        if (user.getFirstName() != null && !user.getFirstName().isBlank()) {
-            if (!sb.isEmpty()) sb.append(" ");
-            sb.append(user.getFirstName().trim());
-        }
-        if (user.getPatronymic() != null && !user.getPatronymic().isBlank()) {
-            if (!sb.isEmpty()) sb.append(" ");
-            sb.append(user.getPatronymic().trim());
-        }
-        return sb.toString();
+        return String.join(" ",
+                safe(user.getLastName()),
+                safe(user.getFirstName()),
+                safe(user.getPatronymic())
+        ).trim().replaceAll("\\s+", " ");
+    }
+
+    private String safe(String value) {
+        return value == null ? "" : value;
     }
 }

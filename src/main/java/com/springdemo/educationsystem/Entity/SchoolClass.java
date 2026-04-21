@@ -27,6 +27,14 @@ public class SchoolClass {
     @JoinColumn(name = "school_id", nullable = false)
     private School school;
 
+    /**
+     * Классный руководитель — отдельная организационная связь.
+     * Поле nullable: класс может существовать без назначенного классного руководителя.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "homeroom_teacher_id")
+    private Teacher homeroomTeacher;
+
     @OneToMany(mappedBy = "schoolClass", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<Student> students = new ArrayList<>();
@@ -35,7 +43,8 @@ public class SchoolClass {
     @JsonIgnore
     private List<Assignment> assignments = new ArrayList<>();
 
-    public SchoolClass() {}
+    public SchoolClass() {
+    }
 
     public Long getId() {
         return id;
@@ -75,6 +84,14 @@ public class SchoolClass {
 
     public void setSchool(School school) {
         this.school = school;
+    }
+
+    public Teacher getHomeroomTeacher() {
+        return homeroomTeacher;
+    }
+
+    public void setHomeroomTeacher(Teacher homeroomTeacher) {
+        this.homeroomTeacher = homeroomTeacher;
     }
 
     public List<Student> getStudents() {

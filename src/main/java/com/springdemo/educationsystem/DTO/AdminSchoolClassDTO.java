@@ -10,6 +10,12 @@ public class AdminSchoolClassDTO {
     private String schoolName;
     private int studentsCount;
 
+    // НОВОЕ: данные классного руководителя
+    private Long homeroomTeacherId;
+    private Long homeroomTeacherUserId;
+    private String homeroomTeacherFullName;
+    private String homeroomTeacherEmail;
+
     public AdminSchoolClassDTO() {
     }
 
@@ -67,5 +73,37 @@ public class AdminSchoolClassDTO {
 
     public void setStudentsCount(int studentsCount) {
         this.studentsCount = studentsCount;
+    }
+
+    public Long getHomeroomTeacherId() {
+        return homeroomTeacherId;
+    }
+
+    public void setHomeroomTeacherId(Long homeroomTeacherId) {
+        this.homeroomTeacherId = homeroomTeacherId;
+    }
+
+    public Long getHomeroomTeacherUserId() {
+        return homeroomTeacherUserId;
+    }
+
+    public void setHomeroomTeacherUserId(Long homeroomTeacherUserId) {
+        this.homeroomTeacherUserId = homeroomTeacherUserId;
+    }
+
+    public String getHomeroomTeacherFullName() {
+        return homeroomTeacherFullName;
+    }
+
+    public void setHomeroomTeacherFullName(String homeroomTeacherFullName) {
+        this.homeroomTeacherFullName = homeroomTeacherFullName;
+    }
+
+    public String getHomeroomTeacherEmail() {
+        return homeroomTeacherEmail;
+    }
+
+    public void setHomeroomTeacherEmail(String homeroomTeacherEmail) {
+        this.homeroomTeacherEmail = homeroomTeacherEmail;
     }
 }

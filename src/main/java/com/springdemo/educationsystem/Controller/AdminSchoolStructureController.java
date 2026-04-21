@@ -44,6 +44,20 @@ public class AdminSchoolStructureController {
         }
     }
 
+    @GetMapping("/schools/{schoolId}/teachers")
+    public ResponseEntity<?> getTeachersBySchool(@PathVariable Long schoolId,
+                                                 @RequestHeader("Authorization") String authorizationHeader) {
+        if (!isAdmin(authorizationHeader)) {
+            return forbidden();
+        }
+
+        try {
+            return ResponseEntity.ok(adminSchoolStructureService.getTeachersBySchool(schoolId));
+        } catch (Exception e) {
+            return badRequest(e);
+        }
+    }
+
     @PostMapping("/classes")
     public ResponseEntity<?> createClass(@RequestBody AdminSchoolClassCreateDTO dto,
                                          @RequestHeader("Authorization") String authorizationHeader) {
@@ -259,6 +273,7 @@ public class AdminSchoolStructureController {
 
     private boolean isAdmin(String authorizationHeader) {
         String token = extractToken(authorizationHeader);
+
         if (token.isBlank() || !authService.isValidToken(token)) {
             return false;
         }
