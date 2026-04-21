@@ -1,5 +1,7 @@
 const token = localStorage.getItem('token');
 
+let teacherTeachingPairs = [];
+
 let allClasses = [];
 let allSubjects = [];
 let currentClassId = null;
@@ -9,12 +11,12 @@ let currentPage = 1;
 const assignmentsPerPage = 5;
 let filteredAssignments = [];
 
-document.addEventListener('DOMContentLoaded', function () {
-    loadTeacherData();
-    loadClasses();
-    loadSubjects();
-    loadTeacherAssignments();
-    loadSubmissionsToGrade();
+document.addEventListener('DOMContentLoaded', async function () {
+    await loadTeacherData();
+    await loadClasses();
+    await loadSubjects();
+    await loadTeacherAssignments();
+    await loadSubmissionsToGrade();
 
     const urlParams = new URLSearchParams(window.location.search);
     const submissionId = urlParams.get('submissionId');
@@ -78,84 +80,232 @@ function normalizeClasses(classes) {
     return unique;
 }
 
-async function loadClasses() {
+function normalizeTeachingPairs(pairs) {
+    if (!Array.isArray(pairs)) {
+        return [];
+    }
+
+    const unique = [];
+    const seen = new Set();
+
+    pairs.forEach(pair => {
+        if (!pair || pair.classId == null || pair.subjectId == null) {
+            return;
+        }
+
+        const key = `${pair.classId}_${pair.subjectId}`;
+        if (seen.has(key)) {
+            return;
+        }
+
+        seen.add(key);
+        unique.push(pair);
+    });
+
+    unique.sort((a, b) => {
+        const classNameA = (a.className || '').toLowerCase();
+        const classNameB = (b.className || '').toLowerCase();
+
+        if (classNameA !== classNameB) {
+            return classNameA.localeCompare(classNameB, 'ru');
+        }
+
+        const yearA = (a.academicYear || '').toLowerCase();
+        const yearB = (b.academicYear || '').toLowerCase();
+
+        if (yearA !== yearB) {
+            return yearA.localeCompare(yearB, 'ru');
+        }
+
+        const subjectA = (a.subjectName || '').toLowerCase();
+        const subjectB = (b.subjectName || '').toLowerCase();
+        return subjectA.localeCompare(subjectB, 'ru');
+    });
+
+    return unique;
+}
+
+function extractClassesFromPairs(pairs) {
+    const classesMap = new Map();
+
+    pairs.forEach(pair => {
+        if (pair.classId == null) {
+            return;
+        }
+
+        const key = String(pair.classId);
+        if (!classesMap.has(key)) {
+            classesMap.set(key, {
+                id: pair.classId,
+                name: pair.className,
+                academicYear: pair.academicYear || ''
+            });
+        }
+    });
+
+    return normalizeClasses(Array.from(classesMap.values()));
+}
+
+function extractSubjectsFromPairs(pairs) {
+    const subjectsMap = new Map();
+
+    pairs.forEach(pair => {
+        if (pair.subjectId == null) {
+            return;
+        }
+
+        const key = String(pair.subjectId);
+        if (!subjectsMap.has(key)) {
+            subjectsMap.set(key, {
+                id: pair.subjectId,
+                name: pair.subjectName
+            });
+        }
+    });
+
+    const subjects = Array.from(subjectsMap.values());
+
+    subjects.sort((a, b) => {
+        const nameA = (a.name || '').toLowerCase();
+        const nameB = (b.name || '').toLowerCase();
+        return nameA.localeCompare(nameB, 'ru');
+    });
+
+    return subjects;
+}
+
+async function loadTeachingPairs() {
     try {
-        const classes = await ApiService.get('/statistics/teacher/classes');
-        allClasses = normalizeClasses(classes);
+        const pairs = await ApiService.get('/teacher/teaching-assignments/pairs');
+        teacherTeachingPairs = normalizeTeachingPairs(pairs);
+        console.log('Teacher teaching pairs loaded:', teacherTeachingPairs);
+    } catch (error) {
+        console.error('Error loading teacher teaching pairs:', error);
+        teacherTeachingPairs = [];
+    }
+}
 
-        console.log('Teacher classes loaded:', allClasses);
+async function loadClasses() {
+    await loadTeachingPairs();
 
-        const classesList = document.getElementById('classes-list');
-        const classSelect = document.getElementById('assignmentClass');
-        const classFilter = document.getElementById('classFilter');
+    const classesList = document.getElementById('classes-list');
+    const classSelect = document.getElementById('assignmentClass');
+    const classFilter = document.getElementById('classFilter');
 
-        classesList.innerHTML = '';
-        classSelect.innerHTML = '<option value="">Выберите класс</option>';
-        classFilter.innerHTML = '<option value="">Все классы</option>';
+    try {
+        allClasses = extractClassesFromPairs(teacherTeachingPairs);
+
+        console.log('Teacher classes loaded from teaching assignments:', allClasses);
+
+        if (classesList) {
+            classesList.innerHTML = '';
+        }
+
+        if (classSelect) {
+            classSelect.innerHTML = '<option value="">Выберите класс</option>';
+        }
+
+        if (classFilter) {
+            classFilter.innerHTML = '<option value="">Все классы</option>';
+        }
 
         if (allClasses.length > 0) {
             allClasses.forEach(classItem => {
-                const classElement = document.createElement('div');
-                classElement.className = 'assignment-item';
-                classElement.innerHTML = `
-                    <div class="assignment-title">${classItem.name}</div>
-                    <div class="assignment-meta">Учебный год: ${classItem.academicYear || '—'}</div>
-                `;
-                classesList.appendChild(classElement);
+                if (classesList) {
+                    const classElement = document.createElement('div');
+                    classElement.className = 'assignment-item';
+                    classElement.innerHTML = `
+                        <div class="assignment-title">${classItem.name}</div>
+                        <div class="assignment-meta">Учебный год: ${classItem.academicYear || '—'}</div>
+                    `;
+                    classesList.appendChild(classElement);
+                }
 
-                const option = document.createElement('option');
-                option.value = classItem.id;
-                option.textContent = classItem.academicYear
-                    ? `${classItem.name} (${classItem.academicYear})`
-                    : classItem.name;
-                classSelect.appendChild(option);
+                if (classSelect) {
+                    const option = document.createElement('option');
+                    option.value = classItem.id;
+                    option.textContent = classItem.academicYear
+                        ? `${classItem.name} (${classItem.academicYear})`
+                        : classItem.name;
+                    classSelect.appendChild(option);
+                }
 
-                const filterOption = document.createElement('option');
-                filterOption.value = classItem.id;
-                filterOption.textContent = classItem.academicYear
-                    ? `${classItem.name} (${classItem.academicYear})`
-                    : classItem.name;
-                classFilter.appendChild(filterOption);
+                if (classFilter) {
+                    const filterOption = document.createElement('option');
+                    filterOption.value = classItem.id;
+                    filterOption.textContent = classItem.academicYear
+                        ? `${classItem.name} (${classItem.academicYear})`
+                        : classItem.name;
+                    classFilter.appendChild(filterOption);
+                }
             });
 
             currentClassId = allClasses[0].id;
+
+            if (classSelect) {
+                classSelect.onchange = async function () {
+                    currentClassId = this.value ? Number(this.value) : null;
+                    await loadSubjects();
+                    loadGamificationPreview();
+                };
+            }
+
             loadGamificationPreview();
         } else {
-            classesList.innerHTML = '<p>Нет доступных классов</p>';
-            classSelect.innerHTML = '<option value="">Нет доступных классов</option>';
-            classFilter.innerHTML = '<option value="">Нет доступных классов</option>';
+            if (classesList) {
+                classesList.innerHTML = '<p>Нет назначенных классов</p>';
+            }
+            if (classSelect) {
+                classSelect.innerHTML = '<option value="">Нет назначенных классов</option>';
+            }
+            if (classFilter) {
+                classFilter.innerHTML = '<option value="">Нет назначенных классов</option>';
+            }
             currentClassId = null;
         }
 
     } catch (error) {
         console.error('Error loading teacher classes:', error);
 
-        const classesList = document.getElementById('classes-list');
-        const classSelect = document.getElementById('assignmentClass');
-        const classFilter = document.getElementById('classFilter');
-
-        classesList.innerHTML = '<p>Ошибка загрузки классов</p>';
-        classSelect.innerHTML = '<option value="">Ошибка загрузки классов</option>';
-        classFilter.innerHTML = '<option value="">Ошибка загрузки классов</option>';
+        if (classesList) {
+            classesList.innerHTML = '<p>Ошибка загрузки классов</p>';
+        }
+        if (classSelect) {
+            classSelect.innerHTML = '<option value="">Ошибка загрузки классов</option>';
+        }
+        if (classFilter) {
+            classFilter.innerHTML = '<option value="">Ошибка загрузки классов</option>';
+        }
         currentClassId = null;
     }
 }
 
 async function loadSubjects() {
     const subjectSelect = document.getElementById('assignmentSubject');
+    const classSelect = document.getElementById('assignmentClass');
+
     if (!subjectSelect) {
         return;
     }
 
     try {
-        const subjects = await ApiService.get('/subjects');
-        allSubjects = Array.isArray(subjects) ? subjects : [];
+        if (!Array.isArray(teacherTeachingPairs) || teacherTeachingPairs.length === 0) {
+            await loadTeachingPairs();
+        }
 
-        allSubjects.sort((a, b) => {
-            const nameA = (a.name || '').toLowerCase();
-            const nameB = (b.name || '').toLowerCase();
-            return nameA.localeCompare(nameB, 'ru');
-        });
+        const selectedClassId = classSelect && classSelect.value
+            ? String(classSelect.value)
+            : null;
+
+        let filteredPairs = teacherTeachingPairs;
+
+        if (selectedClassId) {
+            filteredPairs = teacherTeachingPairs.filter(
+                pair => String(pair.classId) === selectedClassId
+            );
+        }
+
+        allSubjects = extractSubjectsFromPairs(filteredPairs);
 
         subjectSelect.innerHTML = '<option value="">Выберите предмет</option>';
 
@@ -764,6 +914,7 @@ function showCreateAssignmentModal() {
 function closeCreateAssignmentModal() {
     document.getElementById('createAssignmentModal').style.display = 'none';
     document.getElementById('createAssignmentForm').reset();
+    loadSubjects();
 }
 
 function closeGradeSubmissionModal() {

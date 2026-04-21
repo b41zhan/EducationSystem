@@ -17,17 +17,23 @@ import java.util.stream.Collectors;
 
 @Service
 public class AssignmentService {
+
     private final AssignmentRepository assignmentRepository;
     private final SubjectRepository subjectRepository;
     private final SchoolClassRepository schoolClassRepository;
     private final TeacherRepository teacherRepository;
+    private final TeacherClassSubjectService teacherClassSubjectService;
 
-    public AssignmentService(AssignmentRepository assignmentRepository, SubjectRepository subjectRepository,
-                             SchoolClassRepository schoolClassRepository, TeacherRepository teacherRepository) {
+    public AssignmentService(AssignmentRepository assignmentRepository,
+                             SubjectRepository subjectRepository,
+                             SchoolClassRepository schoolClassRepository,
+                             TeacherRepository teacherRepository,
+                             TeacherClassSubjectService teacherClassSubjectService) {
         this.assignmentRepository = assignmentRepository;
         this.subjectRepository = subjectRepository;
         this.schoolClassRepository = schoolClassRepository;
         this.teacherRepository = teacherRepository;
+        this.teacherClassSubjectService = teacherClassSubjectService;
     }
 
     public AssignmentDTO convertToDTO(Assignment assignment) {
@@ -47,8 +53,10 @@ public class AssignmentService {
 
         if (assignment.getTeacher() != null && assignment.getTeacher().getUser() != null) {
             dto.setTeacherId(assignment.getTeacher().getId());
-            dto.setTeacherName(assignment.getTeacher().getUser().getFirstName() + " " +
-                    assignment.getTeacher().getUser().getLastName());
+            dto.setTeacherName(
+                    assignment.getTeacher().getUser().getFirstName() + " " +
+                            assignment.getTeacher().getUser().getLastName()
+            );
         }
 
         if (assignment.getSchoolClass() != null) {
@@ -69,6 +77,13 @@ public class AssignmentService {
         Teacher teacher = teacherRepository.findById(teacherId)
                 .orElseThrow(() -> new RuntimeException("Teacher not found with id: " + teacherId));
 
+        // Stage 5: теперь учитель может создавать задания только по назначенной ему паре class+subject
+        teacherClassSubjectService.requireTeacherHasClassSubjectByTeacherEntityId(
+                teacher.getId(),
+                schoolClass.getId(),
+                subject.getId()
+        );
+
         Assignment assignment = new Assignment();
         assignment.setTitle(createDTO.getTitle());
         assignment.setDescription(createDTO.getDescription());
@@ -76,26 +91,14 @@ public class AssignmentService {
         assignment.setDeadline(createDTO.getDeadline());
         assignment.setType(createDTO.getType());
         assignment.setSubject(subject);
-        assignment.setSchoolClass(schoolClass);
         assignment.setTeacher(teacher);
+        assignment.setSchoolClass(schoolClass);
 
         return assignmentRepository.save(assignment);
     }
 
     public List<AssignmentDTO> getAllAssignments() {
         return assignmentRepository.findAll()
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-
-    public AssignmentDTO getAssignmentById(Long id) {
-        Assignment assignment = assignmentRepository.findById(id).orElse(null);
-        return assignment != null ? convertToDTO(assignment) : null;
-    }
-
-    public List<AssignmentDTO> getAssignmentsByClass(Long classId) {
-        return assignmentRepository.findBySchoolClassId(classId)
                 .stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
@@ -108,26 +111,59 @@ public class AssignmentService {
                 .collect(Collectors.toList());
     }
 
-    // Старый метод (можно оставить для обратной совместимости)
-    public Assignment createAssignment(Assignment assignment) {
-        return assignmentRepository.save(assignment);
+    public List<AssignmentDTO> getAssignmentsByClass(Long classId) {
+        return assignmentRepository.findBySchoolClassId(classId)
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public AssignmentDTO getAssignmentById(Long id) {
+        return assignmentRepository.findById(id)
+                .map(this::convertToDTO)
+                .orElse(null);
     }
 
     public Assignment updateAssignment(Long id, Assignment assignmentDetails) {
-        Assignment assignment = assignmentRepository.findById(id).orElse(null);
-        if (assignment != null) {
-            assignment.setTitle(assignmentDetails.getTitle());
-            assignment.setDescription(assignmentDetails.getDescription());
-            assignment.setMaxGrade(assignmentDetails.getMaxGrade());
-            assignment.setDeadline(assignmentDetails.getDeadline());
-            assignment.setType(assignmentDetails.getType());
-            return assignmentRepository.save(assignment);
-        }
-        return null;
+        return assignmentRepository.findById(id)
+                .map(existing -> {
+                    existing.setTitle(assignmentDetails.getTitle());
+                    existing.setDescription(assignmentDetails.getDescription());
+                    existing.setMaxGrade(assignmentDetails.getMaxGrade());
+                    existing.setDeadline(assignmentDetails.getDeadline());
+                    existing.setType(assignmentDetails.getType());
+
+                    Long effectiveClassId = existing.getSchoolClass() != null ? existing.getSchoolClass().getId() : null;
+                    Long effectiveSubjectId = existing.getSubject() != null ? existing.getSubject().getId() : null;
+
+                    if (assignmentDetails.getSchoolClass() != null && assignmentDetails.getSchoolClass().getId() != null) {
+                        SchoolClass newClass = schoolClassRepository.findById(assignmentDetails.getSchoolClass().getId())
+                                .orElseThrow(() -> new RuntimeException("Class not found"));
+                        existing.setSchoolClass(newClass);
+                        effectiveClassId = newClass.getId();
+                    }
+
+                    if (assignmentDetails.getSubject() != null && assignmentDetails.getSubject().getId() != null) {
+                        Subject newSubject = subjectRepository.findById(assignmentDetails.getSubject().getId())
+                                .orElseThrow(() -> new RuntimeException("Subject not found"));
+                        existing.setSubject(newSubject);
+                        effectiveSubjectId = newSubject.getId();
+                    }
+
+                    if (existing.getTeacher() != null && effectiveClassId != null && effectiveSubjectId != null) {
+                        teacherClassSubjectService.requireTeacherHasClassSubjectByTeacherEntityId(
+                                existing.getTeacher().getId(),
+                                effectiveClassId,
+                                effectiveSubjectId
+                        );
+                    }
+
+                    return assignmentRepository.save(existing);
+                })
+                .orElse(null);
     }
 
     public void deleteAssignment(Long id) {
         assignmentRepository.deleteById(id);
     }
-
 }

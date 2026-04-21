@@ -4,6 +4,7 @@ const quizBuilderState = {
     assignments: [],
     classes: [],
     subjects: [],
+    pairs: [],
     selectedQuizId: null,
     draftQuestions: []
 };
@@ -21,11 +22,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     setDefaultAssignmentWindow();
 
     await Promise.all([
-        loadSubjects(),
-        loadTeacherClasses(),
+        loadTeachingPairs(),
         loadMyQuizzes(),
         loadMyAssignments()
     ]);
+
+    await loadSubjects();
+    await loadTeacherClasses();
 });
 
 function cacheBuilderElements() {
@@ -75,6 +78,18 @@ function bindBuilderEvents() {
             removeOptionRow(qid, oid);
         }
     });
+
+    if (builderEls.assignClassSelect) {
+        builderEls.assignClassSelect.addEventListener('change', () => {
+            syncSelectedQuizSubjectHint();
+        });
+    }
+
+    if (builderEls.assignQuizSelect) {
+        builderEls.assignQuizSelect.addEventListener('change', () => {
+            syncSelectedQuizSubjectHint();
+        });
+    }
 }
 
 function api(path, options = {}) {
@@ -132,11 +147,156 @@ function escapeHtml(str) {
         .replace(/'/g, '&#039;');
 }
 
+function normalizeTeachingPairs(pairs) {
+    if (!Array.isArray(pairs)) {
+        return [];
+    }
+
+    const unique = [];
+    const seen = new Set();
+
+    pairs.forEach(pair => {
+        if (!pair || pair.classId == null || pair.subjectId == null) {
+            return;
+        }
+
+        const key = `${pair.classId}_${pair.subjectId}`;
+        if (seen.has(key)) {
+            return;
+        }
+
+        seen.add(key);
+        unique.push(pair);
+    });
+
+    unique.sort((a, b) => {
+        const classA = (a.className || '').toLowerCase();
+        const classB = (b.className || '').toLowerCase();
+
+        if (classA !== classB) {
+            return classA.localeCompare(classB, 'ru');
+        }
+
+        const yearA = (a.academicYear || '').toLowerCase();
+        const yearB = (b.academicYear || '').toLowerCase();
+
+        if (yearA !== yearB) {
+            return yearA.localeCompare(yearB, 'ru');
+        }
+
+        const subjectA = (a.subjectName || '').toLowerCase();
+        const subjectB = (b.subjectName || '').toLowerCase();
+
+        return subjectA.localeCompare(subjectB, 'ru');
+    });
+
+    return unique;
+}
+
+async function loadTeachingPairs() {
+    try {
+        const pairs = await api('/teacher/teaching-assignments/pairs');
+        quizBuilderState.pairs = normalizeTeachingPairs(pairs);
+        console.log('Quiz builder teaching pairs loaded:', quizBuilderState.pairs);
+    } catch (e) {
+        console.error('Error loading teaching pairs:', e);
+        quizBuilderState.pairs = [];
+    }
+}
+
+function getUniqueSubjectsFromPairs() {
+    const map = new Map();
+
+    quizBuilderState.pairs.forEach(pair => {
+        if (pair.subjectId == null) return;
+
+        const key = String(pair.subjectId);
+        if (!map.has(key)) {
+            map.set(key, {
+                id: pair.subjectId,
+                name: pair.subjectName
+            });
+        }
+    });
+
+    const subjects = Array.from(map.values());
+    subjects.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ru'));
+
+    return subjects;
+}
+
+function getUniqueClassesFromPairs() {
+    const map = new Map();
+
+    quizBuilderState.pairs.forEach(pair => {
+        if (pair.classId == null) return;
+
+        const key = String(pair.classId);
+        if (!map.has(key)) {
+            map.set(key, {
+                id: pair.classId,
+                name: pair.className,
+                academicYear: pair.academicYear || ''
+            });
+        }
+    });
+
+    const classes = Array.from(map.values());
+    classes.sort((a, b) => {
+        const nameCmp = (a.name || '').localeCompare(b.name || '', 'ru');
+        if (nameCmp !== 0) return nameCmp;
+        return (a.academicYear || '').localeCompare(b.academicYear || '', 'ru');
+    });
+
+    return classes;
+}
+
+function getPairForClassAndSubject(classId, subjectId) {
+    return quizBuilderState.pairs.find(pair =>
+        String(pair.classId) === String(classId) &&
+        String(pair.subjectId) === String(subjectId)
+    );
+}
+
+function getSelectedQuiz() {
+    const selectValue = builderEls.assignQuizSelect.value;
+    const selectedId = Number(selectValue || quizBuilderState.selectedQuizId || 0);
+
+    if (!selectedId) {
+        return null;
+    }
+
+    return quizBuilderState.quizzes.find(q => Number(q.id) === selectedId) || null;
+}
+
+function syncSelectedQuizSubjectHint() {
+    const selectedQuiz = getSelectedQuiz();
+    const selectedClassId = builderEls.assignClassSelect.value;
+
+    if (!selectedQuiz || !selectedClassId || !selectedQuiz.subject || !selectedQuiz.subject.id) {
+        builderEls.assignClassSelect.title = '';
+        return;
+    }
+
+    const allowedPair = getPairForClassAndSubject(selectedClassId, selectedQuiz.subject.id);
+
+    if (allowedPair) {
+        builderEls.assignClassSelect.title = '';
+    } else {
+        builderEls.assignClassSelect.title =
+            `Для выбранного квиза (${selectedQuiz.subject.name}) у учителя нет назначения в этот класс`;
+    }
+}
+
 async function loadSubjects() {
     try {
-        const subjects = await api('/subjects');
-        quizBuilderState.subjects = Array.isArray(subjects) ? subjects : [];
+        quizBuilderState.subjects = getUniqueSubjectsFromPairs();
         builderEls.quizSubject.innerHTML = '<option value="">Без предмета</option>';
+
+        if (!quizBuilderState.subjects.length) {
+            builderEls.quizSubject.innerHTML = '<option value="">Нет доступных предметов</option>';
+            return;
+        }
 
         quizBuilderState.subjects.forEach(subject => {
             const option = document.createElement('option');
@@ -146,23 +306,31 @@ async function loadSubjects() {
         });
     } catch (e) {
         console.error(e);
+        builderEls.quizSubject.innerHTML = '<option value="">Ошибка загрузки предметов</option>';
     }
 }
 
 async function loadTeacherClasses() {
     try {
-        const classes = await api('/statistics/teacher/classes');
-        quizBuilderState.classes = Array.isArray(classes) ? classes : [];
+        quizBuilderState.classes = getUniqueClassesFromPairs();
         builderEls.assignClassSelect.innerHTML = '<option value="">Выбери класс</option>';
+
+        if (!quizBuilderState.classes.length) {
+            builderEls.assignClassSelect.innerHTML = '<option value="">Нет доступных классов</option>';
+            return;
+        }
 
         quizBuilderState.classes.forEach(cls => {
             const option = document.createElement('option');
             option.value = cls.id;
-            option.textContent = cls.name;
+            option.textContent = cls.academicYear
+                ? `${cls.name} (${cls.academicYear})`
+                : cls.name;
             builderEls.assignClassSelect.appendChild(option);
         });
     } catch (e) {
         console.error(e);
+        builderEls.assignClassSelect.innerHTML = '<option value="">Ошибка загрузки классов</option>';
     }
 }
 
@@ -470,6 +638,9 @@ function renderQuizList() {
                 <div>
                     <h3>${escapeHtml(q.title)}</h3>
                     <div class="muted">${escapeHtml(q.description || 'Без описания')}</div>
+                    <div class="meta">
+                        <span class="chip">Предмет: ${escapeHtml(q.subject?.name || 'Без предмета')}</span>
+                    </div>
                 </div>
                 <button class="btn btn-primary btn-small" onclick="selectQuiz(${q.id})">Выбрать</button>
             </div>
@@ -482,7 +653,9 @@ function renderQuizSelect() {
     quizBuilderState.quizzes.forEach(q => {
         const opt = document.createElement('option');
         opt.value = q.id;
-        opt.textContent = q.title;
+        opt.textContent = q.subject?.name
+            ? `${q.title} — ${q.subject.name}`
+            : q.title;
         builderEls.assignQuizSelect.appendChild(opt);
     });
 }
@@ -491,6 +664,12 @@ window.selectQuiz = function(id) {
     quizBuilderState.selectedQuizId = id;
     builderEls.currentQuizBadge.textContent = `Выбран: ${quizBuilderState.quizzes.find(q => q.id === id)?.title || id}`;
     renderQuizList();
+
+    if (builderEls.assignQuizSelect) {
+        builderEls.assignQuizSelect.value = String(id);
+    }
+
+    syncSelectedQuizSubjectHint();
 };
 
 async function assignQuiz() {
@@ -508,6 +687,17 @@ async function assignQuiz() {
     if (!classId) {
         showMessage('Выбери класс', 'error');
         return;
+    }
+
+    const selectedQuiz = quizBuilderState.quizzes.find(q => Number(q.id) === quizId);
+
+    if (selectedQuiz && selectedQuiz.subject && selectedQuiz.subject.id) {
+        const allowedPair = getPairForClassAndSubject(classId, selectedQuiz.subject.id);
+
+        if (!allowedPair) {
+            showMessage('Этот квиз нельзя назначить выбранному классу: у учителя нет такого назначения', 'error');
+            return;
+        }
     }
 
     try {
@@ -551,14 +741,15 @@ function renderAssignments() {
     el.innerHTML = quizBuilderState.assignments.map(a => `
         <div class="assignment-item">
             <h4>${escapeHtml(a.quiz?.title || 'Без названия')}</h4>
+            <div class="muted">Предмет: ${escapeHtml(a.quiz?.subject?.name || 'Без предмета')}</div>
             <div class="muted">Класс: ${escapeHtml(a.schoolClass?.name || '—')}</div>
             <div class="muted">Открытие: ${a.startTime || '—'}</div>
             <div class="muted">Закрытие: ${a.endTime || '—'}</div>
             <div class="muted">Лимит: ${a.timeLimitMinutes ? a.timeLimitMinutes + ' мин' : 'без лимита'}</div>
             <div style="margin-top:10px;">
                 <button class="btn btn-secondary btn-small" onclick="openResults(${a.id})">
-    Результаты
-</button>
+                    Результаты
+                </button>
             </div>
         </div>
     `).join('');
@@ -569,6 +760,7 @@ function logout() {
     window.location.href = '/login.html';
 }
 window.logout = logout;
+
 window.openResults = function(assignmentId) {
     window.location.href = `/quiz-results.html?assignmentId=${assignmentId}`;
 };

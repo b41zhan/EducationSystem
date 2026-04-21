@@ -2,15 +2,13 @@ package com.springdemo.educationsystem.Service;
 
 import com.springdemo.educationsystem.DTO.CreateQuizAssignmentDTO;
 import com.springdemo.educationsystem.Entity.*;
-import com.springdemo.educationsystem.Enum.QuizAttemptStatus;
 import com.springdemo.educationsystem.Repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
 
 @Service
 public class QuizAssignmentService {
@@ -21,26 +19,26 @@ public class QuizAssignmentService {
     private final StudentRepository studentRepository;
     private final QuizAssignmentStudentRepository quizAssignmentStudentRepository;
     private final QuizAttemptRepository quizAttemptRepository;
+    private final TeacherClassSubjectService teacherClassSubjectService;
 
-    public QuizAssignmentService(
-            QuizAssignmentRepository quizAssignmentRepository,
-            QuizRepository quizRepository,
-            SchoolClassRepository schoolClassRepository,
-            StudentRepository studentRepository,
-            QuizAssignmentStudentRepository quizAssignmentStudentRepository,
-            QuizAttemptRepository quizAttemptRepository
-    ) {
+    public QuizAssignmentService(QuizAssignmentRepository quizAssignmentRepository,
+                                 QuizRepository quizRepository,
+                                 SchoolClassRepository schoolClassRepository,
+                                 StudentRepository studentRepository,
+                                 QuizAssignmentStudentRepository quizAssignmentStudentRepository,
+                                 QuizAttemptRepository quizAttemptRepository,
+                                 TeacherClassSubjectService teacherClassSubjectService) {
         this.quizAssignmentRepository = quizAssignmentRepository;
         this.quizRepository = quizRepository;
         this.schoolClassRepository = schoolClassRepository;
         this.studentRepository = studentRepository;
         this.quizAssignmentStudentRepository = quizAssignmentStudentRepository;
         this.quizAttemptRepository = quizAttemptRepository;
+        this.teacherClassSubjectService = teacherClassSubjectService;
     }
 
     @Transactional
     public QuizAssignment createAssignment(Long teacherId, CreateQuizAssignmentDTO dto) {
-
         if (dto.getQuizId() == null) {
             throw new RuntimeException("quizId is required");
         }
@@ -70,6 +68,14 @@ public class QuizAssignmentService {
             throw new RuntimeException("You can assign only your own quiz");
         }
 
+        if (dto.getClassId() != null) {
+            teacherClassSubjectService.requireTeacherCanAssignQuizToClassByTeacherEntityId(
+                    teacherId,
+                    dto.getQuizId(),
+                    dto.getClassId()
+            );
+        }
+
         QuizAssignment assignment = new QuizAssignment();
         assignment.setQuiz(quiz);
         assignment.setTeacher(quiz.getTeacher());
@@ -91,6 +97,15 @@ public class QuizAssignmentService {
                 Student student = studentRepository.findById(studentId)
                         .orElseThrow(() -> new RuntimeException("Student not found: " + studentId));
 
+                // Если назначаем конкретному студенту без classId, всё равно валидируем через его класс, если он есть.
+                if (assignment.getSchoolClass() == null && student.getSchoolClass() != null) {
+                    teacherClassSubjectService.requireTeacherCanAssignQuizToClassByTeacherEntityId(
+                            teacherId,
+                            dto.getQuizId(),
+                            student.getSchoolClass().getId()
+                    );
+                }
+
                 QuizAssignmentStudent link = new QuizAssignmentStudent();
                 link.setQuizAssignment(savedAssignment);
                 link.setStudent(student);
@@ -101,60 +116,47 @@ public class QuizAssignmentService {
         return savedAssignment;
     }
 
+    @Transactional(readOnly = true)
     public List<QuizAssignment> getTeacherAssignments(Long teacherId) {
         return quizAssignmentRepository.findByTeacherIdOrderByCreatedAtDesc(teacherId);
     }
 
+    @Transactional(readOnly = true)
     public List<QuizAssignment> getAvailableAssignmentsForStudent(Long studentId) {
-
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new RuntimeException("Student not found"));
 
         LocalDateTime now = LocalDateTime.now();
 
-        List<QuizAssignment> result = new ArrayList<>();
+        List<QuizAssignment> all = quizAssignmentRepository.findAllActiveAssignments(now);
 
-        if (student.getSchoolClass() != null) {
-            result.addAll(
-                    quizAssignmentRepository
-                            .findBySchoolClassIdAndActiveTrueAndStartTimeLessThanEqualAndEndTimeGreaterThanEqualOrderByStartTimeDesc(
-                                    student.getSchoolClass().getId(),
-                                    now,
-                                    now
-                            )
-            );
-        }
+        return all.stream()
+                .filter(assignment -> {
+                    boolean allowedByClass = assignment.getSchoolClass() != null
+                            && student.getSchoolClass() != null
+                            && assignment.getSchoolClass().getId().equals(student.getSchoolClass().getId());
 
-        result.addAll(
-                quizAssignmentRepository
-                        .findByAssignedStudentsStudentIdAndActiveTrueAndStartTimeLessThanEqualAndEndTimeGreaterThanEqualOrderByStartTimeDesc(
-                                studentId,
-                                now,
-                                now
-                        )
-        );
+                    boolean allowedByExplicitStudent =
+                            quizAssignmentStudentRepository.existsByQuizAssignmentIdAndStudentId(
+                                    assignment.getId(), studentId
+                            );
 
-        Map<Long, QuizAssignment> unique = new LinkedHashMap<>();
-        for (QuizAssignment assignment : result) {
-            unique.put(assignment.getId(), assignment);
-        }
-
-        List<QuizAssignment> assignments = new ArrayList<>(unique.values());
-
-        return assignments.stream()
-                .filter(a -> {
-                    Optional<QuizAttempt> att =
-                            quizAttemptRepository.findByQuizAssignmentIdAndStudentId(a.getId(), studentId);
-
-                    return att.isEmpty() || att.get().getStatus() != QuizAttemptStatus.SUBMITTED;
+                    return allowedByClass || allowedByExplicitStudent;
+                })
+                .filter(assignment -> {
+                    var existingAttempt = quizAttemptRepository.findByQuizAssignmentIdAndStudentId(
+                            assignment.getId(), studentId
+                    );
+                    return existingAttempt.isEmpty()
+                            || !existingAttempt.get().getStatus().name().equals("SUBMITTED");
                 })
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public QuizAssignment getAssignmentForStudent(Long assignmentId, Long studentId) {
-
         QuizAssignment assignment = quizAssignmentRepository.findById(assignmentId)
-                .orElseThrow(() -> new RuntimeException("Quiz assignment not found"));
+                .orElseThrow(() -> new RuntimeException("Assignment not found"));
 
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new RuntimeException("Student not found"));
