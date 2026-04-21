@@ -26,24 +26,24 @@ public class QuizService {
     private final QuizOptionRepository optionRepository;
     private final SubjectRepository subjectRepository;
     private final TeacherRepository teacherRepository;
+    private final TeacherClassSubjectService teacherClassSubjectService;
 
-    public QuizService(
-            QuizRepository quizRepository,
-            QuizQuestionRepository questionRepository,
-            QuizOptionRepository optionRepository,
-            SubjectRepository subjectRepository,
-            TeacherRepository teacherRepository
-    ) {
+    public QuizService(QuizRepository quizRepository,
+                       QuizQuestionRepository questionRepository,
+                       QuizOptionRepository optionRepository,
+                       SubjectRepository subjectRepository,
+                       TeacherRepository teacherRepository,
+                       TeacherClassSubjectService teacherClassSubjectService) {
         this.quizRepository = quizRepository;
         this.questionRepository = questionRepository;
         this.optionRepository = optionRepository;
         this.subjectRepository = subjectRepository;
         this.teacherRepository = teacherRepository;
+        this.teacherClassSubjectService = teacherClassSubjectService;
     }
 
     @Transactional
     public Quiz createQuiz(CreateQuizDTO dto, Long teacherId) {
-
         Teacher teacher = teacherRepository.findById(teacherId)
                 .orElseThrow(() -> new RuntimeException("Teacher not found with id: " + teacherId));
 
@@ -54,8 +54,12 @@ public class QuizService {
         quiz.setActive(true);
 
         if (dto.getSubjectId() != null) {
+            // Stage 5: учитель может создавать шаблон квиза только по своему предмету
+            teacherClassSubjectService.requireTeacherCanUseSubjectByTeacherEntityId(teacher.getId(), dto.getSubjectId());
+
             Subject subject = subjectRepository.findById(dto.getSubjectId())
                     .orElseThrow(() -> new RuntimeException("Subject not found with id: " + dto.getSubjectId()));
+
             quiz.setSubject(subject);
         }
 
@@ -64,7 +68,6 @@ public class QuizService {
 
     @Transactional
     public QuizQuestion addQuestion(Long quizId, CreateQuestionDTO dto, Long teacherId) {
-
         Quiz quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new RuntimeException("Quiz not found with id: " + quizId));
 
@@ -104,6 +107,7 @@ public class QuizService {
         return savedQuestion;
     }
 
+    @Transactional(readOnly = true)
     public List<Quiz> getTeacherQuizzes(Long teacherId) {
         return quizRepository.findByTeacherIdOrderByCreatedAtDesc(teacherId);
     }
