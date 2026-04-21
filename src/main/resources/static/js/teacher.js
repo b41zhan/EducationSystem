@@ -1,23 +1,186 @@
+const token = localStorage.getItem('token');
 
-document.addEventListener('DOMContentLoaded', function() {
-    loadTeacherData();
-    loadClasses();
-    loadTeacherAssignments();
-    loadSubmissionsToGrade();
-});
+let allClasses = [];
+let allSubjects = [];
+let currentClassId = null;
 
-// Добавьте эти переменные в начало файла
 let allAssignments = [];
 let currentPage = 1;
 const assignmentsPerPage = 5;
 let filteredAssignments = [];
 
-// Обновите функцию loadTeacherAssignments
+document.addEventListener('DOMContentLoaded', function () {
+    loadTeacherData();
+    loadClasses();
+    loadSubjects();
+    loadTeacherAssignments();
+    loadSubmissionsToGrade();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const submissionId = urlParams.get('submissionId');
+
+    if (submissionId) {
+        setTimeout(() => {
+            if (typeof viewSubmission === 'function') {
+                viewSubmission(Number(submissionId));
+            } else {
+                console.error('viewSubmission function not found');
+            }
+            window.history.replaceState({}, document.title, '/teacher-dashboard.html');
+        }, 500);
+    }
+});
+
+async function loadTeacherData() {
+    try {
+        const userData = await ApiService.get('/auth/me');
+        document.getElementById('welcome-message').textContent =
+            `Добро пожаловать, ${userData.firstName} ${userData.lastName}!`;
+    } catch (error) {
+        console.error('Error loading teacher data:', error);
+    }
+}
+
+function normalizeClasses(classes) {
+    if (!Array.isArray(classes)) {
+        return [];
+    }
+
+    const unique = [];
+    const seen = new Set();
+
+    classes.forEach(cls => {
+        if (!cls || cls.id == null) {
+            return;
+        }
+
+        const key = String(cls.id);
+        if (seen.has(key)) {
+            return;
+        }
+
+        seen.add(key);
+        unique.push(cls);
+    });
+
+    unique.sort((a, b) => {
+        const nameA = (a.name || '').toLowerCase();
+        const nameB = (b.name || '').toLowerCase();
+        if (nameA !== nameB) {
+            return nameA.localeCompare(nameB, 'ru');
+        }
+
+        const yearA = (a.academicYear || '').toLowerCase();
+        const yearB = (b.academicYear || '').toLowerCase();
+        return yearA.localeCompare(yearB, 'ru');
+    });
+
+    return unique;
+}
+
+async function loadClasses() {
+    try {
+        const classes = await ApiService.get('/statistics/teacher/classes');
+        allClasses = normalizeClasses(classes);
+
+        console.log('Teacher classes loaded:', allClasses);
+
+        const classesList = document.getElementById('classes-list');
+        const classSelect = document.getElementById('assignmentClass');
+        const classFilter = document.getElementById('classFilter');
+
+        classesList.innerHTML = '';
+        classSelect.innerHTML = '<option value="">Выберите класс</option>';
+        classFilter.innerHTML = '<option value="">Все классы</option>';
+
+        if (allClasses.length > 0) {
+            allClasses.forEach(classItem => {
+                const classElement = document.createElement('div');
+                classElement.className = 'assignment-item';
+                classElement.innerHTML = `
+                    <div class="assignment-title">${classItem.name}</div>
+                    <div class="assignment-meta">Учебный год: ${classItem.academicYear || '—'}</div>
+                `;
+                classesList.appendChild(classElement);
+
+                const option = document.createElement('option');
+                option.value = classItem.id;
+                option.textContent = classItem.academicYear
+                    ? `${classItem.name} (${classItem.academicYear})`
+                    : classItem.name;
+                classSelect.appendChild(option);
+
+                const filterOption = document.createElement('option');
+                filterOption.value = classItem.id;
+                filterOption.textContent = classItem.academicYear
+                    ? `${classItem.name} (${classItem.academicYear})`
+                    : classItem.name;
+                classFilter.appendChild(filterOption);
+            });
+
+            currentClassId = allClasses[0].id;
+            loadGamificationPreview();
+        } else {
+            classesList.innerHTML = '<p>Нет доступных классов</p>';
+            classSelect.innerHTML = '<option value="">Нет доступных классов</option>';
+            classFilter.innerHTML = '<option value="">Нет доступных классов</option>';
+            currentClassId = null;
+        }
+
+    } catch (error) {
+        console.error('Error loading teacher classes:', error);
+
+        const classesList = document.getElementById('classes-list');
+        const classSelect = document.getElementById('assignmentClass');
+        const classFilter = document.getElementById('classFilter');
+
+        classesList.innerHTML = '<p>Ошибка загрузки классов</p>';
+        classSelect.innerHTML = '<option value="">Ошибка загрузки классов</option>';
+        classFilter.innerHTML = '<option value="">Ошибка загрузки классов</option>';
+        currentClassId = null;
+    }
+}
+
+async function loadSubjects() {
+    const subjectSelect = document.getElementById('assignmentSubject');
+    if (!subjectSelect) {
+        return;
+    }
+
+    try {
+        const subjects = await ApiService.get('/subjects');
+        allSubjects = Array.isArray(subjects) ? subjects : [];
+
+        allSubjects.sort((a, b) => {
+            const nameA = (a.name || '').toLowerCase();
+            const nameB = (b.name || '').toLowerCase();
+            return nameA.localeCompare(nameB, 'ru');
+        });
+
+        subjectSelect.innerHTML = '<option value="">Выберите предмет</option>';
+
+        if (allSubjects.length === 0) {
+            subjectSelect.innerHTML = '<option value="">Нет доступных предметов</option>';
+            return;
+        }
+
+        allSubjects.forEach(subject => {
+            const option = document.createElement('option');
+            option.value = subject.id;
+            option.textContent = subject.name;
+            subjectSelect.appendChild(option);
+        });
+
+    } catch (error) {
+        console.error('Error loading subjects:', error);
+        subjectSelect.innerHTML = '<option value="">Ошибка загрузки предметов</option>';
+    }
+}
+
 async function loadTeacherAssignments() {
     try {
         console.log('Loading teacher assignments...');
 
-        // Пробуем получить задания учителя
         try {
             allAssignments = await ApiService.get('/teacher/assignments/my');
             console.log('Loaded teacher assignments:', allAssignments);
@@ -26,20 +189,13 @@ async function loadTeacherAssignments() {
             allAssignments = await ApiService.get('/assignments');
         }
 
-        // Инициализируем отфильтрованные задания
         filteredAssignments = [...allAssignments];
-
-        // Отображаем первую страницу
         displayTeacherAssignmentsPage(1);
 
-        // Обновляем статистику
         const submissions = await ApiService.get('/submissions/my');
         updateTeacherStats(allAssignments, submissions);
-
     } catch (error) {
         console.error('Error loading assignments:', error);
-
-        // Если ошибка - показываем пустой список
         allAssignments = [];
         filteredAssignments = [];
         displayTeacherAssignmentsPage(1);
@@ -47,6 +203,11 @@ async function loadTeacherAssignments() {
 }
 
 async function loadGamificationPreview() {
+    const previewEl = document.getElementById('gamificationPreview');
+    if (!previewEl || !token || !currentClassId) {
+        return;
+    }
+
     try {
         const response = await fetch('/api/gamification/leaderboard?classId=' + currentClassId, {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -56,7 +217,7 @@ async function loadGamificationPreview() {
             const leaderboard = await response.json();
             const top5 = leaderboard.slice(0, 5);
 
-            document.getElementById('gamificationPreview').innerHTML = `
+            previewEl.innerHTML = `
                 <div style="display: flex; flex-direction: column; gap: 10px;">
                     ${top5.map((student, index) => `
                         <div style="display: flex; align-items: center; gap: 10px; padding: 8px; background: #f8f9fa; border-radius: 6px;">
@@ -73,52 +234,64 @@ async function loadGamificationPreview() {
     }
 }
 
-// Вызовите эту функцию при загрузке страницы статистики
-loadGamificationPreview();
-
-
-// Функция поиска заданий
 function searchTeacherAssignments() {
     const searchTerm = document.getElementById('searchAssignments').value.toLowerCase().trim();
 
     filterTeacherAssignments();
 
     if (searchTerm === '') {
-        // Если поиск пустой, показываем все задания
         filteredAssignments = [...allAssignments];
     } else {
-        // Фильтруем задания по названию
         filteredAssignments = allAssignments.filter(assignment =>
             assignment.title && assignment.title.toLowerCase().includes(searchTerm)
         );
     }
 
-    // Возвращаемся на первую страницу после поиска
     currentPage = 1;
     displayTeacherAssignmentsPage(currentPage);
 }
-
 
 function clearFilters() {
     document.getElementById('searchAssignments').value = '';
     document.getElementById('classFilter').value = '';
 
-    // Возвращаем все задания
     filteredAssignments = [...allAssignments];
     currentPage = 1;
     displayTeacherAssignmentsPage(currentPage);
 }
 
 function getClassNameById(classId) {
-    const classItem = allClasses.find(c => c.id == classId);
+    const classItem = allClasses.find(c => String(c.id) === String(classId));
     return classItem ? classItem.name : '';
+}
+
+function filterTeacherAssignments() {
+    const searchTerm = document.getElementById('searchAssignments').value.toLowerCase().trim();
+    const classFilterValue = document.getElementById('classFilter').value;
+
+    filteredAssignments = [...allAssignments];
+
+    if (searchTerm !== '') {
+        filteredAssignments = filteredAssignments.filter(assignment =>
+            assignment.title && assignment.title.toLowerCase().includes(searchTerm)
+        );
+    }
+
+    if (classFilterValue !== '') {
+        filteredAssignments = filteredAssignments.filter(assignment =>
+            String(assignment.classId) === String(classFilterValue) ||
+            assignment.className === getClassNameById(classFilterValue)
+        );
+    }
+
+    currentPage = 1;
+    displayTeacherAssignmentsPage(currentPage);
 }
 
 function displayTeacherAssignmentsPage(page) {
     const assignmentsList = document.getElementById('assignments-list');
     const pagination = document.getElementById('pagination');
 
-    // Создаем элемент для информации о результатах
     let resultsInfo = document.getElementById('results-info');
     if (!resultsInfo) {
         resultsInfo = document.createElement('div');
@@ -157,7 +330,6 @@ function displayTeacherAssignmentsPage(page) {
         return;
     }
 
-    // Показываем информацию о результатах
     const searchTerm = document.getElementById('searchAssignments').value;
     const classFilterValue = document.getElementById('classFilter').value;
     const className = classFilterValue ? getClassNameById(classFilterValue) : '';
@@ -173,35 +345,20 @@ function displayTeacherAssignmentsPage(page) {
 
     resultsInfo.innerHTML = `<i>📊</i> ${resultsText}`;
 
-    // Рассчитываем индексы для текущей страницы
     const totalPages = Math.ceil(filteredAssignments.length / assignmentsPerPage);
     const startIndex = (page - 1) * assignmentsPerPage;
     const endIndex = Math.min(startIndex + assignmentsPerPage, filteredAssignments.length);
     const currentAssignments = filteredAssignments.slice(startIndex, endIndex);
 
-    // Отображаем задания в табличном формате
     assignmentsList.innerHTML = `
         <div class="assignments-list">
             <div class="assignments-header">
-                <div class="header-cell">
-                    <span>Название задания</span>
-                    <i>▼</i>
-                </div>
-                <div class="header-cell">
-                    <span>Класс</span>
-                </div>
-                <div class="header-cell">
-                    <span>Тип</span>
-                </div>
-                <div class="header-cell">
-                    <span>Макс. оценка</span>
-                </div>
-                <div class="header-cell">
-                    <span>Срок сдачи</span>
-                </div>
-                <div class="header-cell">
-                    <span>Действия</span>
-                </div>
+                <div class="header-cell"><span>Название задания</span><i>▼</i></div>
+                <div class="header-cell"><span>Класс</span></div>
+                <div class="header-cell"><span>Тип</span></div>
+                <div class="header-cell"><span>Макс. оценка</span></div>
+                <div class="header-cell"><span>Срок сдачи</span></div>
+                <div class="header-cell"><span>Действия</span></div>
             </div>
             <div class="assignments-table">
                 ${currentAssignments.map(assignment => {
@@ -232,10 +389,7 @@ function displayTeacherAssignmentsPage(page) {
                                 </span>
                                 ${deadlineDate ? `
                                 <span class="deadline-time">
-                                    ${deadlineDate.toLocaleTimeString('ru-RU', {
-            hour: '2-digit',
-            minute: '2-digit'
-        })}
+                                    ${deadlineDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                                 ` : ''}
                                 ${isUrgent ? '<span class="deadline-urgent">СРОЧНО!</span>' : ''}
@@ -243,15 +397,9 @@ function displayTeacherAssignmentsPage(page) {
                         </div>
                         <div class="assignment-cell">
                             <div class="assignment-actions">
-                                <button class="btn-table btn-view" onclick="viewAssignmentSubmissions(${assignment.id})" title="Просмотреть сдачи">
-                                    <i>👁️</i>
-                                </button>
-                                <button class="btn-table btn-edit" onclick="editAssignment(${assignment.id})" title="Редактировать">
-                                    <i>✏️</i>
-                                </button>
-                                <button class="btn-table btn-delete" onclick="deleteAssignment(${assignment.id})" title="Удалить">
-                                    <i>🗑️</i>
-                                </button>
+                                <button class="btn-table btn-view" onclick="viewAssignmentSubmissions(${assignment.id})" title="Просмотреть сдачи"><i>👁️</i></button>
+                                <button class="btn-table btn-edit" onclick="editAssignment(${assignment.id})" title="Редактировать"><i>✏️</i></button>
+                                <button class="btn-table btn-delete" onclick="deleteAssignment(${assignment.id})" title="Удалить"><i>🗑️</i></button>
                             </div>
                         </div>
                     </div>
@@ -261,19 +409,16 @@ function displayTeacherAssignmentsPage(page) {
         </div>
     `;
 
-    // Обновляем пагинацию
     updatePagination(page, totalPages, filteredAssignments.length, startIndex, endIndex);
 }
 
-// Вспомогательная функция для определения срочности дедлайна
 function isDeadlineUrgent(deadlineDate) {
     const now = new Date();
     const diffHours = (deadlineDate - now) / (1000 * 60 * 60);
-    return diffHours > 0 && diffHours < 48; // Срочно если меньше 48 часов осталось
+    return diffHours > 0 && diffHours < 48;
 }
 
-// Обновленная функция updatePagination для табличного формата
-function updatePagination(currentPage, totalPages, totalItems, startIndex, endIndex) {
+function updatePagination(currentPageValue, totalPages, totalItems, startIndex, endIndex) {
     const pagination = document.getElementById('pagination');
 
     if (totalPages <= 1) {
@@ -288,60 +433,45 @@ function updatePagination(currentPage, totalPages, totalItems, startIndex, endIn
                 Показано <strong>${startIndex + 1}-${endIndex}</strong> из <strong>${totalItems}</strong> заданий
             </div>
             <div class="pagination-controls">
-                <button class="pagination-btn" onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''}>
-                    <i>←</i>
-                </button>
-                
+                <button class="pagination-btn" onclick="changePage(-1)" ${currentPageValue === 1 ? 'disabled' : ''}><i>←</i></button>
                 <div class="page-numbers">
-                    ${generatePageNumbers(currentPage, totalPages)}
+                    ${generatePageNumbers(currentPageValue, totalPages)}
                 </div>
-                
-                <button class="pagination-btn" onclick="changePage(1)" ${currentPage === totalPages ? 'disabled' : ''}>
-                    <i>→</i>
-                </button>
+                <button class="pagination-btn" onclick="changePage(1)" ${currentPageValue === totalPages ? 'disabled' : ''}><i>→</i></button>
             </div>
         </div>
     `;
 }
 
-function generatePageNumbers(currentPage, totalPages) {
+function generatePageNumbers(currentPageValue, totalPages) {
     let pages = [];
-
-    // Всегда показываем первую страницу
     pages.push(1);
 
-    // Рассчитываем диапазон страниц вокруг текущей
-    let startPage = Math.max(2, currentPage - 1);
-    let endPage = Math.min(totalPages - 1, currentPage + 1);
+    let startPage = Math.max(2, currentPageValue - 1);
+    let endPage = Math.min(totalPages - 1, currentPageValue + 1);
 
-    // Добавляем ... если нужно
     if (startPage > 2) {
         pages.push('...');
     }
 
-    // Добавляем страницы в диапазоне
     for (let i = startPage; i <= endPage; i++) {
         pages.push(i);
     }
 
-    // Добавляем ... если нужно
     if (endPage < totalPages - 1) {
         pages.push('...');
     }
 
-    // Всегда показываем последнюю страницу, если есть
     if (totalPages > 1) {
         pages.push(totalPages);
     }
 
-    // Генерируем HTML
     return pages.map(page => {
         if (page === '...') {
             return '<span class="page-dots">...</span>';
         }
         return `
-            <button class="page-number ${page === currentPage ? 'active' : ''}" 
-                    onclick="goToPage(${page})">
+            <button class="page-number ${page === currentPageValue ? 'active' : ''}" onclick="goToPage(${page})">
                 ${page}
             </button>
         `;
@@ -353,7 +483,6 @@ function goToPage(page) {
     displayTeacherAssignmentsPage(currentPage);
 }
 
-// Функция смены страницы
 function changePage(direction) {
     const totalPages = Math.ceil(filteredAssignments.length / assignmentsPerPage);
     const newPage = currentPage + direction;
@@ -364,122 +493,22 @@ function changePage(direction) {
     }
 }
 
-// Функции для редактирования и удаления (добавьте их в ваш код)
 function editAssignment(assignmentId) {
     alert(`Редактирование задания ${assignmentId} - функция в разработке`);
-    // Реализуйте логику редактирования задания
 }
 
 function deleteAssignment(assignmentId) {
     if (confirm('Вы уверены, что хотите удалить это задание?')) {
-        // Реализуйте логику удаления задания
         ApiService.delete(`/teacher/assignments/${assignmentId}`)
             .then(() => {
                 alert('Задание успешно удалено');
-                loadTeacherAssignments(); // Перезагружаем список
+                loadTeacherAssignments();
             })
             .catch(error => {
                 console.error('Error deleting assignment:', error);
                 alert('Ошибка при удалении задания');
             });
     }
-}
-
-async function loadTeacherData() {
-    try {
-        const userData = await ApiService.get('/auth/me');
-        document.getElementById('welcome-message').textContent =
-            `Добро пожаловать, ${userData.firstName} ${userData.lastName}!`;
-    } catch (error) {
-        console.error('Error loading teacher data:', error);
-    }
-}
-
-async function loadClasses() {
-    try {
-        const classes = await ApiService.get('/school-classes');
-        console.log('Classes loaded:', classes);
-
-        // Сохраняем классы для фильтрации
-        allClasses = classes;
-
-        const classesList = document.getElementById('classes-list');
-        const classSelect = document.getElementById('assignmentClass');
-        const classFilter = document.getElementById('classFilter');
-
-        // Очищаем списки
-        classesList.innerHTML = '';
-        classSelect.innerHTML = '<option value="">Выберите класс</option>';
-        classFilter.innerHTML = '<option value="">Все классы</option>';
-
-        if (classes && classes.length > 0) {
-            classes.forEach(classItem => {
-                // Для списка классов в левой колонке
-                const classElement = document.createElement('div');
-                classElement.className = 'assignment-item';
-                classElement.innerHTML = `
-                    <div class="assignment-title">${classItem.name}</div>
-                    <div class="assignment-meta">Учебный год: ${classItem.academicYear}</div>
-                `;
-                classesList.appendChild(classElement);
-
-                // Для выпадающего списка в форме создания задания
-                const option = document.createElement('option');
-                option.value = classItem.id;
-                option.textContent = `${classItem.name} (${classItem.academicYear})`;
-                classSelect.appendChild(option);
-
-                // Для фильтра по классам
-                const filterOption = document.createElement('option');
-                filterOption.value = classItem.id;
-                filterOption.textContent = `${classItem.name} (${classItem.academicYear})`;
-                classFilter.appendChild(filterOption);
-            });
-        } else {
-            classesList.innerHTML = '<p>Нет доступных классов</p>';
-            classSelect.innerHTML = '<option value="">Нет доступных классов</option>';
-            classFilter.innerHTML = '<option value="">Нет доступных классов</option>';
-        }
-
-    } catch (error) {
-        console.error('Error loading classes:', error);
-
-        const classesList = document.getElementById('classes-list');
-        const classSelect = document.getElementById('assignmentClass');
-        const classFilter = document.getElementById('classFilter');
-
-        classesList.innerHTML = '<p>Ошибка загрузки классов</p>';
-        classSelect.innerHTML = '<option value="">Ошибка загрузки классов</option>';
-        classFilter.innerHTML = '<option value="">Ошибка загрузки классов</option>';
-    }
-}
-
-function filterTeacherAssignments() {
-    const searchTerm = document.getElementById('searchAssignments').value.toLowerCase().trim();
-    const classFilterValue = document.getElementById('classFilter').value;
-
-    console.log('Filtering - Search:', searchTerm, 'Class:', classFilterValue);
-
-    // Начинаем со всех заданий
-    filteredAssignments = [...allAssignments];
-
-    // Применяем поиск по названию
-    if (searchTerm !== '') {
-        filteredAssignments = filteredAssignments.filter(assignment =>
-            assignment.title && assignment.title.toLowerCase().includes(searchTerm)
-        );
-    }
-
-    // Применяем фильтр по классу
-    if (classFilterValue !== '') {
-        filteredAssignments = filteredAssignments.filter(assignment =>
-            assignment.classId == classFilterValue || assignment.className === getClassNameById(classFilterValue)
-        );
-    }
-
-    // Возвращаемся на первую страницу после фильтрации
-    currentPage = 1;
-    displayTeacherAssignmentsPage(currentPage);
 }
 
 async function loadSubmissionsToGrade() {
@@ -525,27 +554,16 @@ function displaySubmissionsToGrade(submissions) {
         return;
     }
 
-    // Сортируем по дате сдачи (новые сверху)
     submissionsToGrade.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
 
     container.innerHTML = `
         <div class="submissions-list">
             <div class="submissions-header">
-                <div class="header-cell">
-                    <span>Задание</span>
-                </div>
-                <div class="header-cell">
-                    <span>Студент</span>
-                </div>
-                <div class="header-cell">
-                    <span>Файл</span>
-                </div>
-                <div class="header-cell">
-                    <span>Дата сдачи</span>
-                </div>
-                <div class="header-cell">
-                    <span>Действия</span>
-                </div>
+                <div class="header-cell"><span>Задание</span></div>
+                <div class="header-cell"><span>Студент</span></div>
+                <div class="header-cell"><span>Файл</span></div>
+                <div class="header-cell"><span>Дата сдачи</span></div>
+                <div class="header-cell"><span>Действия</span></div>
             </div>
             <div class="submissions-table">
                 ${submissionsToGrade.map(submission => {
@@ -574,10 +592,7 @@ function displaySubmissionsToGrade(submissions) {
                             <div class="submission-date">
                                 ${submittedDate.toLocaleDateString('ru-RU')}
                                 <div class="submission-time">
-                                    ${submittedDate.toLocaleTimeString('ru-RU', {
-            hour: '2-digit',
-            minute: '2-digit'
-        })}
+                                    ${submittedDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
                                 </div>
                                 ${isRecent ? '<span class="submission-urgent">НОВОЕ</span>' : ''}
                             </div>
@@ -596,14 +611,13 @@ function displaySubmissionsToGrade(submissions) {
         </div>
     `;
 
-    // Обновляем счетчик заданий на проверку
     document.getElementById('pending-count').textContent = submissionsToGrade.length;
 }
 
 function isSubmissionRecent(submittedDate) {
     const now = new Date();
     const diffHours = (now - submittedDate) / (1000 * 60 * 60);
-    return diffHours < 24; // Новое если сдано менее 24 часов назад
+    return diffHours < 24;
 }
 
 async function viewSubmission(submissionId) {
@@ -629,14 +643,14 @@ async function viewSubmission(submissionId) {
                     <strong>${submission.assignmentTitle}</strong>
                 </div>
             </div>
-            
+
             <div class="submission-detail-item">
                 <div class="submission-detail-label">Студент:</div>
                 <div class="submission-detail-value">
                     <strong>${submission.studentName}</strong>
                 </div>
             </div>
-            
+
             <div class="submission-detail-item">
                 <div class="submission-detail-label">Файл:</div>
                 <div class="submission-detail-value">
@@ -647,24 +661,21 @@ async function viewSubmission(submissionId) {
                             ${fileSizeMB} MB
                         </span>
                     </div>
-                    <button class="file-download-btn" 
+                    <button class="file-download-btn"
                             onclick="downloadSubmissionFile('${submission.filePath}', ${submission.id}); return false;">
                         <i>⬇️</i> Скачать файл
                     </button>
                 </div>
             </div>
-            
+
             <div class="submission-detail-item">
                 <div class="submission-detail-label">Дата сдачи:</div>
                 <div class="submission-detail-value">
-                    ${submittedDate.toLocaleDateString('ru-RU')} 
-                    в ${submittedDate.toLocaleTimeString('ru-RU', {
-            hour: '2-digit',
-            minute: '2-digit'
-        })}
+                    ${submittedDate.toLocaleDateString('ru-RU')}
+                    в ${submittedDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
                 </div>
             </div>
-            
+
             ${submission.comment ? `
             <div class="submission-detail-item">
                 <div class="submission-detail-label">Комментарий студента:</div>
@@ -677,7 +688,6 @@ async function viewSubmission(submissionId) {
             ` : ''}
         `;
 
-        // Устанавливаем максимальную оценку
         const assignment = allAssignments.find(a => a.id === submission.assignmentId);
         if (assignment) {
             const maxGrade = assignment.maxGrade || 100;
@@ -696,12 +706,12 @@ async function viewSubmission(submissionId) {
 
 function downloadSubmissionFile(filePath, submissionId = null) {
     if (submissionId) {
-        // Используем endpoint для скачивания файлов учеников
         window.open(`/api/files/download/submission/${submissionId}`, '_blank');
     } else {
         console.error('Submission ID not provided');
     }
 }
+
 async function viewAssignmentSubmissions(assignmentId) {
     try {
         const submissions = await ApiService.get(`/submissions/assignment/${assignmentId}`);
@@ -733,17 +743,16 @@ function updateTeacherStats(assignments, submissions) {
     document.getElementById('total-assignments').textContent = totalAssignments;
     document.getElementById('pending-submissions').textContent = pendingSubmissions;
     document.getElementById('graded-submissions').textContent = gradedSubmissions;
-
     document.getElementById('pending-count').textContent = pendingSubmissions;
 }
 
 function getAssignmentTypeName(type) {
     const types = {
-        'homework': 'Домашнее задание',
-        'test': 'Тест',
-        'quiz': 'Викторина',
-        'sor': 'СОР',
-        'soch': 'СОЧ'
+        homework: 'Домашнее задание',
+        test: 'Тест',
+        quiz: 'Викторина',
+        sor: 'СОР',
+        soch: 'СОЧ'
     };
     return types[type] || type;
 }
@@ -762,13 +771,13 @@ function closeGradeSubmissionModal() {
     document.getElementById('gradeSubmissionForm').reset();
 }
 
-document.getElementById('createAssignmentForm').addEventListener('submit', async function(e) {
+document.getElementById('createAssignmentForm').addEventListener('submit', async function (e) {
     e.preventDefault();
 
-    const title = document.getElementById('assignmentTitle').value;
-    const description = document.getElementById('assignmentDescription').value;
+    const title = document.getElementById('assignmentTitle').value.trim();
+    const description = document.getElementById('assignmentDescription').value.trim();
     const type = document.getElementById('assignmentType').value;
-    const maxGrade = parseInt(document.getElementById('assignmentMaxGrade').value);
+    const maxGrade = parseInt(document.getElementById('assignmentMaxGrade').value, 10);
     const deadline = document.getElementById('assignmentDeadline').value;
     const classId = document.getElementById('assignmentClass').value;
     const subjectId = document.getElementById('assignmentSubject').value;
@@ -778,26 +787,27 @@ document.getElementById('createAssignmentForm').addEventListener('submit', async
         return;
     }
 
+    if (Number.isNaN(maxGrade) || maxGrade < 1) {
+        alert('Максимальная оценка должна быть больше 0');
+        return;
+    }
+
     const formData = {
         title: title,
         description: description,
         type: type,
         maxGrade: maxGrade,
         deadline: deadline,
-        classId: parseInt(classId),
-        subjectId: parseInt(subjectId)
+        classId: parseInt(classId, 10),
+        subjectId: parseInt(subjectId, 10)
     };
 
     try {
-        const response = await ApiService.post('/teacher/assignments', formData);
+        await ApiService.post('/teacher/assignments', formData);
 
         alert('Задание создано успешно!');
         closeCreateAssignmentModal();
-
-        // Перезагружаем задания чтобы показать новое
         await loadTeacherAssignments();
-
-        // Сбрасываем фильтры
         clearFilters();
 
     } catch (error) {
@@ -806,11 +816,11 @@ document.getElementById('createAssignmentForm').addEventListener('submit', async
     }
 });
 
-document.getElementById('gradeSubmissionForm').addEventListener('submit', async function(e) {
+document.getElementById('gradeSubmissionForm').addEventListener('submit', async function (e) {
     e.preventDefault();
 
     const submissionId = document.getElementById('submissionId').value;
-    const gradeValue = parseInt(document.getElementById('gradeValue').value);
+    const gradeValue = parseInt(document.getElementById('gradeValue').value, 10);
     const comment = document.getElementById('teacherComment').value;
 
     if (gradeValue < 0 || gradeValue > 100) {
@@ -820,7 +830,7 @@ document.getElementById('gradeSubmissionForm').addEventListener('submit', async 
 
     try {
         const gradeData = {
-            submissionId: parseInt(submissionId),
+            submissionId: parseInt(submissionId, 10),
             gradeValue: gradeValue,
             comment: comment
         };
@@ -838,26 +848,7 @@ document.getElementById('gradeSubmissionForm').addEventListener('submit', async 
         alert('Ошибка при оценке задания: ' + error.message);
     }
 });
-// Проверяем, есть ли параметр submissionId в URL при загрузке страницы
-document.addEventListener('DOMContentLoaded', function() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const submissionId = urlParams.get('submissionId');
-
-    if (submissionId) {
-        // Небольшая задержка, чтобы страница успела загрузиться и менеджеры инициализироваться
-        setTimeout(() => {
-            if (typeof viewSubmission === 'function') {
-                viewSubmission(submissionId);
-            } else {
-                console.error('viewSubmission function not found');
-            }
-            // Убираем параметр из URL, чтобы при обновлении страницы окно не открывалось снова
-            window.history.replaceState({}, document.title, "/teacher-dashboard.html");
-        }, 500);
-    }
-});
 
 function loadAssignmentsToGrade() {
     loadSubmissionsToGrade();
 }
-

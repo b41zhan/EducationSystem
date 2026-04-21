@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -31,7 +30,6 @@
 
         <!-- Top Actions -->
         <div class="top-actions">
-            <!-- Gamification Button -->
             <a href="teacher-gamification.html" class="btn-action btn-nav">
                 🎮 Геймификация
             </a>
@@ -48,7 +46,7 @@
                 💬 Чат
                 <span id="chat-badge" class="nav-badge" style="display: none;"></span>
             </a>
-            <!-- НОВЫЙ КОЛОКОЛЬЧИК УВЕДОМЛЕНИЙ -->
+
             <div class="notification-bell-container">
                 <button id="notification-bell-btn" class="btn-action btn-nav">
                     🔔
@@ -64,7 +62,7 @@
                     </div>
                 </div>
             </div>
-            <!-- Logout Button -->
+
             <button class="btn-logout" onclick="logout()">
                 <span class="logout-icon">🚪</span>
                 Выйти
@@ -123,7 +121,6 @@
                     <h2>🏫 Мои классы</h2>
                 </div>
                 <div class="classes-list-container" id="classes-list">
-                    <!-- Classes will be loaded here -->
                     <p>Загрузка классов...</p>
                 </div>
             </div>
@@ -137,7 +134,6 @@
                     <h2>📚 Мои задания</h2>
                 </div>
 
-                <!-- Search and Filters -->
                 <div class="search-filters">
                     <div class="form-group">
                         <input class="search-input"
@@ -159,7 +155,6 @@
                     </div>
                 </div>
 
-                <!-- Assignments List -->
                 <div id="assignments-list">
                     <div class="assignments-list">
                         <div class="no-assignments">
@@ -170,7 +165,6 @@
                     </div>
                 </div>
 
-                <!-- Pagination -->
                 <div id="pagination" class="pagination" style="display: none;">
                     <button id="prev-page" class="btn-action btn-secondary" onclick="changePage(-1)">
                         ← Назад
@@ -223,7 +217,7 @@
         </div>
     </div>
 
-    <!-- Statistics Section (at the bottom) -->
+    <!-- Statistics Section -->
     <div class="statistics-section">
         <div class="card">
             <div class="card-header">
@@ -249,16 +243,12 @@
             </div>
 
             <div id="class-statistics" style="display: none;">
-                <div class="class-summary" id="class-summary">
-                    <!-- Class statistics will be here -->
-                </div>
+                <div class="class-summary" id="class-summary"></div>
 
                 <div class="students-statistics">
                     <h3 style="margin-bottom: 1rem;">📊 Детальная статистика студентов</h3>
                     <div class="students-table-container">
-                        <div id="students-stats-table">
-                            <!-- Students table will be here -->
-                        </div>
+                        <div id="students-stats-table"></div>
                     </div>
                 </div>
             </div>
@@ -336,22 +326,13 @@
                         <label for="assignmentClass" class="required">Класс</label>
                         <select id="assignmentClass" required>
                             <option value="">Выберите класс</option>
-                            <!-- Классы будут добавлены динамически -->
                         </select>
                     </div>
 
                     <div class="form-group">
                         <label for="assignmentSubject" class="required">Предмет</label>
                         <select id="assignmentSubject" required>
-                            <option value="">Выберите предмет</option>
-                            <option value="1">Математика</option>
-                            <option value="2">Физика</option>
-                            <option value="3">Химия</option>
-                            <option value="4">История</option>
-                            <option value="5">Литература</option>
-                            <option value="6">Биология</option>
-                            <option value="7">География</option>
-                            <option value="8">Иностранный язык</option>
+                            <option value="">Загрузка предметов...</option>
                         </select>
                     </div>
                 </div>
@@ -377,7 +358,6 @@
     </div>
 </div>
 
-<!-- Модальное окно оценки задания -->
 <div id="gradeSubmissionModal" class="modal" style="display: none;">
     <div class="modal-content">
         <span class="close" onclick="closeGradeSubmissionModal()">&times;</span>
@@ -387,9 +367,7 @@
         </div>
 
         <div class="modal-body">
-            <div id="submission-details" class="submission-details-modal">
-                <!-- Детали задания будут здесь -->
-            </div>
+            <div id="submission-details" class="submission-details-modal"></div>
 
             <form id="gradeSubmissionForm" class="modal-form">
                 <input type="hidden" id="submissionId">
@@ -469,7 +447,6 @@
 <script src="/js/statistics.js"></script>
 
 <script>
-    // Additional JavaScript for StatisticsManager
     if (typeof StatisticsManager !== 'undefined') {
         StatisticsManager.prototype.exportStatistics = function() {
             alert('Функция экспорта в Excel будет реализована в ближайшее время!');

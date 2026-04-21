@@ -5,8 +5,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ParentStudentRepository extends JpaRepository<ParentStudent, Long> {
+
     @Query("select ps from ParentStudent ps where ps.parent.user.id = :parentUserId")
     List<ParentStudent> findByParentUserId(Long parentUserId);
 
@@ -15,4 +17,11 @@ public interface ParentStudentRepository extends JpaRepository<ParentStudent, Lo
 
     boolean existsByParentIdAndStudentId(Long parentId, Long studentId);
 
+    List<ParentStudent> findByParentId(Long parentId);
+
+    List<ParentStudent> findByStudentId(Long studentId);
+
+    Optional<ParentStudent> findByParentIdAndStudentId(Long parentId, Long studentId);
+
+    void deleteByParentIdAndStudentId(Long parentId, Long studentId);
 }
